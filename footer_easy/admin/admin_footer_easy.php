@@ -60,13 +60,13 @@ while ($row = mysqli_fetch_assoc($result)) {
 // Ausgabe
 echo '<div class="card">
     <div class="card-header">
-        <i class="bi bi-paragraph"></i>  Footer verwalten
+        <i class="bi bi-paragraph"></i> ' . $languageService->get('title') . '
     </div>
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb t-5 p-2 bg-light">
-            <li class="breadcrumb-item"><a href="admincenter.php?site=admin_footer_easy">Footer verwalten</a></li>
-            <li class="breadcrumb-item active" aria-current="page">New / Edit</li>
+            <li class="breadcrumb-item"><a href="admincenter.php?site=admin_footer_easy">' . $languageService->get('title') . '</a></li>
+            <li class="breadcrumb-item active" aria-current="page">' . $languageService->get('breadcrumb_edit') . '</li>
         </ol>
     </nav>  
 
