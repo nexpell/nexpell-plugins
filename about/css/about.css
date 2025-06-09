@@ -1,0 +1,31 @@
+.about-section {
+  padding: 40px 20px;
+  background-color: #f9f9f9;
+  font-family: sans-serif;
+}
+
+.about-section h1,
+.about-section h2 {
+  color: #333;
+}
+
+.about-section p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+
+.about-cta {
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top: 1px solid #ddd;
+  font-weight: bold;
+}
+
+.about-cta a {
+  color: #0077cc;
+  text-decoration: none;
+}
+
+.about-cta a:hover {
+  text-decoration: underline;
+}

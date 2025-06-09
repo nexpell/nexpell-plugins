@@ -1,0 +1,189 @@
+[
+    {
+    "name": "News",
+    "modulname": "news",
+    "description": "News Plugin für webSPELL RM, Kommentarfunktion noch nicht aktiv und muss deaktiviert werdgb.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "news",
+    "download": "DISABLED"
+    },
+    {
+    "name": "Blog",
+    "modulname": "blog",
+    "description": "Blog Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "blog",
+    "download": "DISABLED"
+    },
+    {
+    "name": "Carousel",
+    "modulname": "carousel",
+    "description": "Carousel Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "carousel",
+    "download": "carousel.zip"
+    },
+    {
+    "name": "Rules",
+    "modulname": "rules",
+    "description": "[[lang:de]]Das Rules Plugin verwaltet die wichtigen Regeln für Mitglieder, Server und den Verein, um ein faires und sicheres Miteinander zu gewährleisten.[[lang:en]]The Rules Plugin manages the important rules for members, servers, and the club to ensure fair and safe cooperation.[[lang:it]]Il plugin Regole gestisce le regole importanti per membri, server e associazione per garantire una convivenza equa e sicura.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de,gb,it",
+    "folder": "rules",
+    "download": "rules.zip"
+    },
+    {
+    "name": "User List",
+    "modulname": "userlist",
+    "description": "User List Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de,gb,it",
+    "folder": "userlist",
+    "download": "userlist.zip"
+    },
+    {
+    "name": "Lastlogin",
+    "modulname": "lastlogin",
+    "description": "User List Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "lastlogin",
+    "download": "lastlogin.zip"
+    },
+    {
+    "name": "Partners",
+    "modulname": "partners",
+    "description": "[[lang:de]]Unsere Partnerseite bietet die Möglichkeit, eure Partner mit nützlichen Inhalten und praktischen Tools zu verlinken.[[lang:en]]Our partners page offers the opportunity to link your partners with useful content and practical tools.[[lang:it]]La nostra pagina partner offre la possibilità di collegare i vostri partner con contenuti utili e strumenti pratici.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de,gb,it",
+    "folder": "partners",
+    "download": "partners.zip"
+    },
+    {
+    "name": "Gallery",
+    "modulname": "gallery",
+    "description": "Gallerx Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "gallery",
+    "download": "gallery.zip"
+    },
+    {
+    "name": "About",
+    "modulname": "about",
+    "description": "About Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "about",
+    "download": "about.zip"
+    },
+    {
+    "name": "Pricing",
+    "modulname": "pricing",
+    "description": "Pricing Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "pricing",
+    "download": "pricing.zip"
+    },
+    {
+    "name": "Masterlist",
+    "modulname": "masterlist",
+    "description": "Call of Duty Masterlist Plugin für webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "masterlist",
+    "download": "masterlist.zip"
+    },
+    {
+    "name": "Articles",
+    "modulname": "articles",
+    "description": "[[lang:de]]Mit dem Artikel-Plugin kannst du redaktionelle Inhalte, News und Berichte bequem erstellen und veröffentlichen. Kategorien, Kommentare und Bewertungen werden unterstützt.[[lang:en]]The article plugin allows you to easily create and publish editorial content, news, and reports. Categories, comments, and ratings are supported.[[lang:it]]Con il plugin degli articoli puoi creare e pubblicare facilmente contenuti editoriali, notizie e report. Sono supportate categorie, commenti e valutazioni.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "articles",
+    "download": "articles.zip"
+    },
+    {
+    "name": "Counter",
+    "modulname": "counter",
+    "description": "[[lang:de]]Aus Datenschutzgründen wird der Besucherzähler nur noch im Adminbereich angezeigt. Es erfolgt keine Anzeige mehr im öffentlichen Frontend.[[lang:en]]Due to data protection regulations, the visitor counter is now only visible in the admin area. It is no longer displayed publicly.[[lang:it]]Per motivi di privacy, il contatore visite è visibile solo nell’area di amministrazione. Non viene più mostrato pubblicamente.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "counter",
+    "download": "counter.zip"
+    },
+    {
+    "name": "Who is online",
+    "modulname": "whoisonline",
+    "description": "[[lang:de]]Aus Datenschutzgründen wird die Anzeige der Online-Benutzer nur noch im Adminbereich dargestellt. Es erfolgt keine Anzeige mehr im öffentlichen Frontend.[[lang:en]]Due to data protection regulations, the display of online users is now restricted to the admin area only. It is no longer displayed in the public frontend.[[lang:it]]Per motivi di privacy, la visualizzazione degli utenti online è limitata solo all’area di amministrazione. Non viene più mostrata nel frontend pubblico.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "whoisonline",
+    "download": "whoisonline.zip"
+    },
+    {
+    "name": "Link-/Empfehlungsliste",
+    "modulname": "links",
+    "description": "[[lang:de]]Hier findest du nützliche Links und Empfehlungen zu externen Seiten, Tools und Ressourcen rund um Webspell-RM.[[lang:en]]Find helpful links and recommendations for external sites, tools, and resources related to Webspell-RM.[[lang:it]]Qui trovi link utili e consigliati a siti esterni, strumenti e risorse relativi a Webspell-RM.",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de,gb,it",
+    "folder": "links",
+    "download": "links.zip"
+    },
+    {
+      "name": "Sponsors",
+      "modulname": "sponsors",
+      "description": "[[lang:de]]Präsentiere deine Sponsorgb und Partner mit Logos, Farbgb und Links – ideal für Clans, Vereine & Communities.[[lang:gb]]Showcase your sponsors and partners with logos, colors, and links – perfect for clans, clubs & communities.[[lang:it]]Mostra sponsor e partner con loghi, colori e link – ideale per clan, associazioni e community.",
+      "version": "1.0.0",
+      "author": "webspell-team",
+      "url": "https://www.webspell-rm.de",
+      "lang": "de,gb,it",
+      "folder": "sponsors",
+      "download": "sponsors.zip"
+    },
+    {
+    "name": "Entwicklungshistorie",
+    "modulname": "resume",
+    "description": "Entwicklungshistorie von webSPELL RM",
+    "version": "1.0.0",
+    "author": "webspell-team",
+    "url": "https://www.webspell-rm.de",
+    "lang": "de",
+    "folder": "resume",
+    "download": "resume.zip"
+    }
+]

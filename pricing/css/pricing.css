@@ -1,0 +1,133 @@
+/* ======= Pricing Section Styles ======= */
+
+.pricing {
+  padding: 20px 0;
+}
+
+.pricing .box {
+  padding: 20px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.12);
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+  border: 1px solid #eee;
+}
+
+.pricing .box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pricing h3 {
+  font-weight: 600;
+  margin: -20px -20px 20px -20px;
+  padding: 20px 15px;
+  font-size: 16px;
+  color: rgba(var(--bs-link-color-rgb), 1);
+  background: #f8f9fa;
+}
+
+.pricing h4 {
+  font-size: 36px;
+  color: rgba(var(--bs-link-color-rgb), 1);
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  margin-bottom: 20px;
+}
+
+.pricing h4 sup {
+  font-size: 20px;
+  top: -15px;
+  left: -3px;
+  position: relative;
+}
+
+.pricing h4 span {
+  color: #6c757d;
+  font-size: 16px;
+  font-weight: 300;
+}
+
+.pricing ul {
+  padding: 0;
+  list-style: none;
+  /*text-align: center;*/
+  text-align: left;
+  line-height: 20px;
+  font-size: 14px;
+  margin: 0;
+  color: #adb5bd;
+}
+
+.pricing ul li {
+  padding-bottom: 16px;
+}
+
+.pricing ul li::before {
+  content: "✓";
+  margin-right: 6px;
+  color: rgba(var(--bs-success-rgb), 1);
+  font-weight: bold;
+}
+
+.pricing ul .na {
+  color: #adb5bd;
+  text-decoration: line-through;
+}
+
+.pricing ul .na::before {
+  content: "✗";
+  color: rgba(var(--bs-danger-rgb), 1);
+}
+
+.pricing .btn-wrap {
+  margin: 20px -20px -20px -20px;
+  padding: 20px 15px;
+  background: #f8f9fa;
+  text-align: center;
+}
+
+.pricing .btn-buy {
+  background: rgba(var(--bs-link-color-rgb), 1);
+  display: inline-block;
+  padding: 6px 35px 8px 35px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "Raleway", sans-serif;
+  box-shadow: 0 3px 7px rgba(var(--bs-link-color-rgb), 0.4);
+  transition: 0.3s;
+  text-decoration: none;
+}
+
+.pricing .btn-buy:hover {
+  background: #ff7e54;
+  color: #fff;
+}
+
+.pricing .featured h3 {
+  color: #fff;
+  background: rgba(var(--bs-link-color-rgb), 1);
+  box-shadow: 0 3px 7px rgba(var(--bs-link-color-rgb), 0.4);
+}
+
+.pricing .advanced {
+  width: 200px;
+  position: absolute;
+  top: 18px;
+  right: -68px;
+  transform: rotate(45deg);
+  z-index: 1;
+  font-size: 12px;
+  padding: 2px 0;
+  background: rgba(var(--bs-link-color-rgb), 1);
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(var(--bs-link-color-rgb), 0.3);
+  text-align: center;
+}

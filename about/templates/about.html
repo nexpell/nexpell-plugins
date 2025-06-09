@@ -1,0 +1,155 @@
+<!-- about_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+
+<!-- about_content -->
+<section id="about-intro" class="py-5 bg-light">
+  <div class="container">
+    <div class="row align-items-center justify-content-center">
+      <!-- Bild rechts -->
+      <div class="col-lg-5 order-lg-2 mb-4 mb-lg-0">
+        <img src="/includes/plugins/about/images/intro.jpg" alt="Intro Bild" class="img-fluid rounded shadow">
+      </div>
+      <!-- Text links -->
+      <div class="col-lg-6 order-lg-1">
+        <h2 class="display-6 fw-bold">{title}</h2>
+        <p class="lead">{intro}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about-history" class="py-5 bg-white">
+  <div class="container">
+    <div class="row align-items-center justify-content-center">
+      <!-- Bild links -->
+      <div class="col-lg-5 mb-4 mb-lg-0">
+        <img src="/includes/plugins/about/images/history.jpg" alt="Unsere Geschichte" class="img-fluid rounded shadow">
+      </div>
+      <!-- Text rechts -->
+      <div class="col-lg-6">
+        <h2 class="display-6 fw-bold">Unsere Geschichte</h2>
+        <p>{history}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about-values" class="py-5 bg-light">
+  <div class="container">
+    <div class="row align-items-center justify-content-center">
+      <!-- Bild rechts -->
+      <div class="col-lg-5 order-lg-2 mb-4 mb-lg-0">
+        <img src="/includes/plugins/about/images/team.jpg" alt="Werte und Team" class="img-fluid rounded shadow">
+      </div>
+      <!-- Text links -->
+      <div class="col-lg-6 order-lg-1">
+        <h2 class="display-6 fw-bold">Was uns auszeichnet</h2>
+        <p>{core_values}</p>
+
+        <h3 class="mt-4">Unser Team</h3>
+        <p>{team}</p>
+
+        <h3 class="mt-4">Gemeinsam in die Zukunft</h3>
+        <p>{cta}</p>
+
+        <div class="mt-4">
+          <a href="index.php?site=contact" class="btn btn-primary me-2">📩 Kontakt</a>
+          <a href="/leistungen" class="btn btn-outline-secondary">🔗 Leistungen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<!-- END -->
+
+
+
+<!-- about_admin_content -->
+			<div class="card">
+				<div class="card-header">
+					<i class="bi bi-person-vcard-fill"></i> $lang_about
+				</div>
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li class="breadcrumb-item active" aria-current="page">$lang_about</li>
+						<li class="breadcrumb-item active" aria-current="page">new & edit</li>
+					</ol>
+				</nav>
+				<div class="card-body">
+					<script type="text/javascript">
+						function chkFormular() {
+							if(!validbbcode(document.getElementById('message').value, 'admin')){
+							return false;
+							}
+						}
+					</script>
+					<form method="post" id="post" name="post" action="admincenter.php?site=admin_about_us" enctype="multipart/form-data" onsubmit="return chkFormular();">
+					<div class="form-group row">
+						<label for="title" class="col-md-2 col-form-label">$lang_title_head:</label>
+						<div class="col-md-12">
+							<input type="text" class="form-control" name="title"	value="$title">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="message" class="col-md-2 col-form-label">$lang_description:</label>
+						<div class="col-md-12">
+							<textarea class="ckeditor" id="ckeditor" name="message" rows="25" cols="" style="width: 100%;">$text</textarea>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="aboutchars" class="col-md-2 col-form-label">$lang_max_sc:</label>
+						<div class="col-md-12">
+							<input class="form-control" type="text" name="aboutchars" value="$aboutchars" size="35">
+						</div>
+					</div>
+					<div class="form-group row">
+					<label for="aboutchars" class="col-md-2 col-form-label"></label>
+						<div class="col-md-12">
+							<input type="hidden" name="captcha_hash" value="$hash" />
+							<button class="btn btn-success" type="submit" name="submit"  />$lang_update</button>
+						</div>
+					</div>
+					</form>
+				</div>
+			</div>
+<!-- END -->
+
+<!-- about_widget_head -->
+<div class="head-boxes">
+	<span class="head-boxes-head">$title</span>
+	<h2 class="head-h2">
+		<span class="head-boxes-title">$title</span>
+	</h2>
+	<p class="head-boxes-foot">$subtitle</p>
+</div>
+<!-- END -->
+
+<!-- about_widget_content -->
+<div class="card">
+	<div class="card-body"> $text </div>
+</div>
+<!-- END -->
+
+<!-- about_widget_content_content -->
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-6 about_us-info">
+			<p class="about_us-headline">$title</p>
+			<span class="about_us-text">$text</span>
+		</div>
+		<div class="col-md-6 about-pic"></div>
+	</div>
+</div>
+<!-- END -->

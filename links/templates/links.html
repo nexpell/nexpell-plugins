@@ -1,0 +1,117 @@
+<!-- links_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+<!-- links_main -->
+<!-- Isotope -->
+<script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
+
+<section class="py-5">
+  <div class="container">
+
+    <!-- Filterbuttons -->
+    <div class="mb-4 text-center">
+      <button class="btn btn-outline-secondary me-2 filter-btn active" data-filter="*">
+        {filter_all}
+      </button>
+      {foreach categories as category}
+        <button class="btn btn-outline-secondary me-2 filter-btn" data-filter=".cat{category.id}">
+          {category.title}
+        </button>
+      {/foreach}
+    </div>
+
+    <!-- Link-Galerie -->
+<!-- Link-Galerie -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4 isotope-container">
+
+
+  {foreach links as link}
+    <div class="col cat{link.category_id}">
+      <div class="card h-100 shadow-sm d-flex flex-column">
+        
+        <img src="{link.image}" 
+             class="card-img-top" 
+             alt="{link.title}" 
+             onerror="this.onerror=null; this.src='assets/default_thumb.jpg';" 
+             style="height: 160px; object-fit: cover;">
+        
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{link.title}</h5>
+
+          {if link.has_description}
+            <p class="card-text">{link.description}</p>
+          {else}
+            <p class="card-text">{link_no_description}</p>
+          {endif}
+
+          <p class="mt-auto mb-2">
+            <small class="text-muted">
+              {if link.has_icon}
+                <i class="bi {link.icon}"></i>
+              {endif}
+              {link.category}
+            </small>
+          </p>
+
+          {if link.has_valid_url}
+            <a href="./includes/plugins/links/click.php?id={link.id}"
+               target="_blank"
+               rel="nofollow noopener noreferrer"
+               class="btn btn-primary w-100 mt-auto">
+              {link_visit}
+            </a>
+          {else}
+            <span class="text-muted text-center" title="Dieser Link ist aktuell nicht erreichbar.">
+              {link_invalid}
+            </span>
+          {endif}
+        </div>
+      </div>
+    </div>
+
+
+
+  {/foreach}
+
+
+</div>
+
+
+
+
+
+
+
+
+
+  </div>
+</section>
+
+
+
+
+<script>
+  const grid = document.querySelector('.isotope-container');
+  const iso = new Isotope(grid, {
+    itemSelector: '.col-6',
+    layoutMode: 'fitRows'
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      const filterValue = button.getAttribute('data-filter');
+      iso.arrange({ filter: filterValue });
+    });
+  });
+</script>
+
+
+<!-- END -->

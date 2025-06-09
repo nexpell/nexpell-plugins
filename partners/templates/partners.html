@@ -1,0 +1,40 @@
+<!-- partners_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+<!-- partners_main -->
+<div class="card">
+    <div class="card-body">
+        <div class="row g-4">
+            {foreach partners as partner}
+                <div class="col-md-6 col-lg-3">
+                    <div class="card-box position-relative">
+                        <div class="img-wrapper alert alert-{partner.color}">
+                            <img src="{partner.logo}" alt="Logo von {partner.name}" class="card-img-top" loading="lazy">
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{partner.name}</h5>
+                            <p class="card-text">{partner.description}</p>
+                            {if partner.slug != ""}
+                                <a href="./includes/plugins/partners/click.php?id={partner.id}"
+                                   target="_blank"
+                                   rel="nofollow"
+                                   class="btn btn-outline-{partner.color} btn-sm">
+                                  {partner.learn_more}
+                                </a>
+                            {else}
+                                <span class="text-muted">{partner.no_valid_link}</span>
+                            {endif}
+                        </div>
+                    </div>
+                </div>
+            {/foreach}
+        </div>
+    </div>
+</div>
+<!-- END -->

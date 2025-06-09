@@ -1,0 +1,4 @@
+.footer {
+  border-top: 3px solid var(--bs-primary);
+  margin-top: 40px;
+}

@@ -1,0 +1,82 @@
+<section id="services" class="services section py-5">
+  <div class="container">
+    <div class="text-center mb-5" data-aos="fade-up">
+      <h2 class="section-title">{{ title }}</h2>
+      <p class="section-subtitle text-muted">{{ intro }}</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Beispiel Service Item -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="card h-100 shadow-sm">
+          <img src="{{ service1_image }}" class="card-img-top" alt="{{ service1_title }}">
+          <div class="card-body">
+            <h5 class="card-title">{{ service1_title }}</h5>
+            <p class="card-text">{{ service1_description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="card h-100 shadow-sm">
+          <img src="{{ service2_image }}" class="card-img-top" alt="{{ service2_title }}">
+          <div class="card-body">
+            <h5 class="card-title">{{ service2_title }}</h5>
+            <p class="card-text">{{ service2_description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="card h-100 shadow-sm">
+          <img src="{{ service3_image }}" class="card-img-top" alt="{{ service3_title }}">
+          <div class="card-body">
+            <h5 class="card-title">{{ service3_title }}</h5>
+            <p class="card-text">{{ service3_description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="400">
+      <p class="lead">{{ cta_text }}</p>
+      <a href="{{ cta_link }}" class="btn btn-primary btn-lg">{{ cta_button_text }}</a>
+    </div>
+  </div>
+</section>
+
+
+Unsere Leistungen – individuell & professionell
+Wir bieten Ihnen maßgeschneiderte Lösungen rund um Webentwicklung und Community-Systeme. Ob modernes Webdesign, Erweiterungen für Webspell-RM oder langfristiger Support – bei uns sind Sie richtig.
+
+Was wir für Sie tun können:
+
+    Entwicklung moderner, responsiver Webseiten
+
+    Programmierung und Integration von Plugins für Webspell-RM
+
+    Laufender Support, Wartung und Updates
+
+    Individuelle Anpassungen nach Ihren Wünschen
+
+    Beratung für erfolgreiche Online-Projekte
+
+Mit viel Erfahrung und Leidenschaft setzen wir Ihre Anforderungen professionell um – zuverlässig, schnell und transparent.
+
+Interessiert? Kontaktieren Sie uns gerne für ein unverbindliches Gespräch!
+
+
+
+CREATE TABLE IF NOT EXISTS `prefix_plugins_about_us` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `title` TEXT NOT NULL,
+  `intro` TEXT NOT NULL,
+  `history` TEXT NOT NULL,
+  `core_values` TEXT NOT NULL,
+  `team` TEXT NOT NULL,
+  `cta` TEXT NOT NULL,
+  `image1` VARCHAR(255) DEFAULT NULL,
+  `image2` VARCHAR(255) DEFAULT NULL,
+  `image3` VARCHAR(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
