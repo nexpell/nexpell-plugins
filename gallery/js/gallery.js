@@ -52,3 +52,6 @@ function confirmDelete(id, filename) {
             }).catch(() => alert('Fehler bei der Anfrage'));
     }
 }
+
+
+
