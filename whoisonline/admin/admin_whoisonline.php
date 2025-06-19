@@ -15,6 +15,7 @@ $res = safe_query("
     LIMIT 10
 ");
 ?>
+
 <div class="card">
     <div class="card-header">
         <i class="bi bi-paragraph"></i> WhoIsOnline
@@ -28,35 +29,74 @@ $res = safe_query("
 
     <div class="card-body">
 
-<div class="container py-5">
+        <h4>Angemeldete Benutzer</h4>
 
-    <h4>Angemeldete Benutzer</h4>
-    <table class="table table-bordered table-striped bg-white shadow-sm">
-                <thead class="table-light">
-                    <tr><th>Benutzername</th><th>Aktuelle Seite</th><th>Letzte Aktivität</th><th>Gerät</th></tr></thead>
-      <tbody>
-      <?php
-      while ($row = mysqli_fetch_assoc($res)) {
-          $username = $row['username'] ?? 'Gast';
-          $page = htmlspecialchars($row['page']);
-          $last_activity = $row['last_activity'] ?? 'unbekannt';
+        <div class="accordion" id="whoisonlineAccordion">
+            <?php
+            $index = 0;
+            while ($row = mysqli_fetch_assoc($res)) {
+                $index++;
+                $id = 'whoisonlineItem' . $index;
 
-          // Gerät erkennen
-          $user_agent = strtolower($row['user_agent']);
-          $device = 'Unbekannt';
-          if (strpos($user_agent, 'mobile') !== false) $device = 'Mobilgerät';
-          elseif (strpos($user_agent, 'windows') !== false) $device = 'Windows-PC';
-          elseif (strpos($user_agent, 'macintosh') !== false) $device = 'Mac';
-          elseif (strpos($user_agent, 'linux') !== false) $device = 'Linux-PC';
+                $username = $row['username'] ?? 'Gast';
+                $page = htmlspecialchars($row['page'] ?? '');
 
-          echo "<tr>
-              <td>".htmlspecialchars($username)."</td>
-              <td>$page</td>
-              <td>$last_activity</td>
-              <td>$device</td>
-          </tr>";
-      }
-      ?>
-      </tbody>
-      </table>
-  </div></div></div>
+                $last_activity_raw = $row['last_activity'] ?? null;
+                if ($last_activity_raw) {
+                    $dt = new DateTime($last_activity_raw);
+                    $last_activity = $dt->format('d.m.Y H:i');
+                } else {
+                    $last_activity = 'unbekannt';
+                }
+
+                $user_agent_raw = $row['user_agent'] ?? '';
+                $user_agent = !empty($user_agent_raw) ? htmlspecialchars($user_agent_raw) : 'Nicht verfügbar';
+
+                $ip_hash = !empty($row['ip_hash']) ? htmlspecialchars($row['ip_hash']) : 'Nicht verfügbar';
+                $session_id = !empty($row['session_id']) ? htmlspecialchars($row['session_id']) : 'Nicht verfügbar';
+
+                $ua = strtolower($user_agent_raw);
+                $device = 'Unbekannt';
+
+                if (preg_match('/mobile|iphone|ipod|android|blackberry|phone/i', $ua)) {
+                    $device = 'Mobilgerät';
+                } elseif (preg_match('/ipad|tablet/i', $ua)) {
+                    $device = 'Tablet';
+                } elseif (preg_match('/windows nt 10.0|windows nt 6.3|windows nt 6.1|windows nt 6.2/i', $ua)) {
+                    $device = 'Windows-PC';
+                } elseif (preg_match('/macintosh|mac os x/i', $ua)) {
+                    $device = 'Mac';
+                } elseif (preg_match('/linux/i', $ua)) {
+                    $device = 'Linux-PC';
+                } elseif (preg_match('/cros/i', $ua)) {
+                    $device = 'Chrome OS';
+                }
+            ?>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading<?= $index ?>">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $id ?>" aria-expanded="false" aria-controls="<?= $id ?>">
+                        <div class="d-flex justify-content-between w-100">
+                            <span><?= htmlspecialchars($username) ?></span>
+                            <span><?= $page ?></span>
+                            <span><?= $last_activity ?></span>
+                            <span><?= $device ?></span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="<?= $id ?>" class="accordion-collapse collapse" aria-labelledby="heading<?= $index ?>" data-bs-parent="#whoisonlineAccordion">
+                    <div class="accordion-body bg-light">
+                        <strong>User-Agent:</strong> <?= $user_agent ?><br>
+                        <strong>IP-Hash:</strong> <?= $ip_hash ?><br>
+                        <strong>Session-ID:</strong> <?= $session_id ?>
+                    </div>
+                </div>
+            </div>
+
+            <?php
+            }
+            ?>
+        </div>
+
+    </div>
+</div>

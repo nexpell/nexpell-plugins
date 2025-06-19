@@ -107,7 +107,7 @@ if ($result && $result->num_rows > 0) {
                    data-src="/includes/plugins/gallery/images/<?= rawurlencode($image['filename']) ?>"
                    title="<?= htmlspecialchars($image['category_name']) ?>">
                     <img src="/includes/plugins/gallery/images/<?= rawurlencode($image['filename']) ?>" 
-                         class="img-fluid rounded" 
+                         class=" rounded" 
                          alt="<?= htmlspecialchars($image['category_name']) ?>" loading="lazy" aria-label="Bild in Kategorie <?= htmlspecialchars($image['category_name']) ?>">
                 </a>
             </div>

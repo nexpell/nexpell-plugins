@@ -82,7 +82,8 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
         ];
 
         while ($ds = mysqli_fetch_array($ergebnis)) {
-            $timestamp = strtotime($ds['updated_at']);
+
+            $timestamp = (int)($ds['updated_at']);
             $tag = date("d", $timestamp);
             $monat = date("n", $timestamp);
             $year = date("Y", $timestamp);
@@ -475,7 +476,7 @@ if ($action == "watch" && is_numeric($_GET['id'])) {
                 $cat_query = safe_query("SELECT name, description FROM plugins_articles_categories WHERE id = $catID");
                 $cat = mysqli_fetch_assoc($cat_query);
 
-                $article_catname = '<a data-toggle="tooltip" title="' . htmlspecialchars($cat['description']) . '" href="index.php?site=articles&action=show&category_id=' . $catID . '"><strong style="font-size: 16px">' . htmlspecialchars($cat['name']) . '</strong></a>';
+                $article_catname = '<a data-toggle="tooltip" title="' . htmlspecialchars($cat['description']) . '" href="index.php?site=articles&action=show&id=' . $catID . '"><strong style="font-size: 16px">' . htmlspecialchars($cat['name']) . '</strong></a>';
 
                 $data_array = [
                     'name' => $article_catname,

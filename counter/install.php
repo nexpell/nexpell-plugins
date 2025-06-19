@@ -1,14 +1,32 @@
 ﻿<?php
-safe_query("CREATE TABLE IF NOT EXISTS plugins_counter (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ip varchar(128) NOT NULL,
-  user_agent text DEFAULT NULL,
-  referer text DEFAULT NULL,
-  timestamp datetime NOT NULL,
-  page varchar(255) NOT NULL,
-  device_type enum('Desktop','Mobile') DEFAULT 'Desktop'
-) AUTO_INCREMENT=1
-  DEFAULT CHARSET=utf8");
+safe_query("CREATE TABLE IF NOT EXISTS plugins_counter_visitors (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ip_hash VARCHAR(64) NOT NULL,
+    timestamp DATETIME NOT NULL,
+    device_type VARCHAR(20),
+    os VARCHAR(50),
+    browser VARCHAR(100),
+    referer VARCHAR(300),
+    user_agent TEXT,
+    PRIMARY KEY (id),
+    INDEX idx_ip_hash (ip_hash),
+    INDEX idx_timestamp (timestamp)
+);");
+
+safe_query("CREATE TABLE IF NOT EXISTS plugins_counter_clicks (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ip_hash VARCHAR(64) NOT NULL,
+    page VARCHAR(255) NOT NULL,
+    timestamp DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_ip_hash (ip_hash),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_page (page)
+);");
+
+
+
+
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_counter_settings_widgets (
   id int(11) NOT NULL AUTO_INCREMENT,
