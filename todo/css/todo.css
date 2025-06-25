@@ -1,0 +1,9 @@
+.todo-list {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.todo-list li.done .task-text {
+    text-decoration: line-through;
+    color: gray;
+}

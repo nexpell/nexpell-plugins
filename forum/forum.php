@@ -94,11 +94,12 @@ switch ($action) {
 
     // Beiträge mit LIMIT laden
     $posts_res = safe_query("
-        SELECT p.*, u.username, u.avatar 
-        FROM plugins_forum_posts p 
-        LEFT JOIN users u ON p.userID = u.userID 
-        WHERE p.threadID = $threadID 
-        ORDER BY p.created_at ASC 
+        SELECT p.*, u.username, up.avatar
+        FROM plugins_forum_posts p
+        LEFT JOIN users u ON p.userID = u.userID
+        LEFT JOIN user_profiles up ON p.userID = up.userID
+        WHERE p.threadID = $threadID
+        ORDER BY p.created_at ASC
         LIMIT $offset, $perPage
     ");
     ?>
@@ -111,14 +112,17 @@ switch ($action) {
             <div class="posts my-4">
                 <?php while ($post = mysqli_fetch_assoc($posts_res)): ?>
                     <?php
-                        $avatar_url = !empty($post['avatar']) ? $post['avatar'] : 'noavatar.png';
+                        $avatar_file = getavatar($userID);
+                        if (empty($avatar_file)) {
+                            $avatar_file = 'default.png'; // Standard-Avatar
+                        }
                         $is_owner = $post['userID'] == $userID;
                     ?>
                     <div class="card border rounded p-3 mb-4">
                         <div class="row">
                             <div class="col-md-2 text-center border-end border-primary pe-3">
                                 <div class="mb-2">
-                                    <img src="/images/avatars/<?= htmlspecialchars($avatar_url) ?>" class="img-fluid" alt="Avatar" style="max-width: 80px;">
+                                    <img src="<?= htmlspecialchars($avatar_file) ?>" class="img-fluid" alt="Avatar" style="max-width: 80px;">
                                 </div>
                                 <strong><?= htmlspecialchars($post['username'] ?? 'Gast') ?></strong><br>
                                 <small><?= (int)($post['posts'] ?? 0) ?> Beiträge</small>

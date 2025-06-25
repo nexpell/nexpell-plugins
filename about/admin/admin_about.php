@@ -23,12 +23,12 @@ use webspell\AccessControl;
 AccessControl::checkAdminAccess('about');
 
 if (isset($_POST['save'])) {
-    $title = htmlspecialchars($_POST['title']);
-    $intro = htmlspecialchars($_POST['intro']);
-    $history = htmlspecialchars($_POST['history']);
-    $core_values = htmlspecialchars($_POST['core_values']);
-    $team = htmlspecialchars($_POST['team']);
-    $cta = htmlspecialchars($_POST['cta']);
+    $title = $_POST['title'];
+    $intro = $_POST['intro'];
+    $history = $_POST['history'];
+    $core_values = $_POST['core_values'];
+    $team = $_POST['team'];
+    $cta = $_POST['cta'];
 
     $upload_path = ''.$plugin_path . 'images/';
     $image_fields = ['image1', 'image2', 'image3'];
@@ -110,7 +110,7 @@ $data = mysqli_fetch_array($result);
         foreach ($fields as $key => $label) {
             echo '<div class="col-md-12">';
             echo "<label class='form-label'>$label</label>";
-            echo "<textarea name='$key' class='form-control' rows='3'>" . htmlspecialchars($data[$key] ?? '') . "</textarea>";
+            echo "<textarea name='$key' class='ckeditor form-control' rows='3'>" . htmlspecialchars($data[$key] ?? '') . "</textarea>";
             echo '</div>';
         }
         ?>

@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use webspell\LanguageService;
 
-global $languageService;
+global $_database,$languageService;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('userlist');
@@ -107,24 +107,37 @@ if (mysqli_num_rows($ergebnis)) {
             ? '<span class=""><i class="bi bi-envelope-slash"></i> ' . $languageService->get('email_hidden') . '</span>'
             : '<a href="mailto:' . htmlspecialchars(mail_protect($ds['email'])) . '"><i class="bi bi-envelope"></i> ' . $languageService->get('email') . '</a>';
 
-        // Homepage-Link prüfen, ggf. Protokoll ergänzen
-        if ($ds['homepage']) {
-            $protocol = stristr($ds['homepage'], "https://") || stristr($ds['homepage'], "http://") ? '' : 'http://';
-            $homepage = '<a href="' . $protocol . htmlspecialchars($ds['homepage']) . '" target="_blank" rel="nofollow">'
-                . '<i class="bi bi-house" style="font-size:18px;"></i> ' . $languageService->get('homepage') . '</a>';
+        $userID = $ds['userID'];
+                // userID z. B. aus $ds['userID'] oder $id
+        $query = "SELECT website FROM user_socials WHERE userID = " . (int)$userID;
+        $result = mysqli_query($_database, $query);
+
+        if ($row = mysqli_fetch_assoc($result)) {
+            $websiteUrl = $row['website'];
+
+            if (!empty($websiteUrl)) {
+                $protocol = (str_starts_with($websiteUrl, 'http://') || str_starts_with($websiteUrl, 'https://')) ? '' : 'http://';
+                $homepage = '<a href="' . $protocol . htmlspecialchars($websiteUrl) . '" target="_blank" rel="nofollow">'
+                    . '<i class="bi bi-house" style="font-size:18px;"></i> ' . $languageService->get('homepage') . '</a>';
+            } else {
+                $homepage = '<i class="bi bi-house-slash" style="font-size:18px;"></i><i> ' . $languageService->get('homepage') . '</i>';
+            }
         } else {
+            // Falls kein Eintrag in user_socials vorhanden ist
             $homepage = '<i class="bi bi-house-slash" style="font-size:18px;"></i><i> ' . $languageService->get('homepage') . '</i>';
         }
+
 
         // Aktueller eingeloggter User (für PM-Link)
         $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
         $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
 
-        // Private Message Link nur, wenn eingeloggter User und nicht sich selbst
-        $pm = ($loggedin && $id != $userID)
-            ? ' / <a href="index.php?site=messenger&amp;action=touser&amp;touser=' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
-                . '<i class="bi bi-messenger"></i> ' . $languageService->get('message') . '</a>'
-            : ' / <i class="bi bi-slash-circle"></i> ' . $languageService->get('message');
+        $pm = ' / <i class="bi bi-slash-circle text-muted"></i> ' . $languageService->get('no_messenger');
+        $messengerAvailable = false;
+        if ($loggedin && $id != $userID && $messengerAvailable) {
+            $pm = ' / <a href="index.php?site=messenger&amp;action=touser&amp;touser=' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
+                . '<i class="bi bi-messenger"></i> ' . $languageService->get('message') . '</a>';
+        }    
 
         // Lastlogin und Registration vorbereiten
         $lastlogin = $ds['lastlogin'] ?? '1970-01-01 00:00:00';
@@ -153,15 +166,18 @@ if (mysqli_num_rows($ergebnis)) {
         }
 
         // Avatar anzeigen falls vorhanden
-        $avatar = ($getavatar = getavatar($id))
-            ? '<img class="img-fluid avatar_small" src="./images/avatars/' . htmlspecialchars($getavatar) . '" alt="Avatar">'
-            : '';
+        $avatar = '';
+        $getavatar = getavatar($id);
+        if ($getavatar) {
+            $avatar_url = '' . htmlspecialchars($getavatar);
+            $avatar = '<img class="img-fluid avatar_small" src="' . $avatar_url . '" alt="Avatar">';
+        }
 
         // Registrierungstag berechnen (heute, gestern, morgen, Zukunft)
-        $today = new DateTime('today');
-        $regDate = new DateTime($ds['registerdate']);
+        $today = (new DateTime())->setTime(0, 0, 0);
+        $regDate = (new DateTime($ds['registerdate']))->setTime(0, 0, 0);
         $interval = $today->diff($regDate);
-        $difference = (int)$interval->format('%r%a'); // Anzahl Tage (+/-)
+        $difference = (int)$interval->format('%r%a'); // + oder - Tage
 
         if ($difference === 0) {
             $register = $languageService->get('today');

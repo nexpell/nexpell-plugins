@@ -3,7 +3,7 @@
 $language_array = array(
 
     'sort' => 'Sortieren',
-    'registered_users' => 'Registrierte Benutzer',
+    'registered_users' => 'Userliste',
     'username' => 'Benutzername',
     'contact' => 'Kontakt',
     'homepage' => 'Homepage',
@@ -23,7 +23,7 @@ $language_array = array(
 
 
     'lastregistered' => 'Zuletzt registriert',
-    'userlist_title' => 'Online Benutzer',
+    'userlist_title' => 'Jetzt online',
     'today'          => 'Heute',
     'yesterday'      => 'Gestern',
     'tomorrow'       => 'Morgen',
@@ -36,5 +36,8 @@ $language_array = array(
     'hour_and'      => 'Stunde und',
     'hours_and'     => 'Stunden und',
     'minutes'       => 'Minuten',
+
+    'email_hidden' => 'E-Mail verborgen',
+    'no_messenger' => 'Nachrichten deaktiviert',
 
 );

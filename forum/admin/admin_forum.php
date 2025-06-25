@@ -43,19 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'categories') {
         $title = mysqli_real_escape_string($_database, $title);
         $description = mysqli_real_escape_string($_database, $description);
         safe_query("INSERT INTO plugins_forum_categories (title, description, position) VALUES ('$title', '$description', $position)");
-        redirect('categories');
+        echo '<div class="alert alert-success" role="alert">Erfolgreich erstellt!</div>';
+        redirect('admincenter.php?site=admin_forum', "", 3);
     }
 
     if ($postAction === 'edit' && $catID > 0) {
         $title = mysqli_real_escape_string($_database, $title);
         $description = mysqli_real_escape_string($_database, $description);
         safe_query("UPDATE plugins_forum_categories SET title='$title', description='$description', position=$position WHERE catID=$catID");
-        redirect('categories');
+        echo '<div class="alert alert-success" role="alert">Erfolgreich editiert!</div>';
+        redirect('admincenter.php?site=admin_forum', "", 3);
     }
 
     if ($postAction === 'delete' && $catID > 0) {
         safe_query("DELETE FROM plugins_forum_categories WHERE catID=$catID");
-        redirect('categories');
+        echo '<div class="alert alert-danger" role="alert">Erfolgreich gelöscht!</div>';
+        redirect('admincenter.php?site=admin_forum', "", 3);
     }
 }
 
@@ -64,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'threads' && isset($_PO
     $threadID = intval($_POST['delete_thread']);
     safe_query("DELETE FROM plugins_forum_posts WHERE threadID = $threadID");
     safe_query("DELETE FROM plugins_forum_threads WHERE threadID = $threadID");
-    redirect('threads');
+    echo '<div class="alert alert-danger" role="alert">Erfolgreich gelöscht!</div>';
+    redirect('admincenter.php?site=admin_forum', "", 3);
 }
 
 // === Thread bearbeiten ===
@@ -76,7 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
     if ($title !== '' && $catID > 0) {
         $title = mysqli_real_escape_string($_database, $title);
         safe_query("UPDATE plugins_forum_threads SET title='$title', catID=$catID WHERE threadID=$threadID");
-        redirect('threads');
+        echo '<div class="alert alert-success" role="alert">Erfolgreich editiert!</div>';
+        redirect('admincenter.php?site=admin_forum', "", 3);
     }
 }
 
@@ -87,9 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
     <h1 class="mb-4">Forum Verwaltung</h1>
 
     <nav class="mb-3">
-        <a class="btn btn-outline-primary me-2" href="admincenter.php?site=admin_forum&action=categories">Kategorien</a>
-        <a class="btn btn-outline-primary me-2" href="admincenter.php?site=admin_forum&action=threads">Threads</a>
-        <a class="btn btn-outline-primary" href="admincenter.php?site=admin_forum&action=users">Benutzer</a>
+        <a class="btn btn-primary me-2" href="admincenter.php?site=admin_forum&action=categories">Kategorien</a>
+        <a class="btn btn-primary me-2" href="admincenter.php?site=admin_forum&action=threads">Threads</a>
+        <a class="btn btn-primary" href="admincenter.php?site=admin_forum&action=users">Benutzer</a>
     </nav>
     <hr>
 
@@ -244,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
 
     <?php foreach ($categories as $cat): ?>
         <div class="card mb-4">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <strong><?= htmlspecialchars($cat['title']) ?></strong>
                 <div>
                     <a href="admincenter.php?site=admin_forum&action=edit_category&id=<?= $cat['catID'] ?>" class="btn btn-sm btn-light me-2">Bearbeiten</a>

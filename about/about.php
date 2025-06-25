@@ -28,6 +28,10 @@ $ergebnis = safe_query("SELECT * FROM plugins_about");
 
 if (mysqli_num_rows($ergebnis)) {
     $ds = mysqli_fetch_array($ergebnis);
+
+    $image1 = $ds['image1'];
+    $image2 = $ds['image2'];
+
     $translate = new multiLanguage($lang);
 
     // Titel und Abschnitte übersetzen
@@ -59,8 +63,8 @@ if (mysqli_num_rows($ergebnis)) {
         'core_values' => $core_values,
         'team' => $team,
         'cta' => $cta,
-        'image_intro'  => '/includes/plugins/about/images/intro.jpg',
-        'image_history'=> '/includes/plugins/about/images/history.jpg',
+        'image_intro'  => $image1,
+        'image_history'=> $image2,
         'image_team'   => '/includes/plugins/about/images/team.jpg'
     ];
 
