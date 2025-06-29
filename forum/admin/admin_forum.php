@@ -189,15 +189,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
     <h2>Thread bearbeiten</h2>
     <form method="post">
         <div class="mb-2">
-            <input type="text" class="form-control" name="title" value="<?=htmlspecialchars($thread['title'])?>" required>
-        </div>
-        <div class="mb-2">
             <select name="catID" class="form-select">
                 <?php while ($cat = mysqli_fetch_assoc($cat_res)): ?>
                     <option value="<?=$cat['catID']?>" <?=($cat['catID']==$thread['catID'])?'selected':''?>><?=htmlspecialchars($cat['title'])?></option>
                 <?php endwhile; ?>
             </select>
         </div>
+        <div class="mb-2">
+            <input type="text" class="form-control" name="title" value="<?=htmlspecialchars($thread['title'])?>" required>
+        </div>
+        
         <button type="submit" class="btn btn-primary">Speichern</button>
     </form>
 
@@ -252,7 +253,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong><?= htmlspecialchars($cat['title']) ?></strong>
                 <div>
-                    <a href="admincenter.php?site=admin_forum&action=edit_category&id=<?= $cat['catID'] ?>" class="btn btn-sm btn-light me-2">Bearbeiten</a>
+                    <a href="admincenter.php?site=admin_forum&action=edit_category&id=<?= $cat['catID'] ?>" class="btn btn-sm btn-warning me-2">Bearbeiten</a>
                     <a href="admincenter.php?site=admin_forum&action=delete_category&id=<?= $cat['catID'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Kategorie wirklich löschen?')">Löschen</a>
                 </div>
             </div>
@@ -275,8 +276,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
                                 <td><?= htmlspecialchars($thread['userID']) ?></td>
                                 <td><?= date('d.m.Y H:i', (int)$thread['created_at']) ?></td>
                                 <td>
-                                    <a href="admincenter.php?site=admin_forum&action=edit_thread&id=<?= $thread['threadID'] ?>" class="btn btn-sm btn-outline-primary me-1">Bearbeiten</a>
-                                    <a href="admincenter.php?site=admin_forum&action=delete_thread&id=<?= $thread['threadID'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Thread wirklich löschen?')">Löschen</a>
+                                    <a href="admincenter.php?site=admin_forum&action=edit_thread&id=<?= $thread['threadID'] ?>" class="btn btn-sm btn-warning me-1">Bearbeiten</a>
+                                    <a href="admincenter.php?site=admin_forum&action=delete_thread&id=<?= $thread['threadID'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Thread wirklich löschen?')">Löschen</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -290,8 +291,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit_thread') {
     <?php endforeach; ?>
 <?php endif; ?>
 
-
-
-    <hr>
-    <a href="admincenter.php" class="btn btn-secondary">Zurück zum Admincenter</a>
 </div>

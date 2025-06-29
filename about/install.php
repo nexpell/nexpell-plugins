@@ -50,14 +50,31 @@ PRIMARY KEY (id)
 ) AUTO_INCREMENT=1
   DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
 
-safe_query("INSERT IGNORE INTO plugins_about_settings_widgets (id, position, modulname, themes_modulname, widgetname, widgetdatei, activated, sort) VALUES
+safe_query("INSERT IGNORE INTO plugins_leistung_settings_widgets (id, position, modulname, themes_modulname, widgetname, widgetdatei, activated, sort) VALUES
+('1', 'navigation_widget', 'navigation', 'default', 'Navigation', 'widget_navigation', 1, 1),
+('2', 'footer_widget', 'footer_easy', 'default', 'Footer Easy', 'widget_footer_easy', 1, 1)");
+
+safe_query("CREATE TABLE IF NOT EXISTS plugins_info_settings_widgets (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  position varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  modulname varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  themes_modulname varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  widgetname varchar(255) NOT NULL DEFAULT '',
+  widgetdatei varchar(255) NOT NULL DEFAULT '',
+  activated int(1) DEFAULT 1,
+  sort int(11) DEFAULT 1,
+PRIMARY KEY (id)
+) AUTO_INCREMENT=1
+  DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
+
+safe_query("INSERT IGNORE INTO plugins_info_settings_widgets (id, position, modulname, themes_modulname, widgetname, widgetdatei, activated, sort) VALUES
 ('1', 'navigation_widget', 'navigation', 'default', 'Navigation', 'widget_navigation', 1, 1),
 ('2', 'footer_widget', 'footer_easy', 'default', 'Footer Easy', 'widget_footer_easy', 1, 1)");
 
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('', 'About', 'about', '[[lang:de]]Dieses Widget zeigt allgemeine Informationen (kleiner Lebenslauf) über Sie auf Ihrer Webspell-RM-RM-Seite an.[[lang:en]]This widget will show general information (small resume) About You on your Webspell-RM-RM site.[[lang:it]]Questo widget mostrerà informazioni generali (piccolo curriculum) su di te sul tuo sito Webspell-RM-RM.', 'admin_about', 1, 'T-Seven', 'https://Webspell-RM-rm.de', 'about,leistung', '', '0.1', 'includes/plugins/about/', 1, 1, 1, 1, 'deactivated')");
+('', 'About', 'about', '[[lang:de]]Dieses Widget zeigt allgemeine Informationen (kleiner Lebenslauf) über Sie auf Ihrer Webspell-RM-RM-Seite an.[[lang:en]]This widget will show general information (small resume) About You on your Webspell-RM-RM site.[[lang:it]]Questo widget mostrerà informazioni generali (piccolo curriculum) su di te sul tuo sito Webspell-RM-RM.', 'admin_about', 1, 'T-Seven', 'https://Webspell-RM-rm.de', 'about,leistung,info', '', '0.1', 'includes/plugins/about/', 1, 1, 1, 1, 'deactivated')");
 
 ## NAVIGATION #####################################################################################################################################
 
@@ -68,6 +85,8 @@ safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, mod
 ('', 2, '[[lang:de]]About[[lang:en]]About[[lang:it]]About', 'about', 'index.php?site=about', 1, 1, 'default')");
 safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
 ('', 2, '[[lang:de]]Leitung[[lang:en]]Leitung[[lang:it]]Leitung', 'about', 'index.php?site=leistung', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
+('', 2, '[[lang:de]]Info[[lang:en]]Info[[lang:it]]Info', 'about', 'index.php?site=info', 1, 1, 'default')");
 
 #######################################################################################################################################
 safe_query("

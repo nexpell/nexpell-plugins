@@ -64,8 +64,16 @@ $language_array = Array(
   'carousel_time'           => 'Anzeigezeit in Sek.',
   'edit_breadcrumb'         => 'Diashow bearbeiten',
   'get_started'             => 'Get Started',
-  'sticky_headers_info'     => '<li>Du möchtest ein Sticky Header</li><li>in der Kopfzeile (über der Navigation) nutzen?</li><li>Hiermit kannst du ein extra Bild hochladen</li><li>und in einem Widgets dargestellen.</li><li>Position auswählen.</li>',
-  'agency_headers_info'     => '<li>Du möchtest ein Agency Header</li><li>in der Kopfzeile (über der Navigation) nutzen?</li><li>Hiermit kannst du ein extra Bild hochladen</li><li>und in einem Widgets dargestellen.</li><li>Position auswählen.<br><br></li>',
+  'sticky_headers_info'     => '<li>Du möchtest einen Sticky Header</li>
+<li>in der Kopfzeile (oberhalb der Navigation) nutzen?</li>
+<li>Hier kannst du ein zusätzliches Bild hochladen</li>
+<li>und es in einem Widget darstellen.</li>
+<li>Wähle dafür die gewünschte Position aus.</li>',
+  'agency_headers_info'     => '<li>Du möchtest einen Agency Header</li>
+<li>in der Kopfzeile (oberhalb der Navigation) nutzen?</li>
+<li>Hier kannst du ein zusätzliches Bild hochladen</li>
+<li>und es in einem Widget darstellen.</li>
+<li>Wähle dafür die gewünschte Position aus.<br><br></li>',
   'no_header'               => 'Es wurde kein Header Bild hochgeladen'
 );
 

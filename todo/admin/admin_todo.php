@@ -181,9 +181,20 @@ $stmt->close();
                     <?php if (!empty($todo['description'])): ?>
                         <div class="mt-1"><?=htmlspecialchars((string)$todo['description'])?></div>
                     <?php endif; ?>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar" role="progressbar" style="width: <?=$todo['progress']?>%;" aria-valuenow="<?=$todo['progress']?>" aria-valuemin="0" aria-valuemax="100"></div>
+                    <?php
+                        $progress = (int)$todo['progress']; // Wert 0-100
+                        if ($progress >= 80) {
+                            $color = 'bg-success'; // grün
+                        } elseif ($progress >= 50) {
+                            $color = 'bg-warning'; // gelb
+                        } else {
+                            $color = 'bg-danger';  // rot
+                        }
+                    ?>
+                    <div class="progress my-1" style="height: 6px;">
+                        <div class="progress-bar <?= $color ?>" style="width: <?= $progress ?>%;"></div>
                     </div>
+                    <?= $todo['progress'] ?>%                   
                 </div>
                 <div class="ms-3 d-flex flex-nowrap">
                     <?php if (!$todo['done']): ?>

@@ -1,13 +1,23 @@
 <?php
 
-safe_query("CREATE TABLE IF NOT EXISTS plugins_gallery (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  filename VARCHAR(255) NOT NULL,
-  class ENUM('wide', 'tall', 'big', '') DEFAULT '',
-  upload_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  position INT UNSIGNED NOT NULL DEFAULT 0,
+safe_query("CREATE TABLE IF NOT EXISTS plugins_gallery_categories (
+  id int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  name varchar(100) NOT NULL,
   PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+safe_query("CREATE TABLE IF NOT EXISTS plugins_gallery (
+  id int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  filename varchar(255) NOT NULL,
+  class enum('wide','tall','big','') DEFAULT '',
+  upload_date datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  position int(10) UNSIGNED NOT NULL DEFAULT 0,
+  category_id int(10) UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY category_id (category_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+
 
 safe_query("INSERT IGNORE INTO plugins_gallery (id, filename, class, upload_date, position) VALUES
 (1, '1.jpg', '', CURRENT_TIMESTAMP, 1),

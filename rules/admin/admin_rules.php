@@ -61,12 +61,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rule'])) {
 
 
 if ($action === 'add' || $action === 'edit') {
-    $editrule = null;
+    #$editrule = null;
     if ($action === 'edit' && isset($_GET['edit']) && is_numeric($_GET['edit'])) {
         $id = (int)$_GET['edit'];
         $res = $_database->query("SELECT * FROM plugins_rules WHERE id = $id");
         $editrule = $res->fetch_assoc();
     }
+    $editrule = $editrule ?? [];
+
+
     ?>
 
 <div class="card">
@@ -90,7 +93,8 @@ if ($action === 'add' || $action === 'edit') {
 
             <div class="mb-3">
                 <label for="text" class="form-label"><?= $languageService->get('rules_text') ?> *</label>
-                <textarea class="ckeditor" name="message" rows="10"><?= $editrule['text'] ?></textarea>
+                <textarea class="ckeditor" name="message" rows="10"><?= htmlspecialchars($editrule['text'] ?? '') ?></textarea>
+
             </div>
 
             <div class="mb-3">
@@ -99,7 +103,8 @@ if ($action === 'add' || $action === 'edit') {
             </div>
 
             <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" <?= $editrule['is_active'] ? 'checked' : '' ?>>
+                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" <?= isset($editrule['is_active']) && $editrule['is_active'] ? 'checked' : '' ?>>
+
                 <label class="form-check-label" for="is_active"><?= $languageService->get('rules_active') ?></label>
             </div>
 

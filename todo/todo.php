@@ -30,6 +30,18 @@ $todos = [];
 while ($row = $result->fetch_assoc()) {
     $todos[] = $row;
 }
+
+
+// Sortiere todos so, dass alle mit 100% Fortschritt ans Ende wandern
+usort($todos, function($a, $b) {
+    if ((int)$a['progress'] === 100 && (int)$b['progress'] !== 100) {
+        return 1;
+    }
+    if ((int)$a['progress'] !== 100 && (int)$b['progress'] === 100) {
+        return -1;
+    }
+    return (int)$a['progress'] <=> (int)$b['progress'];
+});
 ?>
 
 <div class="row row-cols-1 row-cols-md-2 g-4 mt-4">
@@ -66,8 +78,19 @@ while ($row = $result->fetch_assoc()) {
                     <div class="col-6">
                         <ul class="list-unstyled small">
                             <li><strong>Fortschritt:</strong>
+                                <?php
+                                $progress = (int)$todo['progress']; // Wert 0-100
+                                if ($progress >= 80) {
+                                    $color = 'bg-success'; // grün
+                                } elseif ($progress >= 50) {
+                                    $color = 'bg-warning'; // gelb
+                                } else {
+                                    $color = 'bg-danger';  // rot
+                                }
+                                ?>
+
                                 <div class="progress my-1" style="height: 6px;">
-                                    <div class="progress-bar" style="width: <?= $todo['progress'] ?>%;"></div>
+                                    <div class="progress-bar <?= $color ?>" style="width: <?= $progress ?>%;"></div>
                                 </div>
                                 <?= $todo['progress'] ?>%
                             </li>

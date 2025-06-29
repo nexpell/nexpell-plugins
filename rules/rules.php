@@ -26,7 +26,7 @@ $alle = safe_query("SELECT id FROM plugins_rules WHERE is_active = 1");
 $gesamt = mysqli_num_rows($alle);
 
 // Maximale Anzahl pro Seite (aus Einstellungen oder Standard 10)
-$settings = safe_query("SELECT * FROM plugins_clan_rules_settings"); // Optional, anpassen wenn genutzt
+$settings = safe_query("SELECT * FROM plugins_rules_settings"); // Optional, anpassen wenn genutzt
 $dn = mysqli_fetch_array($settings);
 $max = !empty($dn['clan_rules']) ? (int)$dn['clan_rules'] : 10;
 

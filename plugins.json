@@ -5,7 +5,7 @@
     "description": "News Plugin für webSPELL RM, Kommentarfunktion noch nicht aktiv und muss deaktiviert werdgb.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "news",
     "download": "DISABLED"
@@ -16,7 +16,7 @@
     "description": "Blog Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "blog",
     "download": "DISABLED"
@@ -27,7 +27,7 @@
     "description": "Carousel Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "carousel",
     "download": "carousel.zip"
@@ -38,7 +38,7 @@
     "description": "[[lang:de]]Das Rules Plugin verwaltet die wichtigen Regeln für Mitglieder, Server und den Verein, um ein faires und sicheres Miteinander zu gewährleisten.[[lang:en]]The Rules Plugin manages the important rules for members, servers, and the club to ensure fair and safe cooperation.[[lang:it]]Il plugin Regole gestisce le regole importanti per membri, server e associazione per garantire una convivenza equa e sicura.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de,gb,it",
     "folder": "rules",
     "download": "rules.zip"
@@ -49,7 +49,7 @@
     "description": "User List Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de,gb,it",
     "folder": "userlist",
     "download": "userlist.zip"
@@ -60,7 +60,7 @@
     "description": "User List Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "lastlogin",
     "download": "lastlogin.zip"
@@ -71,7 +71,7 @@
     "description": "[[lang:de]]Unsere Partnerseite bietet die Möglichkeit, eure Partner mit nützlichen Inhalten und praktischen Tools zu verlinken.[[lang:en]]Our partners page offers the opportunity to link your partners with useful content and practical tools.[[lang:it]]La nostra pagina partner offre la possibilità di collegare i vostri partner con contenuti utili e strumenti pratici.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de,gb,it",
     "folder": "partners",
     "download": "partners.zip"
@@ -82,7 +82,7 @@
     "description": "Gallerx Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "gallery",
     "download": "gallery.zip"
@@ -93,7 +93,7 @@
     "description": "About Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "about",
     "download": "about.zip"
@@ -104,7 +104,7 @@
     "description": "Pricing Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "pricing",
     "download": "pricing.zip"
@@ -115,7 +115,7 @@
     "description": "Call of Duty Masterlist Plugin für webSPELL RM",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "masterlist",
     "download": "masterlist.zip"
@@ -126,7 +126,7 @@
     "description": "[[lang:de]]Mit dem Artikel-Plugin kannst du redaktionelle Inhalte, News und Berichte bequem erstellen und veröffentlichen. Kategorien, Kommentare und Bewertungen werden unterstützt.[[lang:en]]The article plugin allows you to easily create and publish editorial content, news, and reports. Categories, comments, and ratings are supported.[[lang:it]]Con il plugin degli articoli puoi creare e pubblicare facilmente contenuti editoriali, notizie e report. Sono supportate categorie, commenti e valutazioni.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "articles",
     "download": "articles.zip"
@@ -137,7 +137,7 @@
     "description": "[[lang:de]]Aus Datenschutzgründen wird der Besucherzähler nur noch im Adminbereich angezeigt. Es erfolgt keine Anzeige mehr im öffentlichen Frontend.[[lang:en]]Due to data protection regulations, the visitor counter is now only visible in the admin area. It is no longer displayed publicly.[[lang:it]]Per motivi di privacy, il contatore visite è visibile solo nell’area di amministrazione. Non viene più mostrato pubblicamente.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "counter",
     "download": "counter.zip"
@@ -148,7 +148,7 @@
     "description": "[[lang:de]]Aus Datenschutzgründen wird die Anzeige der Online-Benutzer nur noch im Adminbereich dargestellt. Es erfolgt keine Anzeige mehr im öffentlichen Frontend.[[lang:en]]Due to data protection regulations, the display of online users is now restricted to the admin area only. It is no longer displayed in the public frontend.[[lang:it]]Per motivi di privacy, la visualizzazione degli utenti online è limitata solo all’area di amministrazione. Non viene più mostrata nel frontend pubblico.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "whoisonline",
     "download": "whoisonline.zip"
@@ -159,7 +159,7 @@
     "description": "[[lang:de]]Hier findest du nützliche Links und Empfehlungen zu externen Seiten, Tools und Ressourcen rund um Webspell-RM.[[lang:en]]Find helpful links and recommendations for external sites, tools, and resources related to Webspell-RM.[[lang:it]]Qui trovi link utili e consigliati a siti esterni, strumenti e risorse relativi a Webspell-RM.",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de,gb,it",
     "folder": "links",
     "download": "links.zip"
@@ -170,7 +170,7 @@
       "description": "[[lang:de]]Präsentiere deine Sponsorgb und Partner mit Logos, Farbgb und Links – ideal für Clans, Vereine & Communities.[[lang:gb]]Showcase your sponsors and partners with logos, colors, and links – perfect for clans, clubs & communities.[[lang:it]]Mostra sponsor e partner con loghi, colori e link – ideale per clan, associazioni e community.",
       "version": "1.0.0",
       "author": "webspell-team",
-      "url": "https://www.webspell-rm.de",
+      "url": "https://www.nexpell.de",
       "lang": "de,gb,it",
       "folder": "sponsors",
       "download": "sponsors.zip"
@@ -178,12 +178,45 @@
     {
     "name": "Entwicklungshistorie",
     "modulname": "resume",
-    "description": "Entwicklungshistorie von webSPELL RM",
+    "description": "Entwicklungshistorie von nexpell",
     "version": "1.0.0",
     "author": "webspell-team",
-    "url": "https://www.webspell-rm.de",
+    "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "resume",
     "download": "resume.zip"
-    }
+    },
+    {
+    "name": "Forum",
+    "modulname": "forum",
+    "description": "[[lang:de]]Integriere ein modernes Forum auf deiner Website, in dem Benutzer Themen erstellen, antworten und diskutieren können – ideal für Communities jeder Art.[[lang:gb]]Integrate a modern forum into your website where users can create topics, reply, and engage in discussions – perfect for any kind of community.[[lang:it]]Integra un forum moderno nel tuo sito web dove gli utenti possono creare argomenti, rispondere e partecipare alle discussioni – perfetto per qualsiasi tipo di community.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "forum",
+    "download": "forum.zip"
+  },
+  {
+    "name": "Downloads",
+    "modulname": "downloads",
+    "description": "[[lang:de]]Füge deiner Website einen Downloadbereich hinzu, in dem Dateien, Programme oder Ressourcen angeboten werden können – ideal für Projekte, Tools oder Medieninhalte.[[lang:gb]]Add a download section to your website where you can offer files, tools, or resources – ideal for projects, tools, or media content.[[lang:it]]Aggiungi una sezione download al tuo sito dove offrire file, strumenti o risorse – ideale per progetti, strumenti o contenuti multimediali.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "downloads",
+    "download": "downloads.zip"
+  },
+  {
+    "name": "Todo",
+    "modulname": "todo",
+    "description": "[[lang:de]]Füge deiner Website eine einfache Todo-Liste hinzu, um Aufgaben zu verwalten und zu organisieren.[[lang:gb]]Add a simple todo list to your website to manage and organize tasks.[[lang:it]]Aggiungi una semplice lista di cose da fare al tuo sito per gestire e organizzare le attività.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "todo",
+    "download": "todo.zip"
+  }
 ]

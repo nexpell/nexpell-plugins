@@ -331,7 +331,7 @@ switch ($action) {
                     <input class="form-control" id="title" name="title" required><br/>
 
                     <label for="content">Inhalt:</label>
-                    <textarea class="form-control" id="content" name="content" rows="8" required></textarea><br/>
+                    <textarea class="ckeditor form-control" id="content" name="content" rows="8" required></textarea><br/>
 
                     <button class="btn btn-success" type="submit">Thema erstellen</button>
                 </form>

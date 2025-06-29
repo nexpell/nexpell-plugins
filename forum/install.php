@@ -26,9 +26,9 @@ safe_query("CREATE TABLE IF NOT EXISTS `plugins_forum_threads` (
 )");
 
 safe_query("INSERT IGNORE INTO `plugins_forum_threads` (`catID`, `userID`, `title`, `created_at`, `updated_at`, `views`, `is_locked`) VALUES
-(1, 1, 'Willkommen im Forum!', 1748807683, 1750444361, 139, 0),
-(2, 1, 'Forum funktioniert nicht richtig', 1748980483, 1749672936, 115, 0),
-(3, 1, 'Was macht ihr am Wochenende?', 1749066883, 1749672963, 117, 0)");
+(1, 1, 'Willkommen im Forum!', 1748807683, 1750444361, 0, 0),
+(2, 1, 'Forum funktioniert nicht richtig', 1748980483, 1749672936, 0, 0),
+(3, 1, 'Was macht ihr am Wochenende?', 1749066883, 1749672963, 0, 0)");
 
 safe_query("CREATE TABLE IF NOT EXISTS `plugins_forum_posts` (
   `postID` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
