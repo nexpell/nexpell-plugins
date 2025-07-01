@@ -17,10 +17,10 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel (
   DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
         
 safe_query("INSERT IGNORE INTO plugins_carousel (carouselID, title, ani_title, link, ani_link, description, ani_description, carousel_pic, carousel_vid, time_pic, sort, displayed) VALUES
-(1, 'The Best <span>Games</span> Out There', 'rollIn', 'https://www.webspell-rm.de', 'fadeInRight', 'The Bootstrap Carousel in Webspell? No way?! Yes we did it!', 'fadeInUp', '1.jpg','', '5', 1, '1'),
-(2, 'The Best <span>Games</span> Out There', 'fadeInDown', 'https://www.webspell-rm.de', 'fadeInRight', 'The Bootstrap Carousel in Webspell? No way?! Yes we did it!', 'fadeInLeft', '2.jpg','', '5', 1, '1'),
-(3, 'The Best <span>Games</span> Out There', 'fadeInUp', 'https://www.webspell-rm.de', 'fadeInDown', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada\nlorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien.\nSuspendisse cursus faucibus finibus.', 'fadeInRight', '3.jpg','', '5', 1, '1'),
-(4, 'The Best <span>Games</span> Out There', 'fadeInRightBig', 'https://www.webspell-rm.de', 'fadeInLeft', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus.', 'fadeInUp', '4.jpg','', '5', 1, '1'),
+(1, 'The Best <span>Games</span> Out There', 'rollIn', 'https://www.nexpell.de', 'fadeInRight', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'fadeInUp', '1.jpg','', '5', 1, '1'),
+(2, 'The Best <span>Games</span> Out There', 'fadeInDown', 'https://www.nexpell.de', 'fadeInRight', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'fadeInLeft', '2.jpg','', '5', 1, '1'),
+(3, 'The Best <span>Games</span> Out There', 'fadeInUp', 'https://www.nexpell.de', 'fadeInDown', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada\nlorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien.\nSuspendisse cursus faucibus finibus.', 'fadeInRight', '3.jpg','', '5', 1, '1'),
+(4, 'The Best <span>Games</span> Out There', 'fadeInRightBig', 'https://www.nexpell.de', 'fadeInLeft', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus.', 'fadeInUp', '4.jpg','', '5', 1, '1'),
 (5, 'Call of Duty® <span>Black Ops 4</span>', 'fadeInRightBig', 'https://www.callofduty.com/it/blackops4/pc', 'fadeInLeft', 'https://www.callofduty.com/it/blackops4/pc', 'fadeInUp', '','5.mp4', '13', 1, '1')");
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_parallax (
@@ -45,7 +45,7 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_sticky (
   DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
 
 safe_query("INSERT IGNORE INTO plugins_carousel_sticky (stickyID, sticky_pic, title, description, link) VALUES
-(1, 'sticky.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in Webspell? No way?! Yes we did it!', 'https://www.webspell-rm.de')");
+(1, 'sticky.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'https://www.nexpell.de')");
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_agency (
   agencyID int(11) NOT NULL AUTO_INCREMENT,
@@ -58,7 +58,7 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_agency (
   DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
 
 safe_query("INSERT IGNORE INTO plugins_carousel_agency (agencyID, agency_pic, title, description, link) VALUES
-(1, 'agency.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in Webspell? No way?! Yes we did it!', 'https://www.webspell-rm.de')");
+(1, 'agency.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'https://www.nexpell.de')");
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_settings (
   carouselID int(11) NOT NULL AUTO_INCREMENT,
@@ -76,12 +76,11 @@ safe_query("INSERT IGNORE INTO plugins_carousel_settings (carouselID, carousel_h
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('', 'Carousel', 'carousel', '[[lang:de]]Mit diesem Plugin könnt ihr ein Carousel in die Webseite einbinden.[[lang:en]]With this plugin you can integrate a carousel into your website.[[lang:it]]Con questo plugin puoi integrare un carosello nel sito web.', 'admin_carousel', 1, 'T-Seven', 'https://webspell-rm.de', '', '', '0.1', 'includes/plugins/carousel/', 1, 1, 0, 1, 'deactivated')");
+('', 'Carousel', 'carousel', '[[lang:de]]Mit diesem Plugin könnt ihr ein Carousel in die Webseite einbinden.[[lang:en]]With this plugin you can integrate a carousel into your website.[[lang:it]]Con questo plugin puoi integrare un carosello nel sito web.', 'admin_carousel', 1, 'T-Seven', 'https://nexpell.de', '', '', '0.1', 'includes/plugins/carousel/', 1, 1, 0, 1, 'deactivated')");
 
 safe_query("INSERT IGNORE INTO settings_plugins_widget (id, modulname, widgetname, widgetdatei, area) VALUES
 ('', 'carousel', 'Sticky Header', 'widget_sticky_header', 1),
 ('', 'carousel', 'Carousel Crossfade', 'widget_carousel_crossfade', 3),
-('', 'carousel', 'Carousel Only', 'widget_carousel_only', 3),
 ('', 'carousel', 'Parallax Header', 'widget_parallax_header', 3),
 ('', 'carousel', 'Agency Header', 'widget_agency_header', 3)");
 

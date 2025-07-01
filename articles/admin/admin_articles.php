@@ -261,41 +261,110 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
 
     <?php
 
-} elseif (($action ?? '') === 'categories') {
-    // --- Kategorien verwalten ---
+
+} elseif (($action ?? '') === 'addcategory' || ($action ?? '') === 'editcategory') {
+    $isEdit = $action === 'editcategory';
+    $errorCat = '';
+    $cat_name = '';
+    $cat_description = '';
+    $editId = 0;
+
+    if ($isEdit) {
+        $editId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $stmt = $_database->prepare("SELECT name, description FROM plugins_articles_categories WHERE id = ?");
+        $stmt->bind_param("i", $editId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $catData = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($catData) {
+            $cat_name = $catData['name'];
+            $cat_description = $catData['description'];
+        } else {
+            $errorCat = "Kategorie nicht gefunden.";
+        }
+    }
+
+    // Speichern
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cat_name'])) {
+        $cat_name = trim($_POST['cat_name']);
+        $cat_description = trim($_POST['cat_description'] ?? '');
+        if ($cat_name === '') {
+            $errorCat = "Der Kategoriename darf nicht leer sein.";
+        } else {
+            if ($isEdit && $editId > 0) {
+                $stmt = $_database->prepare("UPDATE plugins_articles_categories SET name = ?, description = ? WHERE id = ?");
+                $stmt->bind_param("ssi", $cat_name, $cat_description, $editId);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $stmt = $_database->prepare("INSERT INTO plugins_articles_categories (name, description) VALUES (?, ?)");
+                $stmt->bind_param("ss", $cat_name, $cat_description);
+                $stmt->execute();
+                $stmt->close();
+            }
+            header("Location: admincenter.php?site=admin_articles&action=categories");
+            exit;
+        }
+    }
+    ?>
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-tags"></i> <?= $isEdit ? 'Kategorie bearbeiten' : 'Neue Kategorie hinzufügen' ?>
+        </div>
+        <nav class="breadcrumb bg-light p-2">
+            <a class="breadcrumb-item" href="admincenter.php?site=admin_articles&action=categories">Kategorien</a>
+            <span class="breadcrumb-item active"><?= $isEdit ? 'Bearbeiten' : 'Hinzufügen' ?></span>
+        </nav>
+        <div class="card-body">
+            <div class="container py-5">
+                <?php if ($errorCat): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($errorCat) ?></div>
+                <?php endif; ?>
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="cat_name" class="form-label">Kategoriename:</label>
+                        <input type="text"
+                               class="form-control"
+                               id="cat_name"
+                               name="cat_name"
+                               value="<?= htmlspecialchars($cat_name) ?>"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cat_description" class="form-label">Beschreibung:</label>
+                        <textarea class="form-control"
+                                  id="cat_description"
+                                  name="cat_description"
+                                  rows="3"><?= htmlspecialchars($cat_description) ?></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <?= $isEdit ? 'Änderungen speichern' : 'Kategorie hinzufügen' ?>
+                    </button>
+                    <a href="admincenter.php?site=admin_articles&action=categories" class="btn btn-secondary">Abbrechen</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+ elseif (($action ?? '') === 'categories') {
     $errorCat = '';
 
-    // Kategorie löschen (via GET)
+    // Kategorie löschen
     if (isset($_GET['delcat'])) {
         $delcat = intval($_GET['delcat']);
         $stmt = $_database->prepare("DELETE FROM plugins_articles_categories WHERE id = ?");
         $stmt->bind_param("i", $delcat);
         $stmt->execute();
         $stmt->close();
-
         header("Location: admincenter.php?site=admin_articles&action=categories");
         exit;
     }
 
-    // Neue Kategorie hinzufügen
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cat_name'])) {
-        $cat_name = trim($_POST['cat_name']);
-        
-        if ($cat_name === '') {
-            $errorCat = "Der Kategoriename darf nicht leer sein.";
-        } else {
-            // Kategorie speichern
-            $stmt = $_database->prepare("INSERT INTO plugins_articles_categories (name) VALUES (?)");
-            $stmt->bind_param("s", $cat_name);
-            $stmt->execute();
-            $stmt->close();
-            header("Location: admincenter.php?site=admin_articles&action=categories");
-            exit;
-        }
-    }
-
-    // Kategorien laden
-    $result = $_database->query("SELECT id, name FROM plugins_articles_categories ORDER BY name");
+    // Kategorien laden inkl. Beschreibung
+    $result = $_database->query("SELECT id, name, description FROM plugins_articles_categories ORDER BY name");
     ?>
 
     <div class="card">
@@ -307,47 +376,49 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
             <span class="breadcrumb-item active">Kategorien</span>
         </nav>
         <div class="card-body">
-        <div class="container py-5">
-            <?php if ($errorCat): ?>
-                <div class="alert alert-danger"><?= htmlspecialchars($errorCat) ?></div>
-            <?php endif; ?>
+            <div class="container py-5">
 
-            <form method="post" class="mb-4">
-                <div class="mb-3">
-                    <label for="cat_name" class="form-label">Neue Kategorie hinzufügen:</label>
-                    <input type="text" class="form-control" id="cat_name" name="cat_name" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Kategorie hinzufügen</button>
-            </form>
-
-            <h5>Bestehende Kategorien:</h5>
-            <table class="table table-striped">
-                <thead>
-                <tr><th>ID</th><th>Name</th><th>Aktion</th></tr>
-                </thead>
-                <tbody>
-                <?php while ($cat = $result->fetch_assoc()): ?>
+                <a href="admincenter.php?site=admin_articles&action=addcategory"
+                   class="btn btn-success mb-3">
+                   <i class="bi bi-plus-circle"></i> Neue Kategorie hinzufügen
+                </a>
+                
+                <h5>Bestehende Kategorien:</h5>
+                <table class="table table-striped">
+                    <thead>
                     <tr>
-                        <td><?= (int)$cat['id'] ?></td>
-                        <td><?= htmlspecialchars($cat['name']) ?></td>
-                        <td>
-                            <a href="admincenter.php?site=admin_articles&action=categories&delcat=<?= (int)$cat['id'] ?>"
-                               class="btn btn-sm btn-danger"
-                               onclick="return confirm('Kategorie wirklich löschen?')">Löschen</a>
-                        </td>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Beschreibung</th>
+                        <th>Aktion</th>
                     </tr>
-                <?php endwhile; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    <?php while ($cat = $result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= (int)$cat['id'] ?></td>
+                            <td><?= htmlspecialchars($cat['name']) ?></td>
+                            <td><?= htmlspecialchars($cat['description']) ?></td>
+                            <td>
+                                <a href="admincenter.php?site=admin_articles&action=editcategory&id=<?= (int)$cat['id'] ?>"
+                                   class="btn btn-sm btn-warning">Bearbeiten</a>
+                                <a href="admincenter.php?site=admin_articles&action=categories&delcat=<?= (int)$cat['id'] ?>"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Kategorie wirklich löschen?')">Löschen</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                    </tbody>
+                </table>
 
-            <a href="admincenter.php?site=admin_articles" class="btn btn-secondary">Zurück</a>
-        </div>
+                <a href="admincenter.php?site=admin_articles" class="btn btn-secondary">Zurück</a>
+            </div>
         </div>
     </div>
-
     <?php
-} else {
+}
+
+ else {
 
     // --- Artikelliste anzeigen ---
     $result = $_database->query("SELECT a.id, a.title, a.sort_order, a.is_active, c.name as category_name FROM plugins_articles a LEFT JOIN plugins_articles_categories c ON a.category_id = c.id ORDER BY a.sort_order ASC, a.title ASC");

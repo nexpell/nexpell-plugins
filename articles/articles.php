@@ -476,7 +476,11 @@ if ($action == "watch" && is_numeric($_GET['id'])) {
                 $cat_query = safe_query("SELECT name, description FROM plugins_articles_categories WHERE id = $catID");
                 $cat = mysqli_fetch_assoc($cat_query);
 
-                $article_catname = '<a data-toggle="tooltip" title="' . htmlspecialchars($cat['description']) . '" href="index.php?site=articles&action=show&id=' . $catID . '"><strong style="font-size: 16px">' . htmlspecialchars($cat['name']) . '</strong></a>';
+                $cat_name = htmlspecialchars($cat['name'] ?? '');
+                $cat_description = htmlspecialchars($cat['description'] ?? '');
+
+                $article_catname = '<a data-toggle="tooltip" title="' . $cat_description . '" href="index.php?site=articles&action=show&id=' . $catID . '"><strong style="font-size: 16px">' . $cat_name . '</strong></a>';
+
 
                 $data_array = [
                     'name' => $article_catname,

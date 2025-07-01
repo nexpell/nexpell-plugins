@@ -16,9 +16,9 @@ GLOBAL $theme_name;
 
 $filepath = $plugin_path . "images/";
 
-$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
+$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_agency_header_settings"));
 
-$ergebnis = safe_query("SELECT * FROM plugins_carousel_agency");
+$ergebnis = safe_query("SELECT * FROM plugins_agency_header");
 if (mysqli_num_rows($ergebnis)) {
     $i = 1;
     while ($db = mysqli_fetch_array($ergebnis)) {

@@ -21,14 +21,14 @@ $data_array = [
     'subtitle' => 'About'
 ];
 
-echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
+#echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
 
 $qry = safe_query("SELECT * FROM plugins_articles WHERE id!=0 ORDER BY id DESC LIMIT 0,5");
 $anz = mysqli_num_rows($qry);
 
 if ($anz) {
 
-    echo $tpl->loadTemplate("articles", "widget_sidebar_articles_head", $data_array, 'plugin');
+    echo $tpl->loadTemplate("articles", "widget_content_articles_head", $data_array, 'plugin');
 
     $n = 1;
     while ($ds = mysqli_fetch_array($qry)) {
@@ -52,6 +52,12 @@ if ($anz) {
         $question_lang = $question;
         $answer = $ds['content'] ?? '';
         $id = $ds['id'] ?? 0;
+
+        // username holen (z.B. aus userID)
+        $username = getusername($ds['userID']);
+
+        $banner_image = $ds['banner_image'];
+        $image = $banner_image ? "/includes/plugins/articles/images/article/" . $banner_image : "/includes/plugins/articles/images/no-image.jpg";
 
         $translate = new multiLanguage($lang);
         $translate->detectLanguages($question);
@@ -79,12 +85,16 @@ if ($anz) {
             'tag'      => $tag,
             'monat'    => $monatname,
             'year'     => $year,
+            'username' => $username,
+            'image'    => $image,
+			'id'       => $id,
+            'by'       => $languageService->get('by'),
         ];
 
-        echo $tpl->loadTemplate("articles", "widget_sidebar_content", $data_array, 'plugin');
+        echo $tpl->loadTemplate("articles", "widget_content_content", $data_array, 'plugin');
         $n++;
     }
-    echo $tpl->loadTemplate("articles", "widget_sidebar_articles_foot", $data_array, 'plugin');
+    echo $tpl->loadTemplate("articles", "widget_content_articles_foot", $data_array, 'plugin');
 } else {
     echo $languageService->get('no_articles');
 }
