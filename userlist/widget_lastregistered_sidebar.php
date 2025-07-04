@@ -61,7 +61,7 @@ while ($row = mysqli_fetch_array($result)) {
     // Avatar prüfen
     $avatar = '';
     if ($getavatar = getavatar($row['userID'])) {
-        $avatar = './images/avatars/' . htmlspecialchars($getavatar);
+        $avatar = '.' . htmlspecialchars($getavatar);
     }
 
     // Daten an Template übergeben
