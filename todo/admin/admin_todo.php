@@ -33,44 +33,67 @@ if ($userID <= 0) {
 
 
 // Neues Todo hinzufügen
+// Neues Todo hinzufügen
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task']) && trim($_POST['task']) !== '' && !isset($_POST['edit_id'])) {
     $task = trim($_POST['task']);
-    $description = trim($_POST['description'] ?? '');
+    $description = $_POST['description'];
     $priority = $_POST['priority'] ?? 'medium';
 
-    // due_date: Wenn leer, dann NULL, sonst Wert übernehmen
     $due_date_input = $_POST['due_date'] ?? '';
     $due_date = !empty($due_date_input) ? $due_date_input : null;
 
     $progress = (int)($_POST['progress'] ?? 0);
 
-    $stmt = $_database->prepare("INSERT INTO plugins_todo (userID, task, description, priority, due_date, progress) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("issssi", $userID, $task, $description, $priority, $due_date, $progress);
-    $stmt->execute();
-    $stmt->close();
+    // Werte escapen
+    $task_esc = $task;
+    $description_esc = $description;
+    $priority_esc = $priority;
+    $due_date_esc = $due_date !== null ? "'" . $due_date . "'" : "NULL";
+
+    $sql = "INSERT INTO plugins_todo (userID, task, description, priority, due_date, progress) VALUES (
+        {$userID}, 
+        '{$task_esc}', 
+        '{$description_esc}', 
+        '{$priority_esc}', 
+        {$due_date_esc}, 
+        {$progress}
+    )";
+
+    safe_query($sql);
 
     echo '<div class="alert alert-success" role="alert">Erfolgreich erstellt!</div>';
     redirect('admincenter.php?site=admin_todo', "", 3);
     exit;
 }
 
+
 // Todo bearbeiten
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'], $_POST['task_edit'])) {
     $edit_id = (int)$_POST['edit_id'];
     $task_edit = trim($_POST['task_edit']);
-    $description = trim($_POST['description'] ?? '');
+    $description = $_POST['description'];
     $priority = $_POST['priority'] ?? 'medium';
 
-    // due_date: Wenn leer, dann NULL, sonst Wert übernehmen
     $due_date_input = $_POST['due_date'] ?? '';
     $due_date = !empty($due_date_input) ? $due_date_input : null;
 
     $progress = (int)($_POST['progress'] ?? 0);
 
-    $stmt = $_database->prepare("UPDATE plugins_todo SET task = ?, description = ?, priority = ?, due_date = ?, progress = ?, updated_at = NOW() WHERE id = ? AND userID = ?");
-    $stmt->bind_param("ssssiii", $task_edit, $description, $priority, $due_date, $progress, $edit_id, $userID);
-    $stmt->execute();
-    $stmt->close();
+    $task_esc = $task_edit;
+    $description_esc = $description;
+    $priority_esc = $priority;
+    $due_date_esc = $due_date !== null ? "'" . $due_date . "'" : "NULL";
+
+    $sql = "UPDATE plugins_todo SET 
+        task = '{$task_esc}', 
+        description = '{$description_esc}', 
+        priority = '{$priority_esc}', 
+        due_date = {$due_date_esc}, 
+        progress = {$progress}, 
+        updated_at = NOW() 
+        WHERE id = {$edit_id} AND userID = {$userID}";
+
+    safe_query($sql);
 
     echo '<div class="alert alert-info" role="alert">Aufgabe bearbeitet!</div>';
     redirect('admincenter.php?site=admin_todo', "", 3);
@@ -78,14 +101,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'], $_POST['ta
 }
 
 
+
+
+
 // Todo erledigen
 if (isset($_GET['done_id'])) {
     $done_id = (int)$_GET['done_id'];
+    $userID_int = (int)$userID;
 
-    $stmt = $_database->prepare("UPDATE plugins_todo SET done = 1 WHERE id = ? AND userID = ?");
-    $stmt->bind_param("ii", $done_id, $userID);
-    $stmt->execute();
-    $stmt->close();
+    safe_query("UPDATE plugins_todo SET done = 1 WHERE id = {$done_id} AND userID = {$userID_int}");
 
     echo '<div class="alert alert-success" role="alert">Erfolgreich erledigt!</div>';
     redirect('admincenter.php?site=admin_todo', "", 3);
@@ -95,16 +119,15 @@ if (isset($_GET['done_id'])) {
 // Todo löschen
 if (isset($_GET['del_id'])) {
     $del_id = (int)$_GET['del_id'];
+    $userID_int = (int)$userID;
 
-    $stmt = $_database->prepare("DELETE FROM plugins_todo WHERE id = ? AND userID = ?");
-    $stmt->bind_param("ii", $del_id, $userID);
-    $stmt->execute();
-    $stmt->close();
+    safe_query("DELETE FROM plugins_todo WHERE id = {$del_id} AND userID = {$userID_int}");
 
     echo '<div class="alert alert-danger" role="alert">Aufgabe gelöscht!</div>';
     redirect('admincenter.php?site=admin_todo', "", 3);
     exit;
 }
+
 
 // Einzelnes Todo zum Bearbeiten laden
 $todo_edit = null;
@@ -140,7 +163,8 @@ $stmt->close();
         <?php endif; ?>
 
         <input type="text" name="<?= $todo_edit ? 'task_edit' : 'task' ?>" class="form-control mb-2" placeholder="<?=$languageService->get('new_task_placeholder')?>" value="<?=htmlspecialchars($todo_edit['task'] ?? '')?>" required>
-        <textarea name="description" class="form-control mb-2" placeholder="Beschreibung"><?=htmlspecialchars($todo_edit['description'] ?? '')?></textarea>
+        <textarea name="description" class="form-control mb-2 ckeditor" placeholder="Beschreibung"><?= isset($todo_edit['description']) ? htmlspecialchars($todo_edit['description']) : '' ?></textarea>
+
 
         <select name="priority" class="form-select mb-2">
             <option value="low" <?=($todo_edit['priority'] ?? '') === 'low' ? 'selected' : ''?>>Niedrig</option>
@@ -179,7 +203,7 @@ $stmt->close();
                         Bearbeitet: <?=htmlspecialchars($todo['updated_at'])?>
                     </div>
                     <?php if (!empty($todo['description'])): ?>
-                        <div class="mt-1"><?=htmlspecialchars((string)$todo['description'])?></div>
+                        <div class="mt-1"><?=$todo['description']?></div>
                     <?php endif; ?>
                     <?php
                         $progress = (int)$todo['progress']; // Wert 0-100

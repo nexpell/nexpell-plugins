@@ -14,14 +14,15 @@ $tpl = new Template();
 
 GLOBAL $theme_name;
 
-$filepath = $plugin_path . "images/";
+$filepath = "../includes/plugins/carousel/";
+
 
 $ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
 
 $ergebnis = safe_query("SELECT * FROM plugins_carousel_sticky");
 if (mysqli_num_rows($ergebnis)) {
     while ($db = mysqli_fetch_array($ergebnis)) {
-        $sticky_pic = $filepath . $db['sticky_pic'];
+        $sticky_pic = $filepath . "images/" . $db['sticky_pic'];
         $sticky_height = $ds['sticky_height'];
         $description = $db['description'];
         $link_url = $db['link'];

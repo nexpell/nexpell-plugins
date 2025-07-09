@@ -78,11 +78,11 @@ safe_query("INSERT IGNORE INTO plugins_carousel_settings (carouselID, carousel_h
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
 ('', 'Carousel', 'carousel', '[[lang:de]]Mit diesem Plugin könnt ihr ein Carousel in die Webseite einbinden.[[lang:en]]With this plugin you can integrate a carousel into your website.[[lang:it]]Con questo plugin puoi integrare un carosello nel sito web.', 'admin_carousel', 1, 'T-Seven', 'https://nexpell.de', '', '', '0.1', 'includes/plugins/carousel/', 1, 1, 0, 1, 'deactivated')");
 
-safe_query("INSERT IGNORE INTO settings_plugins_widget (id, modulname, widgetname, widgetdatei, area) VALUES
-('', 'carousel', 'Sticky Header', 'widget_sticky_header', 1),
-('', 'carousel', 'Carousel Crossfade', 'widget_carousel_crossfade', 3),
-('', 'carousel', 'Parallax Header', 'widget_parallax_header', 3),
-('', 'carousel', 'Agency Header', 'widget_agency_header', 3)");
+safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
+('widget_sticky_header', 'Sticky Header', 'carousel', 'carousel'),
+('widget_carousel_crossfade', 'Carousel Crossfade', 'carousel', 'carousel'),
+('widget_parallax_header', 'Parallax Header', 'carousel', 'carousel'),
+('widget_agency_header', 'Agency Header', 'carousel', 'carousel')");
 
 ## NAVIGATION #####################################################################################################################################
 

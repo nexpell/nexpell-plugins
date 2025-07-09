@@ -12,14 +12,14 @@ $languageService->readModule('carousel');
 
 $tpl = new Template();
 
-$filepath = $plugin_path."images/";
-$filepathvid = $plugin_path."videos/";
+$filepath = "../includes/plugins/carousel/";
+$filepathvid = "../includes/plugins/carousel/";
 
 $ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
 
 echo '
 <section id="hero" style="height: '.$ds['carousel_height'].';">
-    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div id="hero carouselExampleInterval" class="carousel slide" data-bs-ride="carousel">
 ';
 
 // Query laden
@@ -51,11 +51,11 @@ while ($db = mysqli_fetch_array($carousel)) {
     if (!empty($db['carousel_vid'])) {
         // Video ausgeben
         $carousel_pic = '<video autoplay loop muted playsinline width="100%" class="pic" controls>
-                            <source src="' . $filepathvid . $db['carousel_vid'] . '" type="video/mp4">
+                            <source src="' . $filepath . "videos/" . $db['carousel_vid'] . '" type="video/mp4">
                          </video>';
     } elseif (!empty($db['carousel_pic'])) {
         // Bild ausgeben
-        $carousel_pic = '<img class="pic" src="' . $filepath . $db['carousel_pic'] . '" alt="' . htmlspecialchars($db['title']) . '" style="height: '.$ds['carousel_height'].';">';
+        $carousel_pic = '<img class="pic" src="' .$filepath . "images/" . $db['carousel_pic'] . '" alt="' . htmlspecialchars($db['title']) . '" style="height: '.$ds['carousel_height'].';">';
     } else {
         $carousel_pic = '';
     }

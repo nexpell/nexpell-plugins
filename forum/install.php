@@ -55,28 +55,6 @@ safe_query("CREATE TABLE IF NOT EXISTS `forum_notifications` (
   `created` DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-
-
-
-#######################################################################################################################################
-
-safe_query("CREATE TABLE IF NOT EXISTS plugins_forum_settings_widgets (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  position varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  modulname varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  themes_modulname varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  widgetname varchar(255) NOT NULL DEFAULT '',
-  widgetdatei varchar(255) NOT NULL DEFAULT '',
-  activated int(1) DEFAULT 1,
-  sort int(11) DEFAULT 1,
-PRIMARY KEY (id)
-) AUTO_INCREMENT=1
-  DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
-
-safe_query("INSERT IGNORE INTO plugins_forum_settings_widgets (id, position, modulname, themes_modulname, widgetname, widgetdatei, activated, sort) VALUES
-('1', 'navigation_widget', 'navigation', 'default', 'Navigation', 'widget_navigation', 1, 1),
-('2', 'footer_widget', 'footer_easy', 'default', 'Footer Easy', 'widget_footer_easy', 1, 1)");
-
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, plugin_display, widget_display, sidebar) VALUES

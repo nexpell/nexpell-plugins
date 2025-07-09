@@ -12,14 +12,14 @@ $languageService->readModule('carousel');
 
 $tpl = new Template();
 
-$filepath = $plugin_path . "images/";
+$filepath = "../includes/plugins/carousel/";
 
 $ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
 
 $ergebnis = safe_query("SELECT * FROM plugins_carousel_parallax");
 if (mysqli_num_rows($ergebnis)) {
     while ($db = mysqli_fetch_array($ergebnis)) {
-        $parallax_pic = $filepath . $db['parallax_pic']; // Kein '' nötig, einfache Verkettung reicht
+        $parallax_pic = $filepath . "images/" . $db['parallax_pic']; // Kein '' nötig, einfache Verkettung reicht
         $parallax_height = $ds['parallax_height'];
 
         $data_array = [

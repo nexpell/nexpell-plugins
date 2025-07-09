@@ -21,7 +21,7 @@ $class = htmlspecialchars($config['selected_style']);
 $data_array = [
     'class'    => $class,
     'title'    => $languageService->get('lastregistered'),
-    'subtitle' => $languageService->get('userlist')
+    'subtitle' => 'Userlist'
 ];
 
 echo $tpl->loadTemplate("userlist","head", $data_array, 'plugin');
@@ -61,7 +61,7 @@ while ($row = mysqli_fetch_array($result)) {
     // Avatar prüfen
     $avatar = '';
     if ($getavatar = getavatar($row['userID'])) {
-        $avatar = '.' . htmlspecialchars($getavatar);
+        $avatar = htmlspecialchars($getavatar);
     }
 
     // Daten an Template übergeben

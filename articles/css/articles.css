@@ -1,15 +1,25 @@
-/*.img-art {
-   width: 100%; 
-   height:300px; 
-   object-fit: cover;
-   object-position: 71% 40%;
-}*/
-
 .img-art {
+   width: 100%;
+   height: 300px;
+   object-fit: cover;
+}
+
+.img-cat {
+   width: 100%;
+   height: 150px;
+   object-fit: cover;
+}
+
+.card-2 {
+   height: 315px;
+}
+
+
+/*.img-art {
   width: 100%;
   height: 320px;
   object-fit: contain;   /* Bild komplett anzeigen */
-  object-position: center center; /* Bild zentrieren */
-  background-color: #f0f0f0; /* Optional: Hintergrundfarbe für Randflächen */
-}
+  /*object-position: center center; /* Bild zentrieren */
+  /*background-color: #f0f0f0; /* Optional: Hintergrundfarbe für Randflächen */
+/*}*/
 

@@ -29,23 +29,6 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_sponsors_settings (
 
 safe_query("INSERT IGNORE INTO plugins_sponsors_settings (sponsorssetID, sponsors) VALUES (1, 5)");
 
-
-safe_query("CREATE TABLE IF NOT EXISTS plugins_sponsors_settings_widgets (
-  id INT(11) NOT NULL AUTO_INCREMENT,
-  position VARCHAR(255) NOT NULL DEFAULT '',
-  modulname VARCHAR(100) NOT NULL DEFAULT '',
-  themes_modulname VARCHAR(255) NOT NULL DEFAULT '',
-  widgetname VARCHAR(255) NOT NULL DEFAULT '',
-  widgetdatei VARCHAR(255) NOT NULL DEFAULT '',
-  activated INT(1) DEFAULT 1,
-  sort INT(11) DEFAULT 1,
-  PRIMARY KEY (id)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
-
-safe_query("INSERT IGNORE INTO plugins_sponsors_settings_widgets (id, position, modulname, themes_modulname, widgetname, widgetdatei, activated, sort) VALUES
-('1', 'navigation_widget', 'navigation', 'default', 'Navigation', 'widget_navigation', 1, 1),
-('2', 'footer_widget', 'footer_easy', 'default', 'Footer Easy', 'widget_footer_easy', 1, 1)");
-
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES

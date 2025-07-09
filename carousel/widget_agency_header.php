@@ -12,17 +12,15 @@ $languageService->readModule('carousel');
 
 $tpl = new Template();
 
-GLOBAL $theme_name;
+$filepath = "../includes/plugins/carousel/";
 
-$filepath = $plugin_path . "images/";
+$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
 
-$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_agency_header_settings"));
-
-$ergebnis = safe_query("SELECT * FROM plugins_agency_header");
+$ergebnis = safe_query("SELECT * FROM plugins_carousel_agency");
 if (mysqli_num_rows($ergebnis)) {
     $i = 1;
     while ($db = mysqli_fetch_array($ergebnis)) {
-        $agency_pic = $filepath . $db['agency_pic'];
+        $agency_pic = $filepath . "images/" . $db['agency_pic'];
         $agency_height = $ds['agency_height'];
         $description = $db['description'];
         $title = $db['title'];
@@ -48,8 +46,7 @@ if (mysqli_num_rows($ergebnis)) {
             'agency_height' => $agency_height,
             'title'         => $title,
             'link'          => $link,
-            'description'   => $description,
-            'theme_name'    => $theme_name
+            'description'   => $description
         ];
 
         echo $tpl->loadTemplate("agency_header", "content", $data_array, "plugin");

@@ -70,7 +70,7 @@ while ($ds = mysqli_fetch_array($ergebnis)) {
     // Avatar prüfen
     $avatar = '';
     if ($getavatar = getavatar($ds['userID'])) {
-        $avatar = './images/avatars/' . htmlspecialchars($getavatar);
+        $avatar = htmlspecialchars($getavatar);
     }
 
     $data_array = [

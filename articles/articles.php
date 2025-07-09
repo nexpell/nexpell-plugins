@@ -261,8 +261,14 @@ if ($action == "watch" && is_numeric($_GET['id'])) {
         $categoryQuery = safe_query("SELECT * FROM plugins_articles_categories WHERE id = " . (int)$article['category_id']);
         $category = mysqli_fetch_array($categoryQuery);
 
+        if ($category) {
+            $name = htmlspecialchars($category['name']);
+        } else {
+            $name = 'Unbekannte Kategorie';
+        }
+
         $data_array = [
-            'name' => htmlspecialchars($category['name']),
+            'name' => $name,
             'title' => htmlspecialchars($article['title']),
             'id' => $article['id'],
             'title_categories' => $languageService->get('title_categories'),

@@ -33,9 +33,9 @@ $language_array = array(
     'offline'       => 'Offline',
     'now_on'        => 'Jetzt online',
     'was_online'    => 'War online vor',
-    'hour_and'      => 'Stunde und',
-    'hours_and'     => 'Stunden und',
-    'minutes'       => 'Minuten',
+    'hour_and'    => 'Std. und',
+    'hours_and'   => 'Std. und',
+    'minutes'     => 'Min.',
 
     'email_hidden' => 'E-Mail verborgen',
     'no_messenger' => 'Nachrichten deaktiviert',

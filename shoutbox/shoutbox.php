@@ -7,6 +7,10 @@ use webspell\LanguageService;
 
 global $_database, $languageService;
 
+$get = mysqli_fetch_assoc(safe_query("SELECT * FROM settings"));
+    $webkey = $get['webkey'];
+    $seckey = $get['seckey'];
+
 // Sprachmodul laden
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('shoutbox');
@@ -41,7 +45,7 @@ if ($loggedin) {
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
         if (!empty($recaptcha_response)) {
-            include("system/curl_recaptcha.php");
+            include("./system/curl_recaptcha.php");
             $google_url = "https://www.google.com/recaptcha/api/siteverify";
             $secret     = $seckey;
             $ip         = $_SERVER['REMOTE_ADDR'];
@@ -140,7 +144,7 @@ if (!$result) {
       }
       ?>
       <form method="post" class="mt-3">
-        <div class="g-recaptcha" data-sitekey="<?php echo $sitekey; ?>"></div>
+        <div class="g-recaptcha" data-sitekey="<?php echo $webkey; ?>"></div>
         <button type="submit" class="btn btn-primary mt-2">Bestätigen</button>
       </form>
     <?php endif; ?>
