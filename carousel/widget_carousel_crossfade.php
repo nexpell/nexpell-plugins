@@ -12,91 +12,96 @@ $languageService->readModule('carousel');
 
 $tpl = new Template();
 
-$filepath = "../includes/plugins/carousel/";
-$filepathvid = "../includes/plugins/carousel/";
 
-$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings"));
+$filepath = "../includes/plugins/carousel/images/";
+
+// Lade Einstellungen (z.B. Carousel Höhe)
+$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel_settings")); 
+$carousel_height = (int)($ds['carousel_height']); // Fallback 75 vh
 
 echo '
-<section id="hero" style="height: '.$ds['carousel_height'].';">
-    <div id="hero carouselExampleInterval" class="carousel slide" data-bs-ride="carousel">
+<header id="hero" style="height: ' . $carousel_height . 'vh;">
+  <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
 ';
 
-// Query laden
-$carousel = safe_query("SELECT * FROM plugins_carousel WHERE displayed = '1' ORDER BY sort");
+// Datensätze laden
+$carousel = safe_query("SELECT * FROM plugins_carousel WHERE type = 'carousel' AND visible = 1 ORDER BY sort");
 
-// Indikatoren als Buttons erzeugen
-echo '<div class="carousel-indicators" id="hero-carousel-indicators">';
-$indicatorIndex = 0;
-while ($row = mysqli_fetch_array($carousel)) {
-    echo '<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="' . $indicatorIndex . '"'
-        . ($indicatorIndex === 0 ? ' class="active" aria-current="true"' : '')
-        . ' aria-label="Slide ' . ($indicatorIndex + 1) . '"></button>';
-    $indicatorIndex++;
-}
-// Reset Resultset-Pointer für zweite Schleife
-mysqli_data_seek($carousel, 0);
-echo '</div>';
+// Prüfen, ob überhaupt Slides da sind
+if (mysqli_num_rows($carousel) > 0) {
 
-// Carousel-Items
-echo '<div class="carousel-inner" role="listbox">';
-
-$x = 1;
-while ($db = mysqli_fetch_array($carousel)) {
-
-    $timesec = !empty($db['time_pic']) ? ($db['time_pic'] * 1000) : 10000;
-
-    echo '<div class="carousel-item ' . ($x == 1 ? 'active' : '') . '" data-bs-interval="'.$timesec.'">';
-
-    if (!empty($db['carousel_vid'])) {
-        // Video ausgeben
-        $carousel_pic = '<video autoplay loop muted playsinline width="100%" class="pic" controls>
-                            <source src="' . $filepath . "videos/" . $db['carousel_vid'] . '" type="video/mp4">
-                         </video>';
-    } elseif (!empty($db['carousel_pic'])) {
-        // Bild ausgeben
-        $carousel_pic = '<img class="pic" src="' .$filepath . "images/" . $db['carousel_pic'] . '" alt="' . htmlspecialchars($db['title']) . '" style="height: '.$ds['carousel_height'].';">';
-    } else {
-        $carousel_pic = '';
+    // Carousel Indicators
+    echo '<div class="carousel-indicators" id="hero-carousel-indicators">';
+    $indicatorIndex = 0;
+    while ($row = mysqli_fetch_array($carousel)) {
+        echo '<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="' . $indicatorIndex . '"'
+            . ($indicatorIndex === 0 ? ' class="active" aria-current="true"' : '')
+            . ' aria-label="Slide ' . ($indicatorIndex + 1) . '"></button>';
+        $indicatorIndex++;
     }
+    echo '</div>';
 
-    $carouselID = $db['carouselID'];
-    $title = $db['title'];
-    $ani_title = $db['ani_title'];
-    $ani_link = $db['ani_link'];
-    $ani_description = $db['ani_description'];
-    $description = $db['description'];
+    mysqli_data_seek($carousel, 0); // Cursor zurücksetzen
 
-    if (!empty($db['link'])) {
-        $link = '<a href="'.$db['link'].'" class="btn btn-primary animated '.$ani_link.' scrollto">'.$languageService->get('read_more').'</a>';
-    } else {
+    // Carousel Items
+    echo '<div class="carousel-inner" role="listbox">';
+
+    $slideIndex = 0;
+    while ($db = mysqli_fetch_array($carousel)) {
+        $slideIndex++;
+        $interval_ms = 10000; // Standard Intervall
+
+        $media_file = $filepath . $db['media_file'];
+        $media_type = $db['media_type']; // "image" oder "video"
+        $title_raw = $db['title'];
+        $description_raw = $db['description'];
+        $link_url = $db['link'];
+
+        // Mehrsprachigkeit
+        $translate = new multiLanguage($lang);
+        $translate->detectLanguages($title_raw);
+        $title = $translate->getTextByLanguage($title_raw);
+
+        $translate->detectLanguages($description_raw);
+        $description = $translate->getTextByLanguage($description_raw);
+
+        // Media HTML bauen
+        $common_classes = 'pic img-fluid w-100';
+        $common_style = 'max-height:' . $carousel_height . 'vh; object-fit:cover;';
+
+        if ($media_type === 'image') {
+            $media_html = '<img src="' . htmlspecialchars($media_file) . '" alt="' . htmlspecialchars($title) . '" class="' . $common_classes . '" style="' . $common_style . '">';
+        } elseif ($media_type === 'video') {
+            $media_html = '<video class="' . $common_classes . '" style="' . $common_style . '; margin-top: 15px;" autoplay muted loop playsinline>
+                <source src="' . htmlspecialchars($media_file) . '" type="video/mp4">
+                ' . htmlspecialchars($languageService->get('video_not_supported')) . '
+            </video>';
+        }
+
+        // Link Button (falls Link vorhanden)
         $link = '';
+        if (!empty($link_url)) {
+            $link = '<a href="' . htmlspecialchars($link_url) . '" class="btn btn-primary scrollto">' . htmlspecialchars($languageService->get('read_more')) . '</a>';
+        }
+
+        // Template-Replacements
+        $replaces = [
+            'carouselID'       => $db['id'],
+            'carousel_pic'     => $media_html,
+            'title'            => $title,
+            'link'             => $link,
+            'description'      => $description
+        ];
+
+        echo '<div class="carousel-item ' . ($slideIndex === 1 ? 'active' : '') . '" data-bs-interval="' . $interval_ms . '">';
+        echo $tpl->loadTemplate("widget_carousel_crossfade", "content", $replaces, 'plugin');
+        echo '</div>';
     }
 
-    // Mehrsprachigkeit
-    $translate = new multiLanguage($lang);
-    $translate->detectLanguages($title);
-    $title = $translate->getTextByLanguage($title);
-    $translate->detectLanguages($description);
-    $description = $translate->getTextByLanguage($description);
+    echo '</div>'; // .carousel-inner
 
-    $data_array = [
-        'carouselID'       => $carouselID,
-        'carousel_pic'     => $carousel_pic,
-        'title'            => $title,
-        'ani_title'        => $ani_title,
-        'ani_description'  => $ani_description,
-        'link'             => $link,
-        'description'      => $description
-    ];
-
-    echo $tpl->loadTemplate("widget_carousel_crossfade", "content", $data_array, 'plugin');
-
-    echo '</div>'; // carousel-item schließen
-    $x++;
-}
-
-echo '</div>
+    // Controls
+    echo '
     <a class="carousel-control-prev" href="#heroCarousel" role="button" data-bs-slide="prev">
         <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
         <span class="visually-hidden">Previous</span>
@@ -104,7 +109,14 @@ echo '</div>
     <a class="carousel-control-next" href="#heroCarousel" role="button" data-bs-slide="next">
         <span class="carousel-control-next-icon bi bi-chevron-right" aria-hidden="true"></span>
         <span class="visually-hidden">Next</span>
-    </a>  
-</div>
-</section>';
+    </a>
+    ';
 
+} else {
+    echo '<p>Keine Carousel-Elemente gefunden.</p>';
+}
+
+echo '
+  </div>
+</header>';
+?>

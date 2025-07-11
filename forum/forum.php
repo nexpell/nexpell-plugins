@@ -112,7 +112,7 @@ switch ($action) {
             <div class="posts my-4">
                 <?php while ($post = mysqli_fetch_assoc($posts_res)): ?>
                     <?php
-                        $avatar_file = getavatar($userID);
+                        $avatar_file = getavatar($post['userID']);
                         if (empty($avatar_file)) {
                             $avatar_file = 'default.png'; // Standard-Avatar
                         }

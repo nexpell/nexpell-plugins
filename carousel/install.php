@@ -1,64 +1,29 @@
 <?php
 safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel (
-  carouselID int(11) NOT NULL AUTO_INCREMENT,
-  title varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  ani_title varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  link varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  ani_link varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  description text COLLATE utf8_unicode_ci NOT NULL,
-  ani_description varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  carousel_pic varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  carousel_vid varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  time_pic varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  sort int(11) NOT NULL DEFAULT '1',
-  displayed int(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (carouselID)
-) AUTO_INCREMENT=4
+  id int(11) NOT NULL AUTO_INCREMENT,
+  type enum('sticky','parallax','agency','carousel') NOT NULL,
+  title varchar(255) DEFAULT NULL,
+  subtitle text DEFAULT NULL,
+  description text DEFAULT NULL,
+  link varchar(255) DEFAULT NULL,
+  media_type enum('image','video') NOT NULL,
+  media_file varchar(255) DEFAULT NULL,
+  visible tinyint(1) DEFAULT 1,
+  sort int(11) DEFAULT 0,
+  created_at datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (id)
+) AUTO_INCREMENT=9
   DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
         
-safe_query("INSERT IGNORE INTO plugins_carousel (carouselID, title, ani_title, link, ani_link, description, ani_description, carousel_pic, carousel_vid, time_pic, sort, displayed) VALUES
-(1, 'The Best <span>Games</span> Out There', 'rollIn', 'https://www.nexpell.de', 'fadeInRight', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'fadeInUp', '1.jpg','', '5', 1, '1'),
-(2, 'The Best <span>Games</span> Out There', 'fadeInDown', 'https://www.nexpell.de', 'fadeInRight', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'fadeInLeft', '2.jpg','', '5', 1, '1'),
-(3, 'The Best <span>Games</span> Out There', 'fadeInUp', 'https://www.nexpell.de', 'fadeInDown', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada\nlorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien.\nSuspendisse cursus faucibus finibus.', 'fadeInRight', '3.jpg','', '5', 1, '1'),
-(4, 'The Best <span>Games</span> Out There', 'fadeInRightBig', 'https://www.nexpell.de', 'fadeInLeft', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris scelerisque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus.', 'fadeInUp', '4.jpg','', '5', 1, '1'),
-(5, 'Call of Duty® <span>Black Ops 4</span>', 'fadeInRightBig', 'https://www.callofduty.com/it/blackops4/pc', 'fadeInLeft', 'https://www.callofduty.com/it/blackops4/pc', 'fadeInUp', '','5.mp4', '13', 1, '1')");
-
-safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_parallax (
-  parallaxID int(11) NOT NULL AUTO_INCREMENT,
-  parallax_pic varchar(255) NOT NULL DEFAULT '',
-  text varchar(255) NOT NULL,
-  PRIMARY KEY (parallaxID)
-) AUTO_INCREMENT=1
-  DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
-
-safe_query("INSERT IGNORE INTO plugins_carousel_parallax (parallaxID, parallax_pic, text) VALUES
-(1, 'parallax.jpg', 'parallax')");
-
-safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_sticky (
-  stickyID int(11) NOT NULL AUTO_INCREMENT,
-  sticky_pic varchar(255) NOT NULL DEFAULT '',
-  title varchar(255) NOT NULL,
-  description varchar(255) NOT NULL,
-  link varchar(255) NOT NULL,
-  PRIMARY KEY (stickyID)
-) AUTO_INCREMENT=1
-  DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
-
-safe_query("INSERT IGNORE INTO plugins_carousel_sticky (stickyID, sticky_pic, title, description, link) VALUES
-(1, 'sticky.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'https://www.nexpell.de')");
-
-safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_agency (
-  agencyID int(11) NOT NULL AUTO_INCREMENT,
-  agency_pic varchar(255) NOT NULL DEFAULT '',
-  title varchar(255) NOT NULL,
-  description varchar(255) NOT NULL,
-  link varchar(255) NOT NULL,
-  PRIMARY KEY (agencyID)
-) AUTO_INCREMENT=1
-  DEFAULT CHARSET=utf8 DEFAULT COLLATE utf8_unicode_ci");
-
-safe_query("INSERT IGNORE INTO plugins_carousel_agency (agencyID, agency_pic, title, description, link) VALUES
-(1, 'agency.jpg', 'The Best <span>Games</span> Out There', 'The Bootstrap Carousel in nexpell? No way?! Yes we did it!', 'https://www.nexpell.de')");
+safe_query("INSERT IGNORE INTO plugins_carousel (id, type, title, subtitle, description, link, media_type, media_file, visible, sort, created_at) VALUES
+(1, 'sticky', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_687148bb0318b.jpg', 1, 0, '2025-07-11 19:24:11'),
+(2, 'parallax', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_6871494833ec1.jpg', 1, 0, '2025-07-11 19:26:32'),
+(3, 'agency', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_687149651d571.jpg', 1, 0, '2025-07-11 19:27:01'),
+(4, 'carousel', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_687149d478869.jpg', 1, 0, '2025-07-11 19:28:52'),
+(5, 'carousel', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_687149e906f43.jpg', 1, 0, '2025-07-11 19:29:13'),
+(6, 'carousel', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_687149fd5a1af.jpg', 1, 0, '2025-07-11 19:29:33'),
+(7, 'carousel', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'image', 'block_68714d40abe62.jpg', 1, 0, '2025-07-11 19:29:57'),
+(8, 'carousel', 'nexpell', 'Das moderne CMS', '', 'https://www.nexpell.de', 'video', 'block_68714a4106e25.mp4', 1, 0, '2025-07-11 19:30:41')");
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_carousel_settings (
   carouselID int(11) NOT NULL AUTO_INCREMENT,

@@ -1,14 +1,15 @@
 <!-- agency_header_content -->
-<header id="widget_agency_header" class="agency_header" style="height:{agency_height};">
-  
+<header id="widget_agency_header" class="agency_header">
+  <div class="agency-hero">
 
-  <div class="agency-hero" style="background-image: url('{agency_pic}'); height:{agency_height};">
-    <div class="overlay"></div>
-    <div class="content text-center text-white">
-      <h1 data-aos="fade-down">{title}</h1>
-      <p data-aos="fade-up">{description}</p>
+    {agency_pic} <!-- Entweder <video> oder <img> als Hintergrund -->
+
+    <div class="agency-container" style="position: absolute; top:0; left:0; right:0; bottom:0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; color: white;">
+      <h1 data-aos="zoom-in">{title}</h1>
+      <h2 data-aos="fade-up">{description}</h2>
       {link}
     </div>
+
   </div>
 </header>
 <!-- END -->

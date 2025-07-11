@@ -1,12 +1,19 @@
 <!-- sticky_header_content -->
-<header id="sticky_header" style="height:{sticky_height};">
-  <div class="sticky-image" style="background: url({sticky_pic}) center center / cover no-repeat; height:{sticky_height};">
-    
-    <div class="sticky-container">
+<header id="sticky_header">
+  <div class="sticky-image">
+
+    {sticky_pic} <!-- Entweder <video> oder <img> als Hintergrund -->
+
+    <div class="sticky-container" style="position: absolute; top:0; left:0; right:0; bottom:0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; color: white;">
       <h1 data-aos="zoom-in">{title}</h1>
       <h2 data-aos="fade-up">{description}</h2>
       {link}
     </div>
+
+    <!-- Optional: Overlay -->
+    <div class="sticky-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:1;"></div>
+
   </div>
 </header>
+
 <!-- END -->

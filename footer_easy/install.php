@@ -19,11 +19,10 @@ safe_query("INSERT IGNORE INTO plugins_footer_easy (id, link_number, copyright_l
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('Footer Easy', 'footer_easy', '[[lang:de]]Mit diesem Plugin könnt ihr einen neuen Footer Easy anzeigen lassen.[[lang:en]]With this plugin you can have a new Footer Easy displayed.[[lang:it]]Con questo plugin puoi visualizzare un nuovo piè di pagina.', 'admin_footer_easy', 1, 'T-Seven', 'https://webspell-rm.de', '', '', '0.1', 'includes/plugins/footer_easy/', 1, 1, 0, 0, 'deactivated');
-");
+('Footer Easy', 'footer_easy', '[[lang:de]]Mit diesem Plugin könnt ihr einen neuen Footer Easy anzeigen lassen.[[lang:en]]With this plugin you can have a new Footer Easy displayed.[[lang:it]]Con questo plugin puoi visualizzare un nuovo piè di pagina.', 'admin_footer_easy', 1, 'T-Seven', 'https://webspell-rm.de', '', '', '0.1', 'includes/plugins/footer_easy/', 1, 1, 0, 0, 'deactivated')");
 
-safe_query("INSERT IGNORE INTO settings_plugins_widget (modulname, widgetname, widgetdatei, area) VALUES
-('footer_easy', 'Footer Easy', 'widget_footer_easy', 6);");
+safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
+('widget_footer_easy', 'Footer Easy', 'footer_easy', 'footer_easy')");
 
 ## NAVIGATION #####################################################################################################################################
 
