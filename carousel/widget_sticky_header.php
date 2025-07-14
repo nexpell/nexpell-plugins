@@ -29,6 +29,7 @@ if (mysqli_num_rows($result)) {
         $description = $db['description'];
         $link_url = $db['link'];
         $title = $db['title'];
+        $subtitle = $db['subtitle'];
 
         // Link-Button
         $link = '';
@@ -62,6 +63,7 @@ if (mysqli_num_rows($result)) {
             'sticky_pic'     => $media_html,
             'sticky_height'  => $sticky_height,
             'title'          => $title,
+            'subtitle'       => $subtitle,
             'link'           => $link,
             'description'    => $description,
             'theme_name'     => $theme_name

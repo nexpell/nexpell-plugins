@@ -23,10 +23,11 @@
         <div class="row g-4">
           {foreach sponsors as sponsor}
   <div class="col-4 text-center">
-    <a href="{sponsor.slug}" target="_blank" rel="nofollow">
-      <img src="{sponsor.logo}" alt="{sponsor.name}" class="img-fluid" style="max-height: 80px;">
-    </a>
-    <div class="mt-2 fw-bold text-uppercase" style="color: {sponsor.color};">{sponsor.level}</div>
+    <a href="/includes/plugins/sponsors/click.php?id={sponsor.id}" target="_blank" rel="nofollow">
+  <img src="{sponsor.logo}" alt="{sponsor.name}" class="img-fluid" style="max-height: 80px;">
+</a>
+<div class="mt-2 fw-bold text-uppercase" style="color: {sponsor.color};">{sponsor.level}</div>
+
   </div>
 {/foreach}
 

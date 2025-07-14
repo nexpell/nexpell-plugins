@@ -8,6 +8,9 @@ require_once $configPath;
 
 // Datenbankverbindung aufbauen
 $_database = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+if ($_database->connect_error) {
+    die("Datenbank-Verbindungsfehler: " . $_database->connect_error);
+}
 
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $id = (int)$_GET['id'];
@@ -31,16 +34,15 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $clickedAt = date('Y-m-d H:i:s');
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $referrer = $_SERVER['HTTP_REFERER'] ?? '';
 
         $insert = $_database->prepare("
-            INSERT INTO link_clicks (plugin, itemID, url, clicked_at, ip_address, user_agent, referrer)
-            VALUES ('links', ?, ?, ?, ?, ?, ?)
+            INSERT INTO link_clicks (plugin, itemID, url, clicked_at, ip_address, user_agent)
+            VALUES ('links', ?, ?, ?, ?, ?)
         ");
         if (!$insert) {
             die("Prepare failed: " . $_database->error);
         }
-        $insert->bind_param("isssss", $id, $fullUrl, $clickedAt, $ip, $userAgent, $referrer);
+        $insert->bind_param("issss", $id, $fullUrl, $clickedAt, $ip, $userAgent);
         $insert->execute();
         $insert->close();
 

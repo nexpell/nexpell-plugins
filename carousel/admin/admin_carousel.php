@@ -43,9 +43,9 @@ $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'vide
 if (isset($_POST['save_block'])) {
     $id = (int)($_POST['id'] ?? 0);
     $type = $_POST['type'];
-    $title = escape($_POST['title']);
-    $subtitle = escape($_POST['subtitle']);
-    $description = escape($_POST['description']);
+    $title = $_POST['title'];
+    $subtitle = $_POST['subtitle'];
+    $description = $_POST['description'];
     $link = escape($_POST['link']);
     $visible = isset($_POST['visible']) ? 1 : 0;
     $isEdit = $id > 0;
