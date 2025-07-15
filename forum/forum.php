@@ -216,43 +216,43 @@ switch ($action) {
         return $roleMap[$roleID] ?? 'Unbekannt';
     }
 
-$category = null;
-$board = null;
+    $category = null;
+    $board = null;
 
-if (!empty($thread['catID'])) {
-    $catID = (int) $thread['catID'];
-    $catRes = safe_query("SELECT * FROM plugins_forum_categories WHERE catID = $catID");
-    if (mysqli_num_rows($catRes)) {
-        $category = mysqli_fetch_assoc($catRes);
+    if (!empty($thread['catID'])) {
+        $catID = (int) $thread['catID'];
+        $catRes = safe_query("SELECT * FROM plugins_forum_categories WHERE catID = $catID");
+        if (mysqli_num_rows($catRes)) {
+            $category = mysqli_fetch_assoc($catRes);
 
-        if (!empty($category['group_id'])) {
-            $boardID = (int) $category['group_id'];
-            $boardRes = safe_query("SELECT * FROM plugins_forum_boards WHERE id = $boardID");
-            if (mysqli_num_rows($boardRes)) {
-                $board = mysqli_fetch_assoc($boardRes);
+            if (!empty($category['group_id'])) {
+                $boardID = (int) $category['group_id'];
+                $boardRes = safe_query("SELECT * FROM plugins_forum_boards WHERE id = $boardID");
+                if (mysqli_num_rows($boardRes)) {
+                    $board = mysqli_fetch_assoc($boardRes);
+                }
             }
         }
     }
-}
 
-function userLikedPost(int $postID, int $userID): bool {
-    global $_database;
-    $postID = intval($postID);
-    $userID = intval($userID);
-    if ($userID <= 0) return false; // z. B. nicht eingeloggt
+    function userLikedPost(int $postID, int $userID): bool {
+        global $_database;
+        $postID = intval($postID);
+        $userID = intval($userID);
+        if ($userID <= 0) return false; // z. B. nicht eingeloggt
 
-    $res = safe_query("SELECT 1 FROM plugins_forum_likes WHERE postID = $postID AND userID = $userID LIMIT 1");
-    return mysqli_num_rows($res) > 0;
-}
+        $res = safe_query("SELECT 1 FROM plugins_forum_likes WHERE postID = $postID AND userID = $userID LIMIT 1");
+        return mysqli_num_rows($res) > 0;
+    }
 
-function getLikeCount(int $postID): int {
-    global $_database;
-    $postID = intval($postID);
+    function getLikeCount(int $postID): int {
+        global $_database;
+        $postID = intval($postID);
 
-    $res = safe_query("SELECT COUNT(*) AS cnt FROM plugins_forum_likes WHERE postID = $postID");
-    $row = mysqli_fetch_assoc($res);
-    return (int)($row['cnt'] ?? 0);
-}
+        $res = safe_query("SELECT COUNT(*) AS cnt FROM plugins_forum_likes WHERE postID = $postID");
+        $row = mysqli_fetch_assoc($res);
+        return (int)($row['cnt'] ?? 0);
+    }
 
         ?>
 <nav aria-label="breadcrumb">
@@ -494,27 +494,24 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         preg_match_all('/<img[^>]+src="([^"]+)"/i', $content, $newMatches);
         $newImages = $newMatches[1] ?? [];
 
-        // Alte, nicht mehr genutzte Bilder löschen
-        $deletedImages = array_diff($oldImages, $newImages);
-        foreach ($deletedImages as $imgSrc) {
-            if (strpos($imgSrc, '/includes/plugins/forum/uploads/forum_images/') !== false) {
-                $path = parse_url($imgSrc, PHP_URL_PATH);
-                $path = preg_replace('#/+#', '/', $path);
-                $imagePath = $_SERVER['DOCUMENT_ROOT'] . $path;
+        // Alte Bilder, die nicht mehr verwendet werden
+    $deletedImages = array_diff($oldImages, $newImages);
 
-                error_log("Lösche Bild: $imagePath");
-                if (file_exists($imagePath)) {
-                    error_log("Datei existiert, versuche zu löschen...");
-                    if (unlink($imagePath)) {
-                        error_log("Datei gelöscht.");
-                    } else {
-                        error_log("Datei konnte nicht gelöscht werden.");
-                    }
-                } else {
-                    error_log("Datei existiert NICHT: $imagePath");
-                }
+    foreach ($deletedImages as $filename) {
+        $imagePath = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/forum/uploads/forum_images/' . $filename;
+
+        error_log("Lösche Bild: $imagePath");
+        if (file_exists($imagePath)) {
+            error_log("Datei existiert, versuche zu löschen...");
+            if (unlink($imagePath)) {
+                error_log("Datei gelöscht.");
+            } else {
+                error_log("Datei konnte nicht gelöscht werden.");
             }
+        } else {
+            error_log("Datei existiert NICHT: $imagePath");
         }
+    }
 
         // 💾 neuen Inhalt speichern
         $escaped_content = $content; // besser: mysqli_real_escape_string verwenden

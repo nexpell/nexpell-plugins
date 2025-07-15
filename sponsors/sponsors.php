@@ -42,19 +42,29 @@ while ($ds = mysqli_fetch_array($result)) {
     $levelKey = strtolower(str_replace([' ', 'ü'], ['_', 'ue'], $ds['level']));
 
     // Slug/URL validieren und ggf. vorbereiten
-    $slug = '';
-    $urlRaw = trim($ds['slug']);
+    /*$slug = '';
+    $urlRaw = trim((string)($ds['slug']));
     if (!empty($urlRaw)) {
         $urlCandidate = (stripos($urlRaw, 'http') === 0) ? $urlRaw : 'http://' . $urlRaw;
         if (filter_var($urlCandidate, FILTER_VALIDATE_URL)) {
             $slug = $urlCandidate;
         }
-    }
+    }*/
+
+    $urlRaw = trim((string)($row['slug'] ?? ''));
+        if ($urlRaw) {
+            $urlCandidate = (stripos($urlRaw, 'http') === 0) ? $urlRaw : 'http://' . $urlRaw;
+            $row['valid_url'] = filter_var($urlCandidate, FILTER_VALIDATE_URL) ? $urlCandidate : '';
+        } else {
+            $row['valid_url'] = '';
+        }
 
     // Wenn keine gültige URL, auf click.php zurückfallen
-    if (empty($slug)) {
-        $slug = "/includes/plugins/sponsors/click.php?id=" . (int)$ds['id'];
-    }
+    #if (empty($slug)) {
+    #    $slug = "/includes/plugins/sponsors/click.php?id=" . (int)$ds['id'];
+    #}
+
+        $slug[] = $row;
 
     $sponsors[] = [
         'id'    => (int)$ds['id'],
