@@ -34,19 +34,21 @@ $main_channel = htmlspecialchars($row['main_channel']);
 $extra_channels = htmlspecialchars($row['extra_channels']);
 ?>
 
-<div class="container py-5">
-  <div id="fallback-message" style="display:none;">
-        Bitte akzeptieren Sie die Cookies, um die Twitch-Streams sehen zu können.
-    </div>
+
+
+  <!-- Stream-Bereich -->
+  <div id="stream-wrapper" style="display:none;">
+
     <h2 class="mb-4">Hauptstream:</h2>
     <div id="main-stream"></div>
 
     <h3 class="mt-5 mb-3">Weitere Kanäle:</h3>
     <div class="extra-streams" id="extra-streams"></div>
+  </div>
 
-    
-</div>
-
+<div id="fallback-message" class="alert alert-info text-center mt-3" style="display:none;">
+    ⚠️ Bitte akzeptieren Sie die Cookies, um die Twitch-Streams sehen zu können.
+  </div>
 <script>
   const TWITCH_CONFIG = {
     main: <?= json_encode($main_channel) ?>,

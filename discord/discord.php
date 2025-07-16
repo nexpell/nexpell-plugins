@@ -21,7 +21,6 @@ $data_array = [
 
 echo $tpl->loadTemplate("discord", "head", $data_array, 'plugin');
 
-
 // Funktion zum Konfig-Wert holen
 function getPluginConfig($key) {
     $res = safe_query("SELECT value FROM plugins_discord WHERE name = '" . escape($key) . "'");
@@ -38,28 +37,25 @@ $roles = $_SESSION['user']['roles'] ?? [];
 $isAdmin = is_array($roles) && in_array('admin', $roles);
 ?>
 
+<!-- Discord Widget (nur wenn konfiguriert) -->
 <?php if (!empty($serverID)): ?>
-  <!-- Discord Widget anzeigen -->
-  
+  <div id="discord-card" style="display:none;">
     <div class="card shadow-sm">
       <div class="card-header bg-dark text-white">
         <h5 class="mb-0">🎧 Unser Discord-Server</h5>
       </div>
-      <div class="card-body p-0 bg-dark">
-        <iframe
-          src="https://discord.com/widget?id=<?= htmlspecialchars($serverID) ?>&theme=dark"
-          width="100%"
-          height="500"
-          allowtransparency="true"
-          frameborder="0"
-          class="w-100 border-0 bg-dark"
-          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts">
-        </iframe>
+      <div class="card-body p-0 bg-dark" id="discord-widget">
+        <!-- Widget wird per JS eingefügt -->
       </div>
     </div>
- 
+  </div>
+
+  <!-- Fallback für Cookie-Ablehnung -->
+  <div id="fallback-message" class="alert alert-info text-center mt-3" style="display:none;">
+    ⚠️ Bitte akzeptieren Sie die Cookies, um unseren Discord-Server sehen zu können.
+  </div>
+
 <?php else: ?>
-  <!-- Hinweis, falls keine Server-ID gespeichert ist -->
   <div class="container my-4">
     <div class="alert alert-warning text-center" role="alert">
       ⚠️ Unser Discord-Widget ist derzeit nicht verfügbar.<br>
@@ -71,5 +67,12 @@ $isAdmin = is_array($roles) && in_array('admin', $roles);
     </div>
   </div>
 <?php endif; ?>
+
+<!-- Übergabe der Server-ID an JavaScript -->
+<script>
+  const DISCORD_CONFIG = {
+    serverID: "<?= htmlspecialchars($serverID) ?>"
+  };
+</script>
 
 
