@@ -31,7 +31,7 @@ safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, 
 safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
 ('', 2, '[[lang:de]]About[[lang:en]]About[[lang:it]]About', 'about', 'index.php?site=about', 1, 1, 'default')");
 safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 2, '[[lang:de]]Leitung[[lang:en]]Leitung[[lang:it]]Leitung', 'about', 'index.php?site=leistung', 1, 1, 'default')");
+('', 2, '[[lang:de]]Leistung[[lang:en]]Leistung[[lang:it]]Leistung', 'about', 'index.php?site=leistung', 1, 1, 'default')");
 safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
 ('', 2, '[[lang:de]]Info[[lang:en]]Info[[lang:it]]Info', 'about', 'index.php?site=info', 1, 1, 'default')");
 
