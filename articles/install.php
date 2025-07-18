@@ -45,8 +45,8 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 ('', 'Articles', 'articles', '[[lang:de]]Mit diesem Plugin könnt ihr eure Articles anzeigen lassen.[[lang:en]]With this plugin you can display your articles.[[lang:it]]Con questo plugin è possibile mostrare gli Articoli sul sito web.', 'admin_articles', 1, 'T-Seven', 'https://webspell-rm.de', 'articles,articles_rating,articles_comments', '', '0.3', 'includes/plugins/articles/', 1, 1, 1, 1, 'deactivated')");
 
 safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
-('widget_articles_content', 'Atikel Widget Content', 'articles', 'articles'),
-('widget_articles_sidebar', 'Atikel Widget Sidebar', 'articles', 'articles')");
+('widget_articles_content', 'Artikel Widget Content', 'articles', 'articles'),
+('widget_articles_sidebar', 'Artikel Widget Sidebar', 'articles', 'articles')");
 
 ## NAVIGATION #####################################################################################################################################
 

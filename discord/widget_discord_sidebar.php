@@ -53,7 +53,7 @@ $isAdmin = is_array($roles) && in_array('admin', $roles);
   </div>
 
   <!-- Fallback für Cookie-Ablehnung -->
-  <div id="fallback-message" class="alert alert-info text-center mt-3" style="display:none;">
+  <div id="fallback-discord" class="alert alert-info text-center mt-3" style="display:none;">
     ⚠️ Bitte akzeptieren Sie die Cookies, um unseren Discord-Server sehen zu können.
   </div>
 
