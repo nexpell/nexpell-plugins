@@ -286,7 +286,7 @@ switch ($action) {
                 $points = getPointsForUser($uid);
                 $user_roles = $rolesByUser[$uid] ?? [];
             ?>
-                <div class="card border rounded p-3 mb-4">
+                <div class="card shadow-sm border rounded p-3 mb-4" id="post<?php echo intval($post['postID']); ?>">
                     <div class="row">
                         <div class="col-md-2 text-center border-end border-primary pe-3">
                             <img src="<?= htmlspecialchars($avatar) ?>" class="img-fluid mb-2" style="max-width: 80px;"><br>
@@ -381,6 +381,22 @@ switch ($action) {
                     </div>
                 </div>
             <?php endwhile; ?>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const hash = window.location.hash;
+                  if (hash.startsWith("#post")) {
+                    const target = document.querySelector(hash);
+                    if (target) {
+                      target.classList.add("highlight-post");
+
+                      // optional wieder entfernen nach 4 Sekunden
+                      setTimeout(() => {
+                        target.classList.remove("highlight-post");
+                      }, 4000);
+                    }
+                  }
+                });
+            </script>
         </div>
 
         <!-- Pagination -->
@@ -712,7 +728,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     $boards = getBoards();
 
     ?>
-    <div class="container py-4">
+    
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item active" aria-current="page">Forum</li>
@@ -825,7 +841,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                 </div>
             </div>
         <?php endforeach; ?>
-    </div>
+    
     <?php
     break;
 
@@ -850,7 +866,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         $categories[] = $cat;
     }
     ?>
-    <div class="container py-4">
+    
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
@@ -935,7 +951,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-    </div>
+    
     <?php
     break;
 
@@ -963,7 +979,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     $threads = getThreadsByCategory($catID);
     $threads = enrichThreadsWithLastPost($threads);
     ?>
-    <div class="container py-4">
+    
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
@@ -1020,7 +1036,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-    </div></div></div>
+    </div></div>
     <?php
     break;
 }

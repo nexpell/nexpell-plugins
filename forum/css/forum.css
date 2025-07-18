@@ -1,0 +1,11 @@
+/* In deine CSS-Datei oder im <style> Bereich */
+.highlight-post {
+  outline: 3px solid #0d6efd;
+  background-color: #e7f1ff;
+  animation: highlight-fade 1.5s ease-in-out;
+}
+
+@keyframes highlight-fade {
+  0% { background-color: #e7f1ff; }
+  100% { background-color: transparent; }
+}
