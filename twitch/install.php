@@ -9,7 +9,7 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_twitch_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=2
 ");
 
-Isafe_query("INSERT IGNORE INTO plugins_twitch_settings (id, main_channel, extra_channels, updated_at) VALUES
+safe_query("INSERT IGNORE INTO plugins_twitch_settings (id, main_channel, extra_channels, updated_at) VALUES
 (1, 'fl0m', 'zonixxcs,trilluxe', '2025-07-13 19:03:30')");
 
 ## SYSTEM #####################################################################################################################################

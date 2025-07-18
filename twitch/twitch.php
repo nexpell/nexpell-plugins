@@ -46,7 +46,7 @@ $extra_channels = htmlspecialchars($row['extra_channels']);
     <div class="extra-streams" id="extra-streams"></div>
   </div>
 
-<div id="fallback-message" class="alert alert-info text-center mt-3" style="display:none;">
+<div id="fallback-twitch" class="alert alert-info text-center mt-3" style="display:none;">
     ⚠️ Bitte akzeptieren Sie die Cookies, um die Twitch-Streams sehen zu können.
   </div>
 <script>
