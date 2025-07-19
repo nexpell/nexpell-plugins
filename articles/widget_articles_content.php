@@ -18,7 +18,7 @@ $class = htmlspecialchars($config['selected_style'] ?? '');
 $data_array = [
     'class'    => $class,
     'title' => $languageService->get('title'),
-    'subtitle' => 'About'
+    'subtitle' => 'Articles'
 ];
 
 #echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');

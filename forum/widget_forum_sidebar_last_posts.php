@@ -1,4 +1,29 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+use webspell\LanguageService;
+
+global $languageService;
+
+$lang = $languageService->detectLanguage();
+$languageService->readPluginModule('forum');
+
+$tpl = new Template();
+$config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
+$class = htmlspecialchars($config['selected_style'] ?? '');
+
+// Header-Daten
+$data_array = [
+    'class'    => $class,
+    'title' => $languageService->get('title'),
+    'subtitle' => 'Forum'
+];
+
+echo $tpl->loadTemplate("forum", "head", $data_array, 'plugin');
+
+
 $sql = "
     SELECT 
         t.threadID,
@@ -28,7 +53,7 @@ $sql = "
 <div class="card mb-4">
   <div class="card-body p-3">
     <h5 class="mb-2">
-      <i class="bi bi-chat-dots-fill me-1"></i> Letzte Beiträge
+      Letzte Beiträge
     </h5>
     <hr class="my-2">
 

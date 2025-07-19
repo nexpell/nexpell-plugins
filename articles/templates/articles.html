@@ -116,20 +116,32 @@
 <!-- END -->
 
 <!-- articles_widget_sidebar_articles_head -->
-<div class="card">
-	<div class="card-body" style="margin: -12px -12px -12px -12px;"> 		
+<div class="card shadow-sm">
+  <div class="card-body p-3" style="margin: -10px -10px -10px -10px;">
+    <!-- Beispiel Header, falls gewünscht -->
+    <h5 class="mb-3 border-bottom pb-2">Artikel</h5> 		
    <!-- END -->
 
 <!-- articles_widget_sidebar_content -->
-			<div class="row">
-				<div class="col-3 text-center border-end border-dark">
-                    <p class="mb-0">{tag} <span>{monat} <i>{year}</i></span></p>
-                </div>
-				<div class="col">
-					<p>{title}</p>
-					<p>{text}</p>
-				</div>
-			</div><hr>
+
+<!-- articles_widget_sidebar_articles_head -->
+
+    <div class="row align-items-center mb-3">
+      <div class="col-3 text-center border-end border-secondary pe-3">
+        <div class="text-muted small">
+          <div>{tag}</div>
+          <div>{monat} <i>{year}</i></div>
+        </div>
+      </div>
+      <div class="col-9 ps-3">
+
+        <div class="small text-muted">
+          Titel: <span class="text-primary">{title}</span> <br> <span>{text} </span> <br> {by} <b>{username}</b>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-2">
 <!-- END -->
 <!-- articles_widget_sidebar_articles_foot -->		
 	</div>

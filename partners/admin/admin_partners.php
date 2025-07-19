@@ -75,7 +75,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_partner'])) {
     $id = (int)($_POST['id'] ?? 0);
     $name = $_database->real_escape_string(trim($_POST['name']));
-    $description = $_database->real_escape_string($_POST['description'] ?? '');
+    $description = $_POST['description'];
     $slug = $_database->real_escape_string(trim($_POST['slug']));
     $sort_order = isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0;
     $is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -165,7 +165,7 @@ if ($action === 'add' || $action === 'edit') {
 
             <div class="mb-3">
                 <label for="description" class="form-label"><?= $languageService->get('partners_description') ?></label>
-                <textarea class="ckeditor" name="description" rows="10"><?= htmlspecialchars($editpartner['description'] ?? '') ?></textarea>
+                <textarea class="ckeditor" name="description" rows="10"><?= $editpartner['description'] ?></textarea>
             </div>
 
             <div class="mb-3">

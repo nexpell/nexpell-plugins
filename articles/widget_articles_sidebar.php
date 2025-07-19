@@ -18,7 +18,7 @@ $class = htmlspecialchars($config['selected_style'] ?? '');
 $data_array = [
     'class'    => $class,
     'title' => $languageService->get('title'),
-    'subtitle' => 'About'
+    'subtitle' => 'Articles'
 ];
 
 echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
@@ -53,6 +53,9 @@ if ($anz) {
         $answer = $ds['content'] ?? '';
         $id = $ds['id'] ?? 0;
 
+        // username holen (z.B. aus userID)
+        $username = getusername($ds['userID']);
+
         $translate = new multiLanguage($lang);
         $translate->detectLanguages($question);
         $question = $translate->getTextByLanguage($question);
@@ -70,7 +73,7 @@ if ($anz) {
             $answer = mb_substr($answer, 0, $maxarticleschars) . '...';
         }
 
-        $title = '<a href="index.php?site=articles&action=watch&id='.$id.'" data-toggle="tooltip" data-bs-html="true" title="
+        $title = '<a href="index.php?site=articles&action=watch&id='.$id.'" class="text-decoration-none fw-bold text-truncate" title="
         '.htmlspecialchars($question_lang).'">'.htmlspecialchars($question).'</a>';
 
         $data_array = [
@@ -79,6 +82,8 @@ if ($anz) {
             'tag'      => $tag,
             'monat'    => $monatname,
             'year'     => $year,
+            'username' => $username,
+            'by'       => $languageService->get('by'),
         ];
 
         echo $tpl->loadTemplate("articles", "widget_sidebar_content", $data_array, 'plugin');
