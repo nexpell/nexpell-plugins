@@ -39,7 +39,7 @@ if ($result && $result->num_rows > 0) {
     while ($partner = $result->fetch_assoc()) {
         $name = htmlspecialchars($partner['name']);
         $logo = !empty($partner['logo']) ? $filepath . $partner['logo'] : $filepath . "no-image.jpg";
-        $description = nl2br(htmlspecialchars($partner['description']));
+        $description = $partner['description'];
         $colorKey = $alertColors[$colorIndex];
         $colorIndex = ($colorIndex + 1) % count($alertColors);
 
