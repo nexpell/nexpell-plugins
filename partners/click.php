@@ -1,5 +1,9 @@
 <?php
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $configPath = __DIR__ . '/../../../system/config.inc.php';
 if (!file_exists($configPath)) {
     die("Fehler: Konfigurationsdatei nicht gefunden.");
@@ -13,7 +17,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $id = (int)$_GET['id'];
 
     // Partner-URL holen
-    $stmt = $_database->prepare("SELECT url FROM plugins_partners WHERE id = ?");
+    $stmt = $_database->prepare("SELECT slug FROM plugins_partners WHERE id = ?");
     if (!$stmt) {
         die("Prepare failed: " . $_database->error);
     }
