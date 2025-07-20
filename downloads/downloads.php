@@ -94,7 +94,7 @@ if ($action === 'detail' && $id > 0) {
 
     $dl = $result->fetch_assoc();
     if (!hasAccess($dl['access_roles'])) {
-        die("Kein Zugriff");
+        die("<div class=\"alert alert-danger\">Kein Zugriff</div>");
     }
 
     $title = htmlspecialchars($dl['title']);
@@ -133,9 +133,9 @@ if ($action === 'detail' && $id > 0) {
                     <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
                 </ul>
             </div>
-            <!--<a href="<?= $downloadLink ?>" class="btn btn-primary">
+            <a href="<?= $downloadLink ?>" class="btn btn-primary">
                 <i class="bi bi-download"></i> Jetzt herunterladen
-            </a>--> Download ausgesetzt!!!
+            </a>
         </div>
     </div>
 
