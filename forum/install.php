@@ -83,8 +83,8 @@ safe_query("INSERT IGNORE INTO settings_plugins (name, modulname, info, admin_fi
 ('Forum', 'forum', '[[lang:de]]Mit diesem Plugin könnt ihr ein Forum auf eurer Website integrieren, in dem Benutzer Themen erstellen und diskutieren können.[[lang:en]]With this plugin you can integrate a forum into your website where users can create topics and participate in discussions.[[lang:it]]Con questo plugin puoi integrare un forum nel tuo sito web, dove gli utenti possono creare argomenti e partecipare alle discussioni.', 'admin_forum', 1, 'T-Seven', 'https://webspell-rm.de', 'forum', '', '0.1', 'includes/plugins/forum/', 1, 1, 'deactivated')");
 
 safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
-  ('widget_forum_content_last_posts', 'Letzte Beiträge (Content)', 'forum', 'forum'),
-  ('widget_forum_sidebar_last_posts', 'Letzte Beiträge (Sidebar)', 'forum', 'forum')
+  ('widget_forum_content', 'Forum Widget Content', 'forum', 'forum'),
+  ('widget_forum_sidebar', 'Forum Widget Sidebar', 'forum', 'forum')
 ");
 
 ## NAVIGATION #####################################################################################################################################
