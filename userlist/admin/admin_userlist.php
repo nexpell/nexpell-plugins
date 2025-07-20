@@ -1,10 +1,11 @@
 <?php
-use webspell\LanguageService;
 
 // Session absichern
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -16,14 +17,14 @@ $languageService = new LanguageService($_database);
 // Admin-Modul-Sprache laden
 $languageService->readPluginModule('userlist');
 
-use webspell\AccessControl;
+use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('userlist');
 
 if (isset($_POST[ 'submit' ])) {
     $users_list = $_POST[ "users_list" ];
     $users_online = $_POST[ "users_online" ];
-    $CAPCLASS = new \webspell\Captcha;
+    $CAPCLASS = new \nexpell\Captcha;
     if ($CAPCLASS->checkCaptcha(0, $_POST[ 'captcha_hash' ])) {
         safe_query("UPDATE plugins_userlist SET users_list='" . $_POST[ 'users_list' ] . "', users_online='" . $_POST[ 'users_online' ] . "'");
         
@@ -35,7 +36,7 @@ if (isset($_POST[ 'submit' ])) {
 } else {
     $ergebnis = safe_query("SELECT * FROM plugins_userlist");
     $ds = mysqli_fetch_array($ergebnis);
-    $CAPCLASS = new \webspell\Captcha;
+    $CAPCLASS = new \nexpell\Captcha;
     $CAPCLASS->createTransaction();
     $hash = $CAPCLASS->getHash();
 

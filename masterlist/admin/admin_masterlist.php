@@ -1,8 +1,13 @@
 <?php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
- * Game Server Masterlist Plugin für Webspell-RM
+ * Game Server Masterlist Plugin für nexpell
  * 
- * @version webspell-rm
+ * @version nexpell
  * @license GNU GENERAL PUBLIC LICENSE
  */
 

@@ -1,12 +1,11 @@
 <?php
 
-use webspell\LanguageService;
-use webspell\AccessControl;
-
-// Session absichern
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
+use nexpell\AccessControl;
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -21,11 +20,6 @@ $languageService->readPluginModule('links');
 
 // Admin-Zugriff prüfen
 AccessControl::checkAdminAccess('links');
-
-
-
-
-
 
 function get_og_image($url) {
     $ch = curl_init();

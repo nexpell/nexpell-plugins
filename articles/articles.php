@@ -5,14 +5,14 @@ if (session_status() === PHP_SESSION_NONE) {
 
 
 
-use webspell\LanguageService;
+use nexpell\LanguageService;
 
 global $languageService;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('articles');
 
-use webspell\AccessControl;
+use nexpell\AccessControl;
 
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

@@ -1,4 +1,27 @@
 <?php
+
+// Session absichern
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+use nexpell\LanguageService;
+use nexpell\AccessControl;
+
+// Sprache setzen, falls nicht vorhanden
+$_SESSION['language'] = $_SESSION['language'] ?? 'de';
+
+// LanguageService initialisieren
+global $_database,$languageService;
+$lang = $languageService->detectLanguage();
+$languageService = new LanguageService($_database);
+
+// Admin-Modul-Sprache laden
+$languageService->readPluginModule('twitch');
+
+// Admin-Zugriff prüfen
+AccessControl::checkAdminAccess('twitch');
+
 global $_database; // global verfügbar machen
 
 $statusMsg = "";

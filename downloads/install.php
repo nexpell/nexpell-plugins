@@ -11,18 +11,16 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_downloads_categories (
 
 
 safe_query("CREATE TABLE IF NOT EXISTS plugins_downloads (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  categoryID int(11) NOT NULL,
-  title varchar(255) NOT NULL,
-  description text DEFAULT NULL,
-  filename varchar(255) NOT NULL,
-  access_roles varchar(255) DEFAULT NULL,
-  downloads int(11) DEFAULT 0,
-  file varchar(255) NOT NULL,
-  uploaded_at datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (id),
-  KEY categoryID (categoryID),
-  CONSTRAINT plugins_downloads_ibfk_1 FOREIGN KEY (categoryID) REFERENCES plugins_downloads_categories (categoryID) ON DELETE CASCADE
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoryID INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    file VARCHAR(255) NOT NULL,
+    downloads INT DEFAULT 0,
+    access_roles TEXT,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoryID) REFERENCES `plugins_downloads_categories`(`categoryID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
 

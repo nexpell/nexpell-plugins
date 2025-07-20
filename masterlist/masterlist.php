@@ -1,10 +1,11 @@
 <?php
-use webspell\LanguageService;
 
 // Session absichern
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -17,9 +18,9 @@ $languageService = new LanguageService($_database);
 $languageService->readPluginModule('masterlist');
 
 /**
- * Game Server Masterlist Plugin für Webspell-RM
+ * Game Server Masterlist Plugin für nexpell
  * 
- * @version webspell-rm 2.1.6
+ * @version nexpell
  * @license GNU GENERAL PUBLIC LICENSE
  */
 

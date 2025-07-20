@@ -3,17 +3,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-use webspell\LanguageService;
+use nexpell\LanguageService;
 
 global $languageService;
 
-// Sprache erkennen und Plugin-Sprachdatei laden
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('userlist');
 
 $tpl = new Template();
 
-// Style aus DB lesen
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
 

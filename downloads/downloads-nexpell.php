@@ -111,7 +111,8 @@ SELECT
     d.title AS dl_title,
     d.description AS dl_desc,
     d.downloads,
-    d.access_roles
+    d.access_roles,
+    d.uploaded_at
 FROM plugins_downloads_categories c
 LEFT JOIN plugins_downloads d ON d.categoryID = c.categoryID
 ORDER BY c.categoryID, d.uploaded_at DESC
@@ -172,6 +173,10 @@ while ($row = $result->fetch_assoc()) {
             echo '<p class="card-text" title="' . htmlspecialchars($row['dl_desc']) . '">' . $row['dl_desc'] . '</p>';
         }
         echo '    <div class="mt-auto">';
+        if (!empty($row['uploaded_at']) && strtotime($row['uploaded_at']) !== false) {
+            $uploadedDate = date("d.m.Y", strtotime($row['uploaded_at']));
+            echo '<p class="card-subtitle mb-2 text-muted"><small>Hochgeladen am: ' . $uploadedDate . '</small></p>';
+        }
         echo '      <small class="text-muted">Downloads: ' . intval($row['downloads']) . '</small><br>';
         echo '      <a href="index.php?site=downloads&id=' . intval($row['downloadID']) . '" class="btn btn-primary btn-sm mt-2">Download</a>';
         echo '    </div>';

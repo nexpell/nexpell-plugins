@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-use webspell\LanguageService;
+use nexpell\LanguageService;
 
 global $languageService;
 
@@ -18,7 +18,7 @@ $class = htmlspecialchars($config['selected_style']);
 // Header-Daten
 $data_array = [
     'class'    => $class,
-    'title' => $languageService->get('userlist_title'),
+    'title'    => $languageService->get('userlist_title'),
     'subtitle' => 'User online'
 ];
 

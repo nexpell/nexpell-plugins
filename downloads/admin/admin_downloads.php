@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-use webspell\AccessControl;
+use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('downloads');
 
@@ -183,7 +183,8 @@ if (in_array($action, ['add', 'edit']) && $_SERVER['REQUEST_METHOD'] === 'POST')
                 title='$esc_title',
                 description='$esc_description',
                 file='$esc_filename',
-                access_roles='$rolesJson'
+                access_roles='$rolesJson',
+                updated_at = NOW()
                 WHERE id=$id
             ");
             $success = "Download aktualisiert.";

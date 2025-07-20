@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 #$pm = new plugin_manager();
 #$plugin_language = $pm->plugin_language("footer_easy", $plugin_path);
 
-use webspell\LanguageService;
+use nexpell\LanguageService;
 
 global $languageService;
 

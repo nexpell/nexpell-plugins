@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-use webspell\LanguageService;
+use nexpell\LanguageService;
 
 global $languageService;
 

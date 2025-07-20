@@ -1,6 +1,8 @@
 <?php
 
-
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Datenbankverbindung vorhanden? Nexpell benötigt meist $_database
 global $_database;

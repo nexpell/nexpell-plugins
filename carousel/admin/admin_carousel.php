@@ -1,10 +1,11 @@
 <?php
-use webspell\LanguageService;
 
 // Session absichern
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -17,15 +18,9 @@ $languageService = new LanguageService($_database);
 // Admin-Modul-Sprache laden
 $languageService->readPluginModule('carousel');
 
-use webspell\AccessControl;
+use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('carousel');
-
-
-// Konfiguration
-#$upload_dir = "../includes/plugins/carousel/images/";
-#$allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'ogg'];
-#$types = ['sticky', 'parallax', 'agency', 'carousel'];
 
 // Aktionen
 $action = $_GET['action'] ?? '';

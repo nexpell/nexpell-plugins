@@ -1,11 +1,11 @@
 <?php
 
-use webspell\LanguageService;
-use webspell\AccessControl;
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
+use nexpell\AccessControl;
 
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
 

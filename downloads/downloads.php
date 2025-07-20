@@ -1,20 +1,16 @@
 <?php
-// error_reporting aktivieren bei Bedarf
-#ini_set('display_errors', 1);
-#ini_set('display_startup_errors', 1);
-#error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-use webspell\AccessControl;
-use webspell\LanguageService;
+use nexpell\AccessControl;
+use nexpell\LanguageService;
 
 global $_database, $languageService;
 
 $lang = $languageService->detectLanguage();
-$languageService->readPluginModule('download');
+$languageService->readPluginModule('downloads');
 
 // Style-Klasse laden
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
@@ -23,85 +19,133 @@ $class = htmlspecialchars($config['selected_style']);
 // Header
 $data_array = [
     'class'    => $class,
-    'title'    => $languageService->get('download'),
-    'subtitle' => 'Download'
+    'title'    => $languageService->get('title'),
+    'subtitle' => 'Downloads'
 ];
-echo $tpl->loadTemplate("download", "head", $data_array, 'plugin');
+echo $tpl->loadTemplate("downloads", "head", $data_array, 'plugin');
 
 
-// Wenn ?id= gesetzt, dann Download ausliefern
-$id = (int)($_GET['id'] ?? 0);
+$action = $_GET['action'] ?? 'list';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-if ($id > 0) {
-    $query = "SELECT * FROM plugins_downloads WHERE id = $id";
-    $result = safe_query($query);
-    $dl = $result ? $result->fetch_assoc() : null;
+// Funktion: Zugriff prüfen
+function hasAccess($accessRolesJson): bool {
+    if (empty($accessRolesJson)) return true;
+    $roles = json_decode($accessRolesJson, true);
+    if (!is_array($roles)) return true;
+    return AccessControl::hasAnyRole($roles);
+}
 
-    if (!$dl) {
-        die("Datei nicht gefunden");
+// Aktion: Datei herunterladen
+if ($action === 'download' && $id > 0) {
+    $result = safe_query("SELECT * FROM plugins_downloads WHERE id = $id");
+    $dl = $result && $result->num_rows > 0 ? $result->fetch_assoc() : null;
+
+    if (!$dl || !hasAccess($dl['access_roles'])) {
+        die("Download nicht erlaubt oder nicht gefunden.");
     }
 
-    // Prüfe Download-Verzeichnis
-    $allowedDir = realpath(__DIR__ . "/files/");
-    if (!$allowedDir || !is_dir($allowedDir)) {
-        die("Download-Verzeichnis existiert nicht oder ist ungültig");
-    }
-    $allowedDir .= DIRECTORY_SEPARATOR;
+    $file = basename($dl['file']);
+    $fullpath = realpath(__DIR__ . "/files/$file");
+    $allowedDir = realpath(__DIR__ . "/files/") . DIRECTORY_SEPARATOR;
 
-    $basename = basename($dl['file']);
-    $fullpath = realpath($allowedDir . $basename);
-
-    if (!$fullpath || strpos($fullpath, $allowedDir) !== 0) {
-        die("Ungültiger oder nicht erlaubter Pfad");
+    if (!$fullpath || !file_exists($fullpath) || strpos($fullpath, $allowedDir) !== 0) {
+        die("Datei ungültig oder fehlt.");
     }
 
-    if (!file_exists($fullpath)) {
-        die("Datei existiert nicht");
-    }
-
-    // Rollenzugriff prüfen
-    $allowedRoles = [];
-    if (!empty($dl['access_roles'])) {
-        $allowedRoles = json_decode($dl['access_roles'], true);
-        if (!is_array($allowedRoles)) {
-            $allowedRoles = [];
+    // Download-Zähler & Log
+    if (!empty($_SESSION['userID'])) {
+        $userID = (int)$_SESSION['userID'];
+        $stmt = $_database->prepare("INSERT INTO plugins_downloads_logs (userID, fileID) VALUES (?, ?)");
+        
+        if ($stmt) {
+            $stmt->bind_param("ii", $userID, $id);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            error_log("DB-Fehler: " . $_database->error);
         }
     }
 
-    if (!empty($allowedRoles) && !AccessControl::hasAnyRole($allowedRoles)) {
-        die("Zugriff verweigert");
-    }
-
-    // Download-Zähler hochzählen
-    safe_query("UPDATE plugins_downloads SET downloads = downloads + 1 WHERE id = $id");
-
-    // Download-Log schreiben
-    $userID = $_SESSION['userID'] ?? 0;
-    if ($userID > 0) {
-        $stmt = $_database->prepare("
-            INSERT INTO plugins_downloads_logs (userID, fileID)
-            VALUES (?, ?)
-        ");
-        $stmt->bind_param("ii", $userID, $id);
-        $stmt->execute();
-        $stmt->close();
-    }
-
     // Datei ausliefern
-    if (ob_get_length()) {
-        ob_end_clean();
-    }
+    if (ob_get_length()) ob_end_clean();
     header('Content-Type: application/octet-stream');
-    header('Content-Disposition: attachment; filename="' . basename($fullpath) . '"');
+    header('Content-Disposition: attachment; filename="' . basename($file) . '"');
     header('Content-Length: ' . filesize($fullpath));
     readfile($fullpath);
     exit;
 }
 
-// Download-Liste anzeigen
-echo '<div class="container py-4">';
+// Aktion: Detailansicht
 
-// Kategorien und Dateien laden
+// Detailansicht
+if ($action === 'detail' && $id > 0) {
+    // JOIN, damit auch Kategorie geladen wird
+    $sql = "
+        SELECT d.*, c.title AS category_title, c.categoryID
+        FROM plugins_downloads d
+        LEFT JOIN plugins_downloads_categories c ON d.categoryID = c.categoryID
+        WHERE d.id = $id
+    ";
+    $result = safe_query($sql);
+    if (!$result || $result->num_rows === 0) {
+        die('Download nicht gefunden');
+    }
+
+    $dl = $result->fetch_assoc();
+    if (!hasAccess($dl['access_roles'])) {
+        die("Kein Zugriff");
+    }
+
+    $title = htmlspecialchars($dl['title']);
+    $desc = $dl['description'];
+    $uploaded = !empty($dl['uploaded_at']) ? date("d.m.Y", strtotime($dl['uploaded_at'])) : '–';
+    $updated = !empty($dl['updated_at']) ? date("d.m.Y", strtotime($dl['updated_at'])) : '–';
+    $downloads = intval($dl['downloads']);
+    $downloadLink = "index.php?site=downloads&action=download&id=$id";
+
+    // Kategorie
+    $catTitle = htmlspecialchars($dl['category_title']);
+    $catID = intval($dl['categoryID']);
+    $catLink = "index.php?site=downloads&action=list&category=$catID"; // alternativ: `index.php?site=downloads&action=list&category=$catID`
+
+    ?>
+
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+        <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
+        <li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
+      </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4><?= $title ?></h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Beschreibung:</strong><br><?= $desc ?></p>
+            <div class="bg-light border rounded p-2 mb-2">
+                <p class="mb-1 mt-3 fw-semibold text-muted">Datei-Info</p>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="bi bi-upload me-2"></i><strong>Hochgeladen am:</strong> <?= $uploaded ?></li>
+                    <li><i class="bi bi-pencil-square me-2"></i><strong>Zuletzt aktualisiert:</strong> <?= $updated ?></li>
+                    <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
+                </ul>
+            </div>
+            <!--<a href="<?= $downloadLink ?>" class="btn btn-primary">
+                <i class="bi bi-download"></i> Jetzt herunterladen
+            </a>--> Download ausgesetzt!!!
+        </div>
+    </div>
+
+    <?php
+    exit;
+}
+
+
+
+// Aktion: Übersicht (Standard oder ?action=list)
 $sql = "
 SELECT
     c.categoryID,
@@ -111,7 +155,9 @@ SELECT
     d.title AS dl_title,
     d.description AS dl_desc,
     d.downloads,
-    d.access_roles
+    d.access_roles,
+    d.uploaded_at,
+    d.updated_at
 FROM plugins_downloads_categories c
 LEFT JOIN plugins_downloads d ON d.categoryID = c.categoryID
 ORDER BY c.categoryID, d.uploaded_at DESC
@@ -119,9 +165,51 @@ ORDER BY c.categoryID, d.uploaded_at DESC
 
 $result = safe_query($sql);
 if (!$result) {
-    echo '<div class="alert alert-danger">Fehler beim Laden der Downloads: ' . htmlspecialchars($_database->error) . '</div>';
+    echo '<div class="alert alert-danger">Fehler beim Laden der Downloads.</div>';
     exit;
 }
+
+$catID = isset($_GET['category']) ? (int)$_GET['category'] : null;
+$catTitle = '';
+$catLink = '';
+
+// Falls Kategorie gesetzt, aus DB Titel holen
+if ($catID) {
+    $catSql = "SELECT title FROM plugins_downloads_categories WHERE categoryID = $catID LIMIT 1";
+    $catResult = safe_query($catSql);
+    if ($catResult && $catRow = $catResult->fetch_assoc()) {
+        $catTitle = htmlspecialchars($catRow['title']);
+        $catLink = "index.php?site=downloads&action=list&category=$catID";
+    }
+}
+
+// Beispiel: Falls Detailseite, Titel des Downloads setzen (optional)
+$title = '';
+if (isset($_GET['action']) && $_GET['action'] === 'detail' && isset($_GET['id'])) {
+    $dlID = (int)$_GET['id'];
+    $dlSql = "SELECT title FROM plugins_downloads WHERE id = $dlID LIMIT 1";
+    $dlResult = safe_query($dlSql);
+    if ($dlResult && $dlRow = $dlResult->fetch_assoc()) {
+        $title = htmlspecialchars($dlRow['title']);
+    }
+}
+
+
+?>
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+
+    <?php if ($catID && $catTitle): ?>
+        <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
+    <?php endif; ?>
+
+    <?php if (!empty($title)): ?>
+        <li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
+    <?php endif; ?>
+  </ol>
+</nav>
+<?php
 
 $currentCatID = null;
 $hasVisibleInCategory = false;
@@ -130,10 +218,9 @@ while ($row = $result->fetch_assoc()) {
     if ($currentCatID !== $row['categoryID']) {
         if ($currentCatID !== null) {
             if (!$hasVisibleInCategory) {
-                echo '<div class="alert alert-info"><p class="fst-italic text-muted"><i class="bi bi-info-circle"></i> In dieser Kategorie sind keine für Sie sichtbaren Downloads vorhanden.</p></div>';
+                echo '<div class="alert alert-info">Keine sichtbaren Downloads.</div>';
             }
-            echo '</div>'; // row schließen
-            echo '</section>';
+            echo '</div></section>';
         }
 
         echo '<section class="mb-5">';
@@ -146,47 +233,65 @@ while ($row = $result->fetch_assoc()) {
         $hasVisibleInCategory = false;
     }
 
-    if (empty($row['downloadID'])) {
-        echo '<div class="alert alert-info"><p class="fst-italic text-muted"><i class="bi bi-info-circle"></i> Keine Downloads in dieser Kategorie.</p></div>';
+    if (empty($row['downloadID']) || !hasAccess($row['access_roles'])) {
         continue;
     }
 
-    // Rollenzugriff prüfen
-    $allowedRoles = [];
-    if (!empty($row['access_roles'])) {
-        $allowedRoles = json_decode($row['access_roles'], true);
-        if (!is_array($allowedRoles)) {
-            $allowedRoles = [];
-        }
-    }
+    $hasVisibleInCategory = true;
+    $title = htmlspecialchars($row['dl_title']);
+    #$desc = $row['dl_desc'];
+    $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
+    $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
+    $downloads = intval($row['downloads']);
+    $detailLink = 'index.php?site=downloads&action=detail&id=' . intval($row['downloadID']);
+    $downloadLink = 'index.php?site=downloads&action=download&id=' . intval($row['downloadID']);
 
-    if (empty($allowedRoles) || AccessControl::hasAnyRole($allowedRoles)) {
-        $hasVisibleInCategory = true;
-
-        echo '<div class="col">';
-        echo '<div class="card h-100 shadow-sm">';
-        echo '  <div class="card-body d-flex flex-column">';
-        echo '    <h5 class="card-title">' . htmlspecialchars($row['dl_title']) . '</h5>';
-        if (!empty($row['dl_desc'])) {
-            echo '<p class="card-text text-truncate" title="' . htmlspecialchars($row['dl_desc']) . '">' . htmlspecialchars($row['dl_desc']) . '</p>';
-        }
-        echo '    <div class="mt-auto">';
-        echo '      <small class="text-muted">Downloads: ' . intval($row['downloads']) . '</small><br>';
-        echo '      <a href="index.php?site=downloads&id=' . intval($row['downloadID']) . '" class="btn btn-primary btn-sm mt-2">Download</a>';
-        echo '    </div>';
-        echo '  </div>';
-        echo '</div>';
-        echo '</div>';
+    $descText = strip_tags($row['dl_desc']); // HTML entfernen
+    $maxLength = 100; // max Zeichen
+    if (mb_strlen($descText) > $maxLength) {
+        $descShort = mb_substr($descText, 0, $maxLength) . '...';
+    } else {
+        $descShort = $descText;
     }
+    ?>
+
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <span class="text-primary"><?= $title ?></span>
+                </h5>
+
+                <?php if (!empty($descText)): ?>
+                    <p class="card-text text-truncate" title="<?= htmlspecialchars($descText) ?>"><?= $descShort ?></p>
+                <?php endif; ?>
+
+                <div class="mt-auto">
+                    <ul class="list-unstyled mb-2 small text-muted">
+                        <?php if ($uploaded): ?>
+                            <li><i class="bi bi-upload me-2"></i><strong>Hochgeladen am:</strong> <?= $uploaded ?></li>
+                        <?php endif; ?>
+                        <?php if ($updated && $updated !== $uploaded): ?>
+                            <li><i class="bi bi-pencil-square me-2"></i><strong>Zuletzt aktualisiert:</strong> <?= $updated ?></li>
+                        <?php endif; ?>
+                        <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
+                    </ul>
+
+                    <a href="<?= $detailLink ?>" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-info-circle"></i> Details & Download
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php
 }
 
-// Letzte Kategorie schließen
 if ($currentCatID !== null) {
     if (!$hasVisibleInCategory) {
-        echo '<div class="alert alert-info"><p class="fst-italic text-muted"><i class="bi bi-info-circle"></i> In dieser Kategorie sind keine für Sie sichtbaren Downloads vorhanden.</p></div>';
+        echo '<div class="alert alert-info">Keine sichtbaren Downloads in dieser Kategorie.</div>';
     }
-    echo '</div>'; // row schließen
-    echo '</section>';
+    echo '</div></section>';
 }
-
-echo '</div>'; // container schließen
+?>

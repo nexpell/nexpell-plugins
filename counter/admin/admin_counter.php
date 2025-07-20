@@ -1,5 +1,9 @@
 <?php
-// Annahme: mysqli-Verbindung in $_database, safe_query() Wrapper vorhanden
+
+// Session absichern
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Zeitraum festlegen (week oder month)
 $range = ($_GET['range'] ?? 'week') === 'month' ? 'month' : 'week';

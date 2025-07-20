@@ -1,10 +1,10 @@
 <?php
-use webspell\LanguageService;
 
-// Session absichern
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+use nexpell\LanguageService;
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -16,7 +16,7 @@ $languageService = new LanguageService($_database);
 // Admin-Modul-Sprache laden
 $languageService->readPluginModule('lastlogin');
 
-use webspell\AccessControl;
+use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('lastlogin');
 
