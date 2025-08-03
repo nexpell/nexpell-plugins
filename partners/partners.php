@@ -9,7 +9,7 @@ global $_database,$languageService;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('partners');
-
+$translate = new multiLanguage($lang);
 // Styleklasse laden
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
@@ -40,6 +40,8 @@ if ($result && $result->num_rows > 0) {
         $name = htmlspecialchars($partner['name']);
         $logo = !empty($partner['logo']) ? $filepath . $partner['logo'] : $filepath . "no-image.jpg";
         $description = $partner['description'];
+        $translate->detectLanguages($description);
+        
         $colorKey = $alertColors[$colorIndex];
         $colorIndex = ($colorIndex + 1) % count($alertColors);
 
@@ -51,7 +53,7 @@ if ($result && $result->num_rows > 0) {
                 $slug = $urlCandidate;
             }
         }
-
+        $description = $translate->getTextByLanguage($description);
         // Sprachwerte pro Partner einfügen
         $partners[] = [
             'id' => (int)$partner['id'],

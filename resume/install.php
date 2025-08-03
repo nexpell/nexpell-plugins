@@ -11,14 +11,12 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 5, '[[lang:de]]Resume[[lang:en]]Resume[[lang:it]]Resume', 'resume', 'admincenter.php?site=admin_resume', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 6, '[[lang:de]]Resume[[lang:en]]Resume[[lang:it]]Resume', 'resume', 'index.php?site=resume', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 6, '[[lang:de]]Resume[[lang:en]]Resume[[lang:it]]Resume', 'resume', 'index.php?site=resume', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'resume', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'resume' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'resume')
 ");
  ?>

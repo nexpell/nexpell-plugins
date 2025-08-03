@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use nexpell\LanguageService;
 use nexpell\AccessControl;
+use nexpell\NavigationUpdater;// SEO Anpassung
 
 // Sprache setzen, falls nicht vorhanden
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
@@ -73,12 +74,21 @@ if (isset($_POST['delete_id'])) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_partner'])) {
     $id = (int)($_POST['id'] ?? 0);
-    $name = $_database->real_escape_string(trim($_POST['name']));
-    $description = $_POST['description'];
+    $name = $_POST['title'];
+    #$description = $_POST['description'];
     $slug = $_database->real_escape_string(trim($_POST['slug']));
     $sort_order = isset($_POST['sort_order']) ? (int)$_POST['sort_order'] : 0;
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     $userID = (int)$_SESSION['userID'];
+
+    $nameArray = $_POST['name'] ?? [];
+
+    // Mehrsprachigen Text zusammenbauen
+    $description = '';
+    foreach (['de', 'en', 'it'] as $lang) {
+        $text = $nameArray[$lang] ?? '';
+        $description .= "[[lang:$lang]]" . $text;
+    }
 
     $oldLogo = '';
     if ($id > 0) {
@@ -106,6 +116,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_partner'])) {
                  VALUES ('$name', '$slug', '$description', $userID, '$logo', $is_active, $sort_order)"
             );
         }
+            /////////////////////////////////////////////////////////////////////////////
+            // Datei-Name des aktuellen Admin-Moduls ermitteln
+            $admin_file = basename(__FILE__, '.php');
+
+            // Aktualisiert das Änderungsdatum in der Navigation für dieses Modul
+            // Warum das wichtig ist:
+            // ✅ Google liest das Änderungsdatum über die sitemap.xml (Tag <lastmod>)
+            // ✅ Wenn sich Inhalte ändern, soll Google das bemerken
+            // ✅ Dadurch werden Seiten öfter und gezielter gecrawlt (besseres SEO)
+            // ✅ Das Datum bleibt so immer aktuell – automatisch und ohne Pflegeaufwand
+            $admin_file = basename(__FILE__, '.php');
+            echo NavigationUpdater::updateFromAdminFile($admin_file);
+            /////////////////////////////////////////////////////////////////////////////
 
         header("Location: admincenter.php?site=admin_partners");
         exit;
@@ -121,6 +144,41 @@ if ($action === 'add' || $action === 'edit') {
         $res = $_database->query("SELECT * FROM plugins_partners WHERE id = $id");
         $editpartner = $res->fetch_assoc();
     }
+
+
+    // Daten laden
+    $ds = mysqli_fetch_array(safe_query("SELECT * FROM settings_startpage"));
+
+    // Mehrsprachigen Text extrahieren
+    function extractLangText(?string $multiLangText, string $lang): string {
+        if (!$multiLangText) return '';
+        if (preg_match('/\[\[lang:' . preg_quote($lang, '/') . '\]\](.*?)(?=\[\[lang:|$)/s', $multiLangText, $matches)) {
+            return trim($matches[1]);
+        }
+        return '';
+    }
+
+    // Sprach-Array
+    $languages = [];
+
+    $query = "SELECT iso_639_1, name_de FROM settings_languages WHERE active = 1 ORDER BY id ASC";
+    $result = mysqli_query($_database, $query);
+
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            // $row['iso_639_1'] z.B. 'de', $row['name_de'] z.B. 'Deutsch'
+            $languages[$row['iso_639_1']] = $row['name_de'];
+        }
+    } else {
+        // Fallback falls Query nicht klappt
+        $languages = ['de' => 'Deutsch', 'en' => 'English', 'it' => 'Italiano'];
+    }
+
+    // Editor-Status
+    $editor_checked = ($ds['editor'] ?? 0) == 1 ? 'checked' : '';
+
+
+
     ?>
 
 <div class="card">
@@ -159,12 +217,30 @@ if ($action === 'add' || $action === 'edit') {
 
             <div class="mb-3">
                 <label for="name" class="form-label"><?= $languageService->get('partners_name') ?> *</label>
-                <input type="text" class="form-control" id="name" name="name" required value="<?= htmlspecialchars($editpartner['name'] ?? '') ?>">
+                <input type="text" class="form-control" id="name" name="title" required value="<?= htmlspecialchars($editpartner['name'] ?? '') ?>">
             </div>
 
-            <div class="mb-3">
-                <label for="description" class="form-label"><?= $languageService->get('partners_description') ?></label>
-                <textarea class="ckeditor" name="description" rows="10"><?= $editpartner['description'] ?></textarea>
+            
+
+            
+
+            <div class="mb-3 row">
+                            <label class="col-sm-3 control-label"><?= $languageService->get('editor_is_editor') ?>:</label>
+                            <div class="col-sm-8 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="toggle-editor" name="editor" value="1" <?= $editor_checked ?>>
+                            </div>
+                        </div>
+
+            <div class="alert alert-info" role="alert">
+                 <label for="text" class="form-label"><h4><?= $languageService->module['partners_description'] ?></h4></label>
+            <?php foreach ($languages as $code => $label): ?>
+                <div class="mb-3 row">
+                    <label class="col-sm-2 col-form-label"><?= $label ?>:</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control lang-field" rows="6" id="editor_<?= $code ?>" name="name[<?= $code ?>]"><?= htmlspecialchars(extractLangText($editpartner['description'] ?? '', $code)) ?></textarea>
+                    </div>
+                </div>
+            <?php endforeach; ?>
             </div>
 
             <div class="mb-3">
@@ -200,8 +276,33 @@ if ($action === 'add' || $action === 'edit') {
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('toggle-editor');
+    const editors = document.querySelectorAll('.lang-field');
+
+    function toggleEditors() {
+        editors.forEach(textarea => {
+            const id = textarea.id;
+            if (toggle.checked) {
+                if (!CKEDITOR.instances[id]) {
+                    CKEDITOR.replace(id);
+                }
+            } else {
+                if (CKEDITOR.instances[id]) {
+                    CKEDITOR.instances[id].destroy(true);
+                }
+            }
+        });
+    }
+
+    toggle.addEventListener('change', toggleEditors);
+    toggleEditors(); // Initialer Zustand
+});
+</script>
 
     <?php
+
 } else {
     // Standard: Liste aller partneren anzeigen
     $respartners = $_database->query("

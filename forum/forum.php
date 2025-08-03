@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+use nexpell\AccessControl;
 use nexpell\LanguageService;
 
 global $_database, $languageService;
@@ -257,15 +258,17 @@ switch ($action) {
         ?>
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
+    <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
     <li class="breadcrumb-item">
-        <a href="index.php?site=forum&action=overview&id=<?= isset($board['id']) ? intval($board['id']) : 0 ?>">
+        <?php $urlString = 'index.php?site=forum&action=overview&id=' . (isset($board['id']) ? intval($board['id']) : 0);?>
+        <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>">
             <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="index.php?site=forum&action=category&id=<?= isset($category['catID']) ? intval($category['catID']) : 0 ?>">
-            <?= htmlspecialchars($category['title'] ?? 'Unbekannte Kategorie') ?>
+        <?php $urlString = 'index.php?site=forum&action=category&id=' . (isset($category['catID']) ? intval($category['catID']) : 0);?>
+        <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>">
+            <?= htmlspecialchars($category['title'] ?? 'Unbekanntes Board') ?>
         </a>
     </li>
     <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($thread['title']) ?></li>
@@ -338,10 +341,66 @@ switch ($action) {
                             <div class="d-flex justify-content-between">
                                 <div><i class="bi bi-calendar-plus"></i> <?= date('d.m.Y H:i', $post['created_at']) ?></div>
                                 <div>
-                                    <?php if (isset($_SESSION['userID']) && $uid == (int)$_SESSION['userID']): ?>
+                                    <?php /* if (isset($_SESSION['userID']) && $uid == (int)$_SESSION['userID']): ?>
                                         <a href="index.php?site=forum&action=quote&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-secondary">Zitieren</a>
                                         <a href="index.php?site=forum&action=edit&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-primary">Bearbeiten</a>
-                                    <?php endif; ?>
+                                    <?php endif; */?>
+
+
+<?php
+$currentUserID = $_SESSION['userID'] ?? 0;
+$userRoles = [];
+
+if ($currentUserID > 0) {
+    $currentUserID = (int) $currentUserID;
+    $res = safe_query("
+        SELECT ur.role_name
+        FROM user_role_assignments ura
+        JOIN user_roles ur ON ura.roleID = ur.roleID
+        WHERE ura.userID = $currentUserID
+    ");
+    
+    while ($row = mysqli_fetch_assoc($res)) {
+        $userRoles[] = $row['role_name'];
+    }
+}
+
+$uid = $post['userID'] ?? 0;
+$mayEdit = ($uid == $currentUserID) || in_array('Admin', $userRoles) || in_array('Moderator', $userRoles);
+?>
+
+<div>
+<?php if (isset($_SESSION['userID'])): ?>
+    <a href="index.php?site=forum&action=quote&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-secondary">
+        Zitieren
+    </a>
+    <?php
+    $urlString = 'index.php?site=forum&action=quote&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
+    ?>
+    <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-secondary">
+        Zitieren
+    </a>
+<?php endif; ?>
+
+<?php if ($mayEdit): ?>
+    <a href="index.php?site=forum&action=edit&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-primary">
+        Bearbeiten
+    </a>
+    <?php
+    $urlString = 'index.php?site=forum&action=edit&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
+?>
+<a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-primary">
+    Bearbeiten
+</a>
+<?php endif; ?>
+</div>
+
+
+
+
+
+
+
                                 </div>
                             </div>
                             <hr>
@@ -415,9 +474,9 @@ switch ($action) {
         <!-- Antwortformular -->
         <?php if (isset($_SESSION['userID'])): ?>
             <h4>Antwort schreiben</h4>
-            <form method="post" action="index.php?site=forum&action=reply">
+            <form method="post" action="index.php?site=forum&action=reply" id="replyform">
                 <input type="hidden" name="threadID" value="<?= $threadID ?>" />
-                <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" required><?= htmlspecialchars($_SESSION['quote_content'] ?? '') ?></textarea>
+                <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" style="resize: vertical; width: 100%;" required><?= $_SESSION['quote_content'] ?? '' ?></textarea>
 
                 <div id="dropArea" class="mt-2 p-4 text-center border border-secondary rounded bg-light" style="cursor: pointer;">
                     📎 Hier klicken oder Bild per Drag & Drop einfügen
@@ -490,13 +549,33 @@ document.querySelectorAll('.like-btn').forEach(btn => {
 
 
     case 'edit':
+    $userID = $_SESSION['userID'] ?? 0;
+    $userRoles = [];
+
+    if ($userID > 0) {
+        $userID = (int)$userID;
+        $resRoles = safe_query("
+            SELECT ur.role_name
+            FROM user_role_assignments ura
+            JOIN user_roles ur ON ura.roleID = ur.roleID
+            WHERE ura.userID = $userID
+        ");
+        while ($row = mysqli_fetch_assoc($resRoles)) {
+            $userRoles[] = $row['role_name'];
+        }
+    }
+
     $postID = intval($_GET['postID'] ?? 0);
     $threadID = intval($_GET['threadID'] ?? 0);
     if (!$userID || $postID <= 0) die("Ungültiger Zugriff.");
 
     $res = safe_query("SELECT * FROM plugins_forum_posts WHERE postID = $postID");
     $post = mysqli_fetch_assoc($res);
-    if (!$post || $post['userID'] != $userID) die("Keine Berechtigung.");
+    if (!$post) die("Beitrag nicht gefunden.");
+
+    // Berechtigung prüfen: Autor ODER Admin/Moderator
+    $mayEdit = ($post['userID'] == $userID) || in_array('Admin', $userRoles) || in_array('Moderator', $userRoles);
+    if (!$mayEdit) die("Keine Berechtigung.");
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $content = trim($_POST['content'] ?? '');
@@ -511,30 +590,30 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         $newImages = $newMatches[1] ?? [];
 
         // Alte Bilder, die nicht mehr verwendet werden
-    $deletedImages = array_diff($oldImages, $newImages);
+        $deletedImages = array_diff($oldImages, $newImages);
 
-    foreach ($deletedImages as $filename) {
-        $imagePath = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/forum/uploads/forum_images/' . $filename;
+        foreach ($deletedImages as $filename) {
+            $imagePath = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/forum/uploads/forum_images/' . basename($filename);
 
-        error_log("Lösche Bild: $imagePath");
-        if (file_exists($imagePath)) {
-            error_log("Datei existiert, versuche zu löschen...");
-            if (unlink($imagePath)) {
-                error_log("Datei gelöscht.");
+            error_log("Lösche Bild: $imagePath");
+            if (file_exists($imagePath)) {
+                error_log("Datei existiert, versuche zu löschen...");
+                if (unlink($imagePath)) {
+                    error_log("Datei gelöscht.");
+                } else {
+                    error_log("Datei konnte nicht gelöscht werden.");
+                }
             } else {
-                error_log("Datei konnte nicht gelöscht werden.");
+                error_log("Datei existiert NICHT: $imagePath");
             }
-        } else {
-            error_log("Datei existiert NICHT: $imagePath");
         }
-    }
 
-        // 💾 neuen Inhalt speichern
-        $escaped_content = $content; // besser: mysqli_real_escape_string verwenden
+        // Inhalt speichern (hier solltest du mysqli_real_escape_string oder Prepared Statements nutzen)
+        $escaped_content = $content;
 
         safe_query("UPDATE plugins_forum_posts SET content = '$escaped_content' WHERE postID = $postID");
 
-        // 🔍 Position des bearbeiteten Posts im Thread ermitteln (nach created_at sortiert)
+        // Position des Posts im Thread finden
         $order_res = safe_query("SELECT postID FROM plugins_forum_posts WHERE threadID = $threadID ORDER BY created_at ASC");
         $position = 1;
         while ($row = mysqli_fetch_assoc($order_res)) {
@@ -542,14 +621,14 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             $position++;
         }
 
-        // 📄 Seite berechnen (10 Beiträge pro Seite)
+        $per_Page = 10; // Falls $per_Page nicht definiert ist, sonst entfernen
         $page = ceil($position / $per_Page);
 
         header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
         exit;
     }
 
-    // Thread laden, um die catID zu bekommen
+    // Thread laden, um catID zu bekommen
     $threadRes = safe_query("SELECT * FROM plugins_forum_threads WHERE threadID = " . intval($post['threadID']));
     $thread = mysqli_fetch_assoc($threadRes);
     $catID = intval($thread['catID'] ?? 0);
@@ -567,49 +646,50 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         $boardRes = safe_query("SELECT * FROM plugins_forum_boards WHERE id = " . intval($category['group_id']));
         $board = mysqli_fetch_assoc($boardRes);
     }
+    ?>
 
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
+        <li class="breadcrumb-item">
+            <a href="index.php?site=forum&action=overview&id=<?= intval($board['id'] ?? 0) ?>">
+                <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="index.php?site=forum&action=category&id=<?= intval($category['catID'] ?? 0) ?>">
+                <?= htmlspecialchars($category['title'] ?? 'Unbekannte Kategorie') ?>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="index.php?site=forum&action=thread&id=<?= intval($thread['threadID'] ?? 0) ?>">
+                <?= htmlspecialchars($thread['title'] ?? 'Unbekannte Kategorie') ?>
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">Beitrag bearbeiten</li>
+      </ol>
+    </nav>
 
-        ?>
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
-            <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=overview&id=<?= intval($board['id']) ?>">
-                    <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
-                </a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=category&id=<?= intval($category['catID']) ?>">
-                    <?= htmlspecialchars($category['title'] ?? 'Unbekannte Kategorie') ?>
-                </a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=thread&id=<?= intval($thread['threadID']) ?>">
-                    <?= htmlspecialchars($thread['title'] ?? 'Unbekannte Kategorie') ?>
-                </a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Beitrag bearbeiten</li>
-          </ol>
-        </nav>
+    <div class="card">
+        <div class="card-header"><h4>Beitrag bearbeiten</h4></div>
+        <div class="card-body">
+            <form method="post">
+                <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" placeholder="Dein Beitrag..."><?= htmlspecialchars($post['content']) ?></textarea>
 
-        <div class="card">
-            <div class="card-header"><h4>Beitrag bearbeiten</h4></div>
-            <div class="card-body">
-                <form method="post">
-                    <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" placeholder="Dein Beitrag..."><?= htmlspecialchars($post['content']) ?></textarea>
+                <div id="dropArea" class="mt-2 p-4 text-center border border-secondary rounded bg-light" style="cursor: pointer;">
+                  📎 Hier klicken oder Bild per Drag & Drop einfügen
+                </div>
+                <input type="file" id="uploadImage" accept="image/*" style="display: none;"><br/>
 
-                    <div id="dropArea" class="mt-2 p-4 text-center border border-secondary rounded bg-light" style="cursor: pointer;">
-                      📎 Hier klicken oder Bild per Drag & Drop einfügen
-                    </div>
-                    <input type="file" id="uploadImage" accept="image/*" style="display: none;"><br/>
-
-                    <button type="submit" class="btn btn-primary">Speichern</button>
-                    <a href="index.php?site=forum&action=thread&id=<?= $threadID ?>" class="btn btn-secondary">Abbrechen</a>
-                </form>
-            </div>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <a href="index.php?site=forum&action=thread&id=<?= $threadID ?>" class="btn btn-secondary">Abbrechen</a>
+            </form>
         </div>
-        <?php
-        break;
+    </div>
+
+    <?php
+    break;
+
 
     case 'quote':
         $postID = intval($_GET['postID'] ?? 0);
@@ -620,10 +700,10 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         if (mysqli_num_rows($res) > 0) {
             $post = mysqli_fetch_assoc($res);
 
-            $quote = '<blockquote class="blockquote p-3 mb-3 bg-light border-start border-primary">
-                      <footer class="blockquote-footer">' . htmlspecialchars($post['username']) . ' schrieb:</footer>
-                      <div>' . nl2br(htmlspecialchars($post['content'])) . '</div>
-                    </blockquote><br><br>';
+            $quote = '<blockquote class="blockquote-primary">
+              ' . htmlspecialchars($post['username']) . ' schrieb:<br>
+              ' . htmlspecialchars($post['content']) . '
+          </blockquote>';
 
             $_SESSION['quote_content'] = $quote;
         }
@@ -639,7 +719,8 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         // 📄 Seite berechnen (10 Beiträge pro Seite)
         $page = ceil($position / $per_Page);
 
-        header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
+        #header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
+        header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page#replyform");
         exit;
 
     case 'new_thread':
@@ -683,7 +764,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item">
                 <a href="index.php?site=forum&action=overview&id=<?= isset($board['id']) ? intval($board['id']) : 0 ?>">
                     <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
@@ -869,7 +950,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($board['title']) ?></li>
           </ol>
         </nav>
@@ -982,7 +1063,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php?site=forum">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item">
                 <a href="index.php?site=forum&action=overview&id=<?= intval($board['id']) ?>">
                     <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
@@ -1048,11 +1129,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let editor = null;
 
-  // Warten bis CKEditor fertig initialisiert ist
+  // CKEditor bereit?
+  if (typeof CKEDITOR === 'undefined') {
+    console.error('CKEditor wurde nicht gefunden.');
+    return;
+  }
+
   CKEDITOR.on('instanceReady', function(evt) {
     if (evt.editor.name === 'ckeditor') {
       editor = evt.editor;
-      console.log('Editor ist bereit:', editor.name);
+      console.log('Editor bereit:', editor.name);
     }
   });
 
@@ -1081,48 +1167,38 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  
+  function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
 
-CKEDITOR.on('instanceReady', function(evt) {
-  if (evt.editor.name === 'ckeditor') {
-    editor = evt.editor;
-    console.log('Editor ready:', editor.name);
-  }
-});
-
-function uploadImage(file) {
-  const formData = new FormData();
-  formData.append('image', file);
-
-  fetch('/includes/plugins/forum/upload_image.php', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.text())
-  .then(text => {
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      alert('Fehlerhafte Serverantwort:\n' + text);
-      return;
-    }
-
-    if (data.success && data.url) {
-      console.log('Editor:', editor);
-      console.log('Image URL:', data.url);
-      if (editor) {
-        editor.insertHtml('<img src="/includes/plugins/forum' + data.url + '" alt="">');
-      } else {
-        alert('Editor noch nicht bereit');
+    fetch('/includes/plugins/forum/upload_image.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.text())
+    .then(text => {
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        alert('Fehlerhafte Serverantwort:\n' + text);
+        return;
       }
-    } else {
-      alert(data.message || 'Upload fehlgeschlagen');
-    }
-  })
-  .catch(err => {
-    alert('Fehler beim Upload: ' + err.message);
-  });
-}
+
+      if (data.success && data.url) {
+        if (editor) {
+          editor.focus();
+          editor.insertHtml('<img src="' + data.url + '" alt="">');
+        } else {
+          alert('Editor noch nicht bereit');
+        }
+      } else {
+        alert(data.message || 'Upload fehlgeschlagen');
+      }
+    })
+    .catch(err => {
+      alert('Fehler beim Upload: ' + err.message);
+    });
+  }
 });
 </script>

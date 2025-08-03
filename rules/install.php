@@ -31,15 +31,12 @@ safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, 
 ('', 5, '[[lang:de]]Regeln[[lang:en]]Rules[[lang:it]]Regole del', 'rules', 'admincenter.php?site=admin_rules', 1)");
 
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 2, '[[lang:de]]Regeln[[lang:en]]Rules[[lang:it]]Regole del', 'rules', 'index.php?site=rules', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 2, '[[lang:de]]Regeln[[lang:en]]Rules[[lang:it]]Regole del', 'rules', 'index.php?site=rules', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'rules', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'rules' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'rules')
 ");
-  
  ?>

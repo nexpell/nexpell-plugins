@@ -35,12 +35,8 @@ safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, 
 ('', 2, '[[lang:de]]Counter[[lang:en]]Counter[[lang:it]]Counter', 'counter', 'admincenter.php?site=admin_counter', 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'counter', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'counter' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'counter')
 ");
-  
  ?>

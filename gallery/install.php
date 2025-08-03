@@ -19,19 +19,19 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_gallery (
 
 
 
-safe_query("INSERT IGNORE INTO plugins_gallery (id, filename, class, upload_date, position) VALUES
-(1, '1.jpg', '', CURRENT_TIMESTAMP, 1),
-(2, '2.jpg', 'wide', CURRENT_TIMESTAMP, 2),
-(3, '3.jpg', 'tall', CURRENT_TIMESTAMP, 3),
-(4, '4.jpg', 'wide', CURRENT_TIMESTAMP, 4),
-(5, '5.jpg', '', CURRENT_TIMESTAMP, 5),
-(6, '6.jpg', 'tall', CURRENT_TIMESTAMP, 6),
-(7, '7.jpg', '', CURRENT_TIMESTAMP, 7),
-(8, '8.jpg', 'big', CURRENT_TIMESTAMP, 8),
-(9, '9.jpg', '', CURRENT_TIMESTAMP, 9),
-(10, '10.jpg', '', CURRENT_TIMESTAMP, 10),
-(11, '11.jpg', 'wide', CURRENT_TIMESTAMP, 11),
-(12, '12.jpg', '', CURRENT_TIMESTAMP, 12)");
+safe_query("INSERT IGNORE INTO plugins_gallery (id, filename, class, upload_date, position, category_id) VALUES
+(1, 'img_68839134a01b4.jpg', '', CURRENT_TIMESTAMP, 1, 1),
+(2, 'img_688391421701b.jpg', 'wide', CURRENT_TIMESTAMP, 2, 1),
+(3, 'img_6883914ca02e4.jpg', 'tall', CURRENT_TIMESTAMP, 3, 1),
+(4, 'img_688391578247d.jpg', 'wide', CURRENT_TIMESTAMP, 4, 1),
+(5, 'img_68839167eadb7.jpg', '', CURRENT_TIMESTAMP, 5, 1),
+(6, 'img_688391793db05.jpg', 'tall', CURRENT_TIMESTAMP, 6, 1),
+(7, 'img_6883918321c6a.jpg', '', CURRENT_TIMESTAMP, 7, 1),
+(8, 'img_6883918f85626.jpg', 'big', CURRENT_TIMESTAMP, 8, 1),
+(9, 'img_6883919ad6c13.jpg', '', CURRENT_TIMESTAMP, 9, 1),
+(10, 'img_688391a5ecfa1.jpg', '', CURRENT_TIMESTAMP, 10, 1),
+(11, 'img_688391b3c986c.jpg', 'wide', CURRENT_TIMESTAMP, 11, 1),
+(12, 'img_688391be98734.jpg', '', CURRENT_TIMESTAMP, 12, 1)");
 
 ## SYSTEM #####################################################################################################################################
 
@@ -43,17 +43,13 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 9, '[[lang:de]]Gallery[[lang:en]]Gallery[[lang:it]]Gallery', 'gallery', 'admincenter.php?site=admin_gallery', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 4, '[[lang:de]]Gallery[[lang:en]]Gallery[[lang:it]]Gallery', 'gallery', 'index.php?site=gallery', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 4, '[[lang:de]]Gallery[[lang:en]]Gallery[[lang:it]]Gallery', 'gallery', 'index.php?site=gallery', 1, 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'gallery', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'gallery' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'gallery')
 ");
-  
  ?>
 

@@ -26,20 +26,14 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
-('', 5, '[[lang:de]]About[[lang:en]]About[[lang:it]]About', 'about', 'admincenter.php?site=admin_about', 1)");
+('', 5, '[[lang:de]]Über uns[[lang:en]]About Us[[lang:it]]Chi siamo', 'about', 'admincenter.php?site=admin_about', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 2, '[[lang:de]]About[[lang:en]]About[[lang:it]]About', 'about', 'index.php?site=about', 1, 1, 'default')");
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 2, '[[lang:de]]Leistung[[lang:en]]Leistung[[lang:it]]Leistung', 'about', 'index.php?site=leistung', 1, 1, 'default')");
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 2, '[[lang:de]]Info[[lang:en]]Info[[lang:it]]Info', 'about', 'index.php?site=info', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 2, '[[lang:de]]Über uns[[lang:en]]About Us[[lang:it]]Chi siamo', 'about', 'index.php?site=about', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'about', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'about' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'about')
 ");
  ?>

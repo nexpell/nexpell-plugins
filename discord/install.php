@@ -21,14 +21,12 @@ safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modu
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 11, '[[lang:de]]Discord[[lang:en]]Discord[[lang:it]]Discord', 'discord', 'admincenter.php?site=admin_discord', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 4, '[[lang:de]]Discord[[lang:en]]Discord[[lang:it]]Discord', 'discord', 'index.php?site=discord', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 6, '[[lang:de]]Discord[[lang:en]]Discord[[lang:it]]Discord', 'discord', 'index.php?site=discord', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'discord', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'discord' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'discord')
 ");
  ?>

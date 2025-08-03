@@ -33,7 +33,7 @@ while ($r = mysqli_fetch_assoc($res)) {
     $tgt = $r['new_tab'] ? ' target="_blank"' : '';
     $data["copyright_link{$num}"]
       = $url
-      ? "<a class=\"foot_link\" href=\"{$url}\"{$tgt} rel=\"nofollow\">{$txt}</a>"
+      ? "<a class=\"foot_link me-3\" href=\"{$url}\"{$tgt} rel=\"nofollow\">{$txt}</a>"
       : '';
 }
 

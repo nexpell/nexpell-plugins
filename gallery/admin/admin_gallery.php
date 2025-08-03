@@ -38,12 +38,14 @@ if (!in_array($sortBy, $allowedSorts)) {
 }
 
 // Upload Verzeichnis
-$uploadDir = __DIR__ . '/../images/';
+#$uploadDir = __DIR__ . '/../images/';
+
+
 
 // Rechtecheck hier (z.B. isAdmin())
 
 // --- AJAX Löschung ---
-if ($action === 'delete' && isset($_GET['id'])) {
+/*if ($action === 'delete' && isset($_GET['id'])) {
     $id = intval($_GET['id']);
     // Bildname ermitteln
     $stmt = $_database->prepare("SELECT filename FROM plugins_gallery WHERE id = ?");
@@ -65,7 +67,41 @@ if ($action === 'delete' && isset($_GET['id'])) {
         echo json_encode(['success' => false, 'error' => 'Bild nicht gefunden']);
     }
     exit;
+}*/
+
+if (isset($_GET['delete'], $_GET['file'])) {
+    $id = intval($_GET['delete']);
+    $filename = basename($_GET['file']); // gegen Pfadangriffe absichern
+
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/gallery/images/upload/';
+    $thumbDir = $uploadDir . 'thumbs/';
+    $origDir = $uploadDir . 'originals/';
+
+    // Dateien löschen
+    @unlink($uploadDir . $filename);
+    @unlink($thumbDir . $filename);
+
+    // Dateiendung & Name extrahieren
+    $fileBase = pathinfo($filename, PATHINFO_FILENAME); // ohne .jpg
+    $fileExt = pathinfo($filename, PATHINFO_EXTENSION);
+
+    $originalName = $fileBase . '_orig.' . $fileExt;
+    @unlink($origDir . $originalName);
+
+    // DB-Eintrag löschen – korrekt vorbereitet
+    $stmt = $_database->prepare("DELETE FROM plugins_gallery WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    // Weiterleitung
+    header("Location: admincenter.php?site=admin_gallery");
+    exit;
 }
+
+
 
 if ($action === "add_cat" || $action === "edit_cat") {
     $isEdit_cat = ($action === "edit_cat");
@@ -135,85 +171,255 @@ if ($action === "add_cat" || $action === "edit_cat") {
 }
 
 
+
+$settings_result = safe_query("SELECT * FROM `settings`");
+$settings = mysqli_fetch_assoc($settings_result);
+$hp_title = $settings['hptitle'] ?? 'nexpell';
+
+function createWatermarkOnImage($src, $dest, $watermarkText = '© DeinName') {
+    $info = getimagesize($src);
+    if (!$info) return false;
+
+    list($width, $height) = $info;
+    $mime = $info['mime'];
+
+    switch ($mime) {
+        case 'image/jpeg': $image = imagecreatefromjpeg($src); break;
+        case 'image/png':  $image = imagecreatefrompng($src); break;
+        case 'image/webp': $image = imagecreatefromwebp($src); break;
+        default: return false;
+    }
+
+    // Wasserzeichen hinzufügen
+    $fontPath = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/gallery/images/fonts/OpenSans-Regular.ttf';
+    if (file_exists($fontPath) && function_exists('imagettftext')) {
+        $fontSize = 12;
+        $padding = 10;
+        $textColor = imagecolorallocatealpha($image, 255, 255, 255, 40); // Weiß, halbtransparent
+        $bbox = imagettfbbox($fontSize, 0, $fontPath, $watermarkText);
+        $textWidth = $bbox[2] - $bbox[0];
+        $textHeight = $bbox[1] - $bbox[7];
+
+        $x = $width - $textWidth - $padding;
+        $y = $height - $padding - (-$bbox[7]); // Korrigiert Position Y
+
+        imagettftext($image, $fontSize, 0, $x, $y, $textColor, $fontPath, $watermarkText);
+    }
+
+    // Bild speichern
+    switch ($mime) {
+        case 'image/jpeg': imagejpeg($image, $dest, 85); break;
+        case 'image/png':  imagepng($image, $dest); break;
+        case 'image/webp': imagewebp($image, $dest); break;
+    }
+
+    imagedestroy($image);
+    return true;
+}
+
+function createThumbnail($src, $dest, $maxWidth, $maxHeight) {
+    $info = getimagesize($src);
+    if (!$info) return false;
+
+    list($width, $height) = $info;
+    $mime = $info['mime'];
+
+    switch ($mime) {
+        case 'image/jpeg': $image = imagecreatefromjpeg($src); break;
+        case 'image/png':  $image = imagecreatefrompng($src); break;
+        case 'image/webp': $image = imagecreatefromwebp($src); break;
+        default: return false;
+    }
+
+    $ratio = min($maxWidth / $width, $maxHeight / $height);
+    $newWidth = (int)($width * $ratio);
+    $newHeight = (int)($height * $ratio);
+
+    $thumb = imagecreatetruecolor($newWidth, $newHeight);
+
+    // Für PNG/WebP Transparenz erhalten
+    if ($mime === 'image/png' || $mime === 'image/webp') {
+        imagealphablending($thumb, false);
+        imagesavealpha($thumb, true);
+        $transparent = imagecolorallocatealpha($thumb, 0, 0, 0, 127);
+        imagefilledrectangle($thumb, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+
+    imagecopyresampled($thumb, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    switch ($mime) {
+        case 'image/jpeg': imagejpeg($thumb, $dest, 85); break;
+        case 'image/png':  imagepng($thumb, $dest); break;
+        case 'image/webp': imagewebp($thumb, $dest); break;
+    }
+
+    imagedestroy($image);
+    imagedestroy($thumb);
+    return true;
+}
+
+
+
+
+
+
 if ($action === "add" || $action === "edit") {
-    $id = intval($_GET['id'] ?? 0);
-    $isEdit = $id > 0;
-    $data = ['filename' => '', 'class' => '', 'category_id' => 0];
 
-    // Kategorien laden
-    $categories = [];
-    $res = $_database->query("SELECT id, name FROM plugins_gallery_categories ORDER BY name ASC");
-    while ($row = $res->fetch_assoc()) {
-        $categories[] = $row;
+$id = intval($_GET['id'] ?? 0);
+$isEdit = $id > 0;
+$data = ['filename' => '', 'class' => '', 'category_id' => 0];
+
+// Kategorien laden
+$categories = [];
+$res = $_database->query("SELECT id, name FROM plugins_gallery_categories ORDER BY name ASC");
+while ($row = $res->fetch_assoc()) {
+    $categories[] = $row;
+}
+
+// Daten bei Bearbeitung laden
+if ($isEdit) {
+    $stmt = $_database->prepare("SELECT filename, class, category_id FROM plugins_gallery WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->bind_result($filenameDB, $classDB, $catIDDB);
+    if ($stmt->fetch()) {
+        $data = ['filename' => $filenameDB, 'class' => $classDB, 'category_id' => $catIDDB];
+    } else {
+        echo "<div class='alert alert-danger'>Bild nicht gefunden.</div>";
+        exit;
+    }
+    $stmt->close();
+}
+
+// Fehler- und Uploadstatus
+$error = '';
+$fileUploaded = false;
+$filename = '';
+
+
+
+// POST-Verarbeitung
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $class = $_POST['class'] ?? '';
+    $category_id = intval($_POST['category_id'] ?? 0);
+
+$uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/gallery/images/upload/';
+
+// Initial Werte
+$fileUploaded = false;
+$filename = '';
+$originalPath = '';
+$thumbDir = $uploadDir . 'thumbs/';
+$thumbPath = ''; 
+$originalsDir = $uploadDir . 'originals/';
+$originalPath = $uploadDir . $filename; // Das Ziel für move_uploaded_file()   
+
+    // Upload-Verarbeitung
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $originalName = basename($_FILES['image']['name']);
+    $fileExt = pathinfo($originalName, PATHINFO_EXTENSION);
+    $fileBase = pathinfo($originalName, PATHINFO_FILENAME);
+    #$fileBase = preg_replace('/[^a-zA-Z0-9_-]/', '_', $fileBase); // Sonderzeichen entfernen
+
+    $uniqueId = uniqid('img_'); // EINMALIG erzeugen
+$fileExt = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+
+// Dateinamen auf Basis der EINEN ID
+$filenameWatermarked = $uniqueId . '.' . $fileExt;       // z. B. img_abcd1234.jpg
+$filenameOrig = $uniqueId . '_orig.' . $fileExt;         // z. B. img_abcd1234_orig.jpg
+$thumbFilename = $filenameWatermarked;                   // gleich wie das Wasserzeichen
+
+// Pfade
+$originalPath = $uploadDir . 'originals/' . $filenameOrig;
+$watermarkedPath = $uploadDir . $filenameWatermarked;
+$thumbPath = $thumbDir . $thumbFilename;
+
+    echo "Original-Pfad: $originalPath<br>";
+    echo "Tmp-Datei: " . $_FILES['image']['tmp_name'] . "<br>";
+
+    if (!is_dir($originalsDir)) {
+        mkdir($originalsDir, 0775, true);
     }
 
-    if ($isEdit) {
-        $stmt = $_database->prepare("SELECT filename, class, category_id FROM plugins_gallery WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $stmt->bind_result($filenameDB, $classDB, $catIDDB);
-        if ($stmt->fetch()) {
-            $data = ['filename' => $filenameDB, 'class' => $classDB, 'category_id' => $catIDDB];
+    // Vorab prüfen, ob Ordner existiert
+    if (!is_dir($uploadDir)) {
+        echo "Fehler: Upload-Ordner existiert nicht: $uploadDir<br>";
+    } elseif (!is_writable($uploadDir)) {
+        echo "Fehler: Upload-Ordner ist nicht beschreibbar: $uploadDir<br>";
+    }
+
+    if (move_uploaded_file($_FILES['image']['tmp_name'], $originalPath)) {
+        echo "Originalbild gespeichert: $filenameOrig<br>";
+        $fileUploaded = true;
+
+        if (function_exists('createWatermarkOnImage')) {
+            createWatermarkOnImage($originalPath, $watermarkedPath, '© ' . $hp_title);
+            echo "Wasserzeichen erstellt: $filenameWatermarked<br>";
         } else {
-            echo "<div class='alert alert-danger'>Bild nicht gefunden.</div>";
-            exit;
+            copy($originalPath, $watermarkedPath);
+            echo "Original kopiert (kein Wasserzeichen): $filenameWatermarked<br>";
         }
+
+        if (function_exists('createThumbnail')) {
+            createThumbnail($watermarkedPath, $thumbPath, 300, 300);
+            echo "Thumbnail erstellt: $thumbFilename<br>";
+        }
+
+        $filename = $filenameWatermarked;
+    } else {
+        echo "❌ Fehler beim Speichern von: $originalPath<br>";
+        echo "Upload-Fehlercode: " . $_FILES['image']['error'] . "<br>";
+    }
+} else {
+    echo '❌ Keine Datei hochgeladen oder Fehler beim Upload.<br>';
+    echo 'Upload-Fehlercode: ' . ($_FILES['image']['error'] ?? 'nicht gesetzt') . '<br>';
+}
+
+
+
+
+if (empty($error)) {
+    if ($isEdit) {
+        if ($fileUploaded) {
+            // Altes Bild + Thumbnail + Original löschen
+            if (!empty($data['filename'])) {
+                @unlink($uploadDir . $data['filename']);
+                @unlink($uploadDir . 'thumbs/' . $data['filename']);
+                $oldOriginal = $uploadDir . pathinfo($data['filename'], PATHINFO_FILENAME) . '_orig.' . pathinfo($data['filename'], PATHINFO_EXTENSION);
+                @unlink($oldOriginal);
+            }
+
+            $stmt = $_database->prepare("UPDATE plugins_gallery SET filename = ?, class = ?, category_id = ? WHERE id = ?");
+            $stmt->bind_param("ssii", $filename, $class, $category_id, $id);
+        } else {
+            $stmt = $_database->prepare("UPDATE plugins_gallery SET class = ?, category_id = ? WHERE id = ?");
+            $stmt->bind_param("sii", $class, $category_id, $id);
+        }
+    } else {
+        if ($fileUploaded) {
+            $stmt = $_database->prepare("INSERT INTO plugins_gallery (filename, class, category_id, upload_date) VALUES (?, ?, ?, NOW())");
+            $stmt->bind_param("ssi", $filename, $class, $category_id);
+        } else {
+            $error = 'Bitte wählen Sie eine Bilddatei aus.';
+        }
+    }
+
+    if (empty($error) && isset($stmt)) {
+        $stmt->execute();
         $stmt->close();
+        header("Location: admincenter.php?site=admin_gallery");
+        exit;
     }
+}
 
-    $uploadSuccess = false;
-    $error = '';
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $class = $_POST['class'] ?? '';
-        $category_id = intval($_POST['category_id'] ?? 0);
-        $fileUploaded = false;
-        $filename = '';
+}
 
-        if (!empty($_FILES['image']['name'])) {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (in_array($_FILES['image']['type'], $allowedTypes)) {
-                $filename = basename($_FILES['image']['name']);
-                $targetPath = $uploadDir . $filename;
-                if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-                    $fileUploaded = true;
-                } else {
-                    $error = 'Datei konnte nicht gespeichert werden.';
-                }
-            } else {
-                $error = 'Ungültiger Dateityp.';
-            }
-        }
 
-        if (!$error) {
-            if ($isEdit) {
-                if ($fileUploaded) {
-                    @unlink($uploadDir . $data['filename']);
-                    $stmt = $_database->prepare("UPDATE plugins_gallery SET filename = ?, class = ?, category_id = ? WHERE id = ?");
-                    $stmt->bind_param("ssii", $filename, $class, $category_id, $id);
-                } else {
-                    $stmt = $_database->prepare("UPDATE plugins_gallery SET class = ?, category_id = ? WHERE id = ?");
-                    $stmt->bind_param("sii", $class, $category_id, $id);
-                }
-                $stmt->execute();
-                $stmt->close();
-            } else {
-                if ($fileUploaded) {
-                    $stmt = $_database->prepare("INSERT INTO plugins_gallery (filename, class, category_id, upload_date) VALUES (?, ?, ?, NOW())");
-                    $stmt->bind_param("ssi", $filename, $class, $category_id);
-                    $stmt->execute();
-                    $stmt->close();
-                } else {
-                    $error = 'Bitte eine Bilddatei auswählen.';
-                }
-            }
-        }
 
-        if (!$error) {
-            header("Location: admincenter.php?site=admin_gallery");
-            exit;
-        }
-    }
+
+
+
 ?>
 
 <div class="card">
@@ -251,7 +457,7 @@ if ($action === "add" || $action === "edit") {
 
                 <?php if ($isEdit): ?>
                     <p><strong>Aktuelles Bild:</strong><br>
-                        <img src="/includes/plugins/gallery/images/<?= htmlspecialchars($data['filename']) ?>" class="img-thumbnail" width="200" loading="lazy" alt="aktuelles Bild">
+                        <img src="/includes/plugins/gallery/images/upload/<?= htmlspecialchars($data['filename']) ?>" class="img-thumbnail" width="200" loading="lazy" alt="aktuelles Bild">
                     </p>
                 <?php endif; ?>
 
@@ -259,6 +465,22 @@ if ($action === "add" || $action === "edit") {
                     <label for="image" class="form-label">Bild-Datei (JPG, PNG, WebP):</label>
                     <input class="form-control" type="file" name="image" id="image" <?= $isEdit ? '' : 'required' ?>>
                 </div>
+
+                    <?php
+                        $filename = htmlspecialchars($data['filename']);
+                        $fileBase = pathinfo($filename, PATHINFO_FILENAME);         // img_abc123
+                        $fileExt  = pathinfo($filename, PATHINFO_EXTENSION);        // jpg
+                        $filenameOrig = $fileBase . '_orig.' . $fileExt;            // img_abc123_orig.jpg
+
+                        $urlBase = '/includes/plugins/gallery/images/upload/';
+                    ?>
+
+                    <ul class="list-unstyled small">
+                        <li>🖼️ Wasserzeichen: <a href="<?= $urlBase . $filename ?>" target="_blank"><?= $urlBase . $filename ?></a></li>
+                        <li>📷 Originalbild: <a href="<?= $urlBase . 'originals/' . $filenameOrig ?>" target="_blank"><?= $urlBase . 'originals/' . $filenameOrig ?></a></li>
+                        <li>🔎 Thumbnail: <a href="<?= $urlBase . 'thumbs/' . $filename ?>" target="_blank"><?= $urlBase . 'thumbs/' . $filename ?></a></li>
+                    </ul>
+
 
                 <div class="mb-3">
                     <label for="class" class="form-label">Layout-Klasse:</label>
@@ -329,7 +551,7 @@ $pages = array_chunk($allImages, $imagesPerPage);
                     <div class="grid-wrapper">
                         <?php foreach ($pageImages as $image): ?>
                             <div class="sortable-item <?= htmlspecialchars($image['class']) ?>" data-id="<?= (int)$image['id'] ?>">
-                                <img src="/includes/plugins/gallery/images/<?= htmlspecialchars($image['filename']) ?>" alt="">
+                                <img src="/includes/plugins/gallery/images/upload/<?= htmlspecialchars($image['filename']) ?>" alt="">
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -497,7 +719,7 @@ $stmtData->close();
                 <?php else: ?>
                     <?php foreach ($images as $img): ?>
                         <tr>
-                            <td><img src="/includes/plugins/gallery/images/<?= htmlspecialchars($img['filename']) ?>" width="100" class="img-thumbnail" loading="lazy" alt="Vorschau"></td>
+                            <td><img src="/includes/plugins/gallery/images/upload/<?= htmlspecialchars($img['filename']) ?>" width="100" class="img-thumbnail" loading="lazy" alt="Vorschau"></td>
                             <td><?= htmlspecialchars($img['filename']) ?></td>
                             <td><?= htmlspecialchars($categories[$img['category_id']] ?? '—') ?></td>
                             <td><?= htmlspecialchars($img['class']) ?></td>
@@ -531,4 +753,11 @@ $stmtData->close();
 
 
 <?php }
-
+?>
+<script>
+function confirmDelete(id, filename) {
+    if (confirm('Bist du sicher, dass du dieses Bild löschen möchtest?')) {
+        window.location.href = `admincenter.php?site=admin_gallery&delete=${id}&file=${encodeURIComponent(filename)}`;
+    }
+}
+</script>

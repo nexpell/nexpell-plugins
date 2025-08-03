@@ -23,17 +23,13 @@ safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modu
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 9, '[[lang:de]]Shoutbox[[lang:en]]Shoutbox[[lang:it]]Shoutbox', 'shoutbox', 'admincenter.php?site=admin_shoutbox', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 3, '[[lang:de]]Shoutbox[[lang:en]]Shoutbox[[lang:it]]Shoutbox', 'shoutbox', 'index.php?site=shoutbox', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 3, '[[lang:de]]Shoutbox[[lang:en]]Shoutbox[[lang:it]]Shoutbox', 'shoutbox', 'index.php?site=shoutbox', 1, 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'shoutbox', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'shoutbox' LIMIT 1
-  ))
-");
-  
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'shoutbox')
+"); 
  ?>
 

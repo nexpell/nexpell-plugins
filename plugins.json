@@ -2,7 +2,7 @@
     {
     "name": "News",
     "modulname": "news",
-    "description": "News Plugin für nexpell, Kommentarfunktion noch nicht aktiv und muss deaktiviert werdgb.",
+    "description": "News Plugin für nexpell, Kommentarfunktion noch nicht aktiv und muss deaktiviert werden.",
     "version": "1.0.0",
     "author": "nexpell Team",
     "url": "https://www.nexpell.de",
@@ -184,7 +184,7 @@
     "url": "https://www.nexpell.de",
     "lang": "de",
     "folder": "resume",
-    "download": "resume.zip"
+    "download": "DISABLED"
     },
     {
     "name": "Forum",
@@ -218,5 +218,63 @@
     "lang": "de",
     "folder": "todo",
     "download": "todo.zip"
+  },
+  {
+    "name": "Shoutbox",
+    "modulname": "shoutbox",
+    "description": "[[lang:de]]Füge deiner Website eine einfache Shoutbox hinzu, um kurze Nachrichten mit deinen Besuchern auszutauschen.[[lang:gb]]Add a simple shoutbox to your website to exchange short messages with your visitors.[[lang:it]]Aggiungi una semplice shoutbox al tuo sito per scambiare brevi messaggi con i visitatori.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "shoutbox",
+    "download": "shoutbox.zip"
+  },
+  {
+    "name": "Twitch",
+    "modulname": "twitch",
+    "description": "[[lang:de]]Zeigt deinen Twitch-Livestream direkt auf deiner Website mit integriertem Chat.[[lang:gb]]Display your Twitch livestream directly on your website with integrated chat.[[lang:it]]Mostra il tuo livestream Twitch direttamente sul tuo sito web con chat integrata.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "twitch",
+    "download": "twitch.zip"
+  },
+  {
+    "name": "Discord",
+    "modulname": "discord",
+    "description": "[[lang:de]]Integriert deinen Discord-Server direkt auf deiner Website mit Online-Mitglieder-Anzeige und Benachrichtigungen.[[lang:gb]]Integrate your Discord server directly on your website with online member display and notifications.[[lang:it]]Integra il tuo server Discord direttamente sul tuo sito web con visualizzazione dei membri online e notifiche.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "discord",
+    "download": "discord.zip"
+  },
+  {
+    "name": "GameTracker",
+    "modulname": "gametracker",
+    "description": "[[lang:de]]Zeigt Informationen zu deinen Spielservern wie Name, Karte, Spieleranzahl und Status direkt auf deiner Website an.[[lang:gb]]Displays information about your game servers such as name, map, player count, and status directly on your website.[[lang:it]]Mostra le informazioni dei tuoi server di gioco come nome, mappa, numero di giocatori e stato direttamente sul tuo sito web.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "gametracker",
+    "download": "gametracker.zip"
+  },
+  {
+    "name": "SEO",
+    "modulname": "seo",
+    "description": "[[lang:de]]Erstelle und verwalte suchmaschinenoptimierte Inhalte mehrsprachig für deine Website.[[lang:en]]Create and manage multilingual search engine optimized content for your website.[[lang:it]]Crea e gestisci contenuti ottimizzati per i motori di ricerca multilingue per il tuo sito web.",
+    "version": "1.0.0",
+    "author": "nexpell-team",
+    "url": "https://www.nexpell.de",
+    "lang": "de",
+    "folder": "seo",
+    "download": "seo.zip"
   }
+
+
+
 ]

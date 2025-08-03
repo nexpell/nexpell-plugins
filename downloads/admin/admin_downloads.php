@@ -138,12 +138,12 @@ if (in_array($action, ['add', 'edit']) && $_SERVER['REQUEST_METHOD'] === 'POST')
         if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             $errors[] = "Datei-Upload fehlgeschlagen.";
         } else {
-            $allowedExts = ['zip','pdf','jpg','png'];
+            $allowedExts = ['exe','zip','pdf','jpg','png'];
             $uploadedFilename = basename($_FILES['file']['name']);
             $ext = strtolower(pathinfo($uploadedFilename, PATHINFO_EXTENSION));
 
             if (!in_array($ext, $allowedExts)) {
-                $errors[] = "Nur ZIP, PDF, JPG oder PNG erlaubt.";
+                $errors[] = "Nur EXE, ZIP, PDF, JPG oder PNG erlaubt.";
             } else {
                 if ($action === 'edit' && $filename && file_exists($uploadDir . $filename)) {
                     unlink($uploadDir . $filename);

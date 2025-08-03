@@ -38,14 +38,39 @@ $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'vide
 if (isset($_POST['save_block'])) {
     $id = (int)($_POST['id'] ?? 0);
     $type = $_POST['type'];
-    $title = $_POST['title'];
-    $subtitle = $_POST['subtitle'];
-    $description = $_POST['description'];
+    #$title = $_POST['title'];
+    #$subtitle = $_POST['subtitle'];
+    #$description = $_POST['description'];
     $link = escape($_POST['link']);
     $visible = isset($_POST['visible']) ? 1 : 0;
     $isEdit = $id > 0;
     $filename = '';
     $media_type = '';
+
+    $nameArray1 = $_POST['title'] ?? [];
+    $nameArray2 = $_POST['subtitle'] ?? [];
+    $nameArray3 = $_POST['description'] ?? [];
+
+    // Mehrsprachigen Text zusammenbauen
+    $title = '';
+    foreach (['de', 'en', 'it'] as $lang) {
+        $text = $nameArray1[$lang] ?? '';
+        $title .= "[[lang:$lang]]" . $text;
+    }
+
+    // Mehrsprachigen Text zusammenbauen
+    $subtitle = '';
+    foreach (['de', 'en', 'it'] as $lang) {
+        $text = $nameArray2[$lang] ?? '';
+        $subtitle .= "[[lang:$lang]]" . $text;
+    }
+
+    // Mehrsprachigen Text zusammenbauen
+    $description = '';
+    foreach (['de', 'en', 'it'] as $lang) {
+        $text = $nameArray3[$lang] ?? '';
+        $description .= "[[lang:$lang]]" . $text;
+    }
 
     if (isset($_FILES['media_file']) && $_FILES['media_file']['size'] > 0) {
         $mime = mime_content_type($_FILES['media_file']['tmp_name']);
@@ -109,6 +134,34 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
+// Daten laden
+$ds = mysqli_fetch_array(safe_query("SELECT * FROM plugins_carousel"));
+
+// Mehrsprachigen Text extrahieren
+function extractLangText(?string $multiLangText, string $lang): string {
+    if (!$multiLangText) return '';
+    if (preg_match('/\[\[lang:' . preg_quote($lang, '/') . '\]\](.*?)(?=\[\[lang:|$)/s', $multiLangText, $matches)) {
+        return trim($matches[1]);
+    }
+    return '';
+}
+
+// Sprach-Array
+$languages = [];
+
+$query = "SELECT iso_639_1, name_de FROM settings_languages WHERE active = 1 ORDER BY id ASC";
+$result = mysqli_query($_database, $query);
+
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        // $row['iso_639_1'] z.B. 'de', $row['name_de'] z.B. 'Deutsch'
+        $languages[$row['iso_639_1']] = $row['name_de'];
+    }
+} else {
+    // Fallback falls Query nicht klappt
+    $languages = ['de' => 'Deutsch', 'en' => 'English', 'it' => 'Italiano'];
+}
+
 
 
 // === Formular: add/edit ===
@@ -142,19 +195,40 @@ if ($action === 'add' || $action === 'edit') {
             </select>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Titel</label>
-            <input class="form-control" name="title" value="<?= htmlspecialchars($edit['title'] ?? '') ?>">
+        <div class="alert alert-info" role="alert">
+            <label for="text" class="form-label"><h4><?= $languageService->get('maintitle') ?></h4></label>
+            <?php foreach ($languages as $code => $label): ?>
+                <div class="mb-3 row">
+                    <label class="col-sm-2 col-form-label"><?= $label ?>:</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control lang-field" rows="2" name="title[<?= $code ?>]"><?= htmlspecialchars(extractLangText($ds['title'] ?? '', $code)) ?></textarea>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Untertitel</label>
-            <input class="form-control" name="subtitle" value="<?= htmlspecialchars($edit['subtitle'] ?? '') ?>">
+        <div class="alert alert-info" role="alert">
+            <label for="text" class="form-label"><h4><?= $languageService->get('subtitle') ?></h4></label>
+            <?php foreach ($languages as $code => $label): ?>
+                <div class="mb-3 row">
+                    <label class="col-sm-2 col-form-label"><?= $label ?>:</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control lang-field" rows="2" name="subtitle[<?= $code ?>]"><?= htmlspecialchars(extractLangText($ds['subtitle'] ?? '', $code)) ?></textarea>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Beschreibung</label>
-            <textarea class="form-control" name="description"><?= htmlspecialchars($edit['description'] ?? '') ?></textarea>
+        <div class="alert alert-info" role="alert">
+            <label for="text" class="form-label"><h4><?= $languageService->get('description') ?></h4></label>
+            <?php foreach ($languages as $code => $label): ?>
+                <div class="mb-3 row">
+                    <label class="col-sm-2 col-form-label"><?= $label ?>:</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control lang-field" rows="2" name="description[<?= $code ?>]"><?= htmlspecialchars(extractLangText($ds['description'] ?? '', $code)) ?></textarea>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
 
         <div class="mb-3">
@@ -313,8 +387,13 @@ else {
                             <?php endif; ?>
                         </td>
                         <td><?= ucfirst($row['type']) ?></td>
-                        <td><?= htmlspecialchars($row['title']) ?></td>
-                        
+                        <td>
+                            <?php
+                            $translate = new multiLanguage($lang);
+                            $translate->detectLanguages($row['title']);
+                            echo $translate->getTextByLanguage($row['title']);
+                            ?>
+                        </td>                        
                         <td>
                             <?php if ($row['visible']): ?>
                                 <span class="badge bg-success">Ja</span>

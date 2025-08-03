@@ -4,7 +4,25 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Datenbankverbindung vorhanden? Nexpell benötigt meist $_database
+
+use nexpell\LanguageService;
+use nexpell\AccessControl;
+use nexpell\NavigationUpdater;// SEO Anpassung
+
+// Sprache setzen, falls nicht vorhanden
+$_SESSION['language'] = $_SESSION['language'] ?? 'de';
+
+// LanguageService initialisieren
+global $languageService;
+$lang = $languageService->detectLanguage();
+$languageService = new LanguageService($_database);
+
+// Admin-Modul-Sprache laden
+$languageService->readPluginModule('discord');
+
+// Admin-Zugriff prüfen
+AccessControl::checkAdminAccess('discord');
+
 global $_database;
 
 function setPluginConfig($key, $value) {
@@ -14,6 +32,19 @@ function setPluginConfig($key, $value) {
     } else {
         safe_query("INSERT INTO plugins_discord (name, value) VALUES ('" . escape($key) . "', '" . escape($value) . "')");
     }
+    /////////////////////////////////////////////////////////////////////////////
+    // Datei-Name des aktuellen Admin-Moduls ermitteln
+        $admin_file = basename(__FILE__, '.php');
+
+    // Aktualisiert das Änderungsdatum in der Navigation für dieses Modul
+    // Warum das wichtig ist:
+    // ✅ Google liest das Änderungsdatum über die sitemap.xml (Tag <lastmod>)
+    // ✅ Wenn sich Inhalte ändern, soll Google das bemerken
+    // ✅ Dadurch werden Seiten öfter und gezielter gecrawlt (besseres SEO)
+    // ✅ Das Datum bleibt so immer aktuell – automatisch und ohne Pflegeaufwand
+        $admin_file = basename(__FILE__, '.php');
+        echo NavigationUpdater::updateFromAdminFile($admin_file);
+    /////////////////////////////////////////////////////////////////////////////
 }
 
 function getPluginConfig($key) {

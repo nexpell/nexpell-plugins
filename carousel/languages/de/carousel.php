@@ -74,6 +74,13 @@ $language_array = Array(
 <li>Hier kannst du ein zusätzliches Bild hochladen</li>
 <li>und es in einem Widget darstellen.</li>
 <li>Wähle dafür die gewünschte Position aus.<br><br></li>',
-  'no_header'               => 'Es wurde kein Header Bild hochgeladen'
+  'no_header'               => 'Es wurde kein Header Bild hochgeladen',
+
+
+
+
+  'maintitle' => 'Haupttitel',
+  'subtitle' => 'Untertitel',
+  'description' => 'Beschreibung',
 );
 

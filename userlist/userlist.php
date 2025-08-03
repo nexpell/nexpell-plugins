@@ -48,7 +48,7 @@ for ($n = $maxusers; $n <= $gesamt; $n += $maxusers) {
 $page = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
 
 // Sortierung validieren (Whitelist)
-$allowedSorts = ['username', 'lastlogin', 'registerdate', 'homepage'];
+$allowedSorts = ['username', 'lastlogin', 'registerdate', 'website'];
 $sort = isset($_GET['sort']) && in_array($_GET['sort'], $allowedSorts) ? $_GET['sort'] : 'username';
 
 // Sortier-Typ (ASC / DESC), Default ASC
@@ -94,7 +94,8 @@ if (mysqli_num_rows($ergebnis)) {
     // Benutzer-Daten ausgeben
     while ($ds = mysqli_fetch_array($ergebnis)) {
         $id = $ds['userID'];
-        $username = '<a href="index.php?site=profile&amp;userID=' . $id . '">' . getusername($id) . '</a>';
+        //$username = '<a href="index.php?site=profile&amp;userID=' . $id . '">' . getusername($id) . '</a>';
+        $username = '<a href="' . htmlspecialchars(convertToSeoUrl("index.php?site=profile&userID=" . $id)) . '">' . getusername($id) . '</a>';
 
         // Prüfen, ob Squad-Modul aktiv und User Mitglied
         $dx = mysqli_fetch_array(safe_query("SELECT * FROM settings_plugins WHERE modulname='squads'"));
@@ -135,7 +136,8 @@ if (mysqli_num_rows($ergebnis)) {
         $pm = ' / <i class="bi bi-slash-circle text-muted"></i> ' . $languageService->get('no_messenger');
         $messengerAvailable = false;
         if ($loggedin && $id != $userID && $messengerAvailable) {
-            $pm = ' / <a href="index.php?site=messenger&amp;action=touser&amp;touser=' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
+            //$pm = ' / <a href="index.php?site=messenger&amp;action=touser&amp;touser=' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
+            $pm = ' / <a href="' . htmlspecialchars(convertToSeoUrl("index.php?site=messenger&action=touser&touser=" . $id)) . '">'
                 . '<i class="bi bi-messenger"></i> ' . $languageService->get('message') . '</a>';
         }    
 

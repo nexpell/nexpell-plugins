@@ -82,7 +82,8 @@ if ($action === 'download' && $id > 0) {
 if ($action === 'detail' && $id > 0) {
     // JOIN, damit auch Kategorie geladen wird
     $sql = "
-        SELECT d.*, c.title AS category_title, c.categoryID
+        SELECT d.*, c.title AS category_title, c.categoryID,
+               (SELECT COUNT(*) FROM plugins_downloads_logs l WHERE l.fileID = d.id) AS download_count
         FROM plugins_downloads d
         LEFT JOIN plugins_downloads_categories c ON d.categoryID = c.categoryID
         WHERE d.id = $id
@@ -101,13 +102,13 @@ if ($action === 'detail' && $id > 0) {
     $desc = $dl['description'];
     $uploaded = !empty($dl['uploaded_at']) ? date("d.m.Y", strtotime($dl['uploaded_at'])) : '–';
     $updated = !empty($dl['updated_at']) ? date("d.m.Y", strtotime($dl['updated_at'])) : '–';
-    $downloads = intval($dl['downloads']);
+    $downloads = intval($dl['download_count']);
     $downloadLink = "index.php?site=downloads&action=download&id=$id";
 
     // Kategorie
     $catTitle = htmlspecialchars($dl['category_title']);
     $catID = intval($dl['categoryID']);
-    $catLink = "index.php?site=downloads&action=list&category=$catID"; // alternativ: `index.php?site=downloads&action=list&category=$catID`
+    $catLink = "index.php?site=downloads&action=list&category=$catID";
 
     ?>
 
@@ -154,10 +155,10 @@ SELECT
     d.id AS downloadID,
     d.title AS dl_title,
     d.description AS dl_desc,
-    d.downloads,
     d.access_roles,
     d.uploaded_at,
-    d.updated_at
+    d.updated_at,
+    (SELECT COUNT(*) FROM plugins_downloads_logs l WHERE l.fileID = d.id) AS download_count
 FROM plugins_downloads_categories c
 LEFT JOIN plugins_downloads d ON d.categoryID = c.categoryID
 ORDER BY c.categoryID, d.uploaded_at DESC
@@ -242,7 +243,7 @@ while ($row = $result->fetch_assoc()) {
     #$desc = $row['dl_desc'];
     $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
     $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
-    $downloads = intval($row['downloads']);
+    $downloads = intval($row['download_count']);
     $detailLink = 'index.php?site=downloads&action=detail&id=' . intval($row['downloadID']);
     $downloadLink = 'index.php?site=downloads&action=download&id=' . intval($row['downloadID']);
 

@@ -21,16 +21,14 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
-('', 11, '[[lang:de]]Twitch[[lang:en]]Twitch[[lang:it]]Twitch', 'Twitch', 'admincenter.php?site=admin_twitch', 1)");
+('', 11, '[[lang:de]]Twitch[[lang:en]]Twitch[[lang:it]]Twitch', 'twitch', 'admincenter.php?site=admin_twitch', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 4, '[[lang:de]]Twitch[[lang:en]]Twitch[[lang:it]]Twitch', 'Twitch', 'index.php?site=twitch', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 4, '[[lang:de]]Twitch[[lang:en]]Twitch[[lang:it]]Twitch', 'twitch', 'index.php?site=twitch', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'twitch', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'twitch' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'twitch')
 ");
  ?>

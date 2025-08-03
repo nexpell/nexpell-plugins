@@ -21,17 +21,14 @@ safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modu
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
-('', 3, '[[lang:de]]User Liste[[lang:en]]User List[[lang:it]]Lista Utenti', 'userlist', 'admincenter.php?site=admin_userlist', 1)");
+('', 3, '[[lang:de]]Mitglieder[[lang:en]]Members[[lang:it]]Membri', 'userlist', 'admincenter.php?site=admin_userlist', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 3, '[[lang:de]]User Liste[[lang:en]]User List[[lang:it]]Lista Utenti', 'userlist', 'index.php?site=userlist', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 3, '[[lang:de]]Mitglieder[[lang:en]]Members[[lang:it]]Membri', 'userlist', 'index.php?site=userlist', 1, 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'userlist', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'userlist' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'userlist')
 ");
  ?>

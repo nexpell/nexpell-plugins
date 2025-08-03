@@ -23,13 +23,22 @@ $sticky_height = (int)$ds['sticky_height'];
 $result = safe_query("SELECT * FROM plugins_carousel WHERE type = 'sticky' AND visible = 1 ORDER BY sort ASC");
 
 if (mysqli_num_rows($result)) {
+    $translate = new multiLanguage($lang);
+
     while ($db = mysqli_fetch_array($result)) {
         $media_file = $filepath . $db['media_file'];
-        $media_type = $db['media_type']; // "image" oder "video"
-        $description = $db['description'];
+        $media_type = $db['media_type'];
         $link_url = $db['link'];
-        $title = $db['title'];
-        $subtitle = $db['subtitle'];
+
+        // Texte übersetzen
+        $translate->detectLanguages($db['title']);
+        $title = $translate->getTextByLanguage($db['title']);
+
+        $translate->detectLanguages($db['subtitle']);
+        $subtitle = $translate->getTextByLanguage($db['subtitle']);
+
+        $translate->detectLanguages($db['description']);
+        $description = $translate->getTextByLanguage($db['description']);
 
         // Link-Button
         $link = '';
@@ -41,14 +50,7 @@ if (mysqli_num_rows($result)) {
             }
         }
 
-        // Mehrsprachigkeit
-        $translate = new multiLanguage($lang);
-        $translate->detectLanguages($title);
-        $title = $translate->getTextByLanguage($title);
-        $translate->detectLanguages($description);
-        $description = $translate->getTextByLanguage($description);
-
-        // Medientyp erkennen
+        // Media HTML
         $media_html = '';
         if ($media_type === 'image') {
             $media_html = '<img src="' . $media_file . '" alt="' . htmlspecialchars($title) . '" class="img-fluid w-100" style="max-height:' . $sticky_height . 'vh; object-fit:cover;">';
@@ -60,17 +62,18 @@ if (mysqli_num_rows($result)) {
         }
 
         $replaces = [
-            'sticky_pic'     => $media_html,
-            'sticky_height'  => $sticky_height,
-            'title'          => $title,
-            'subtitle'       => $subtitle,
-            'link'           => $link,
-            'description'    => $description,
-            'theme_name'     => $theme_name
+            'sticky_pic'    => $media_html,
+            'sticky_height' => $sticky_height,
+            'title'         => $title,
+            'subtitle'      => $subtitle,
+            'link'          => $link,
+            'description'   => $description,
+            'theme_name'    => $theme_name
         ];
 
         echo $tpl->loadTemplate("sticky_header", "content", $replaces, 'plugin');
     }
+
 } else {
     echo '<div class="alert alert-danger" role="alert">' . $languageService->get('no_header') . '</div>';
 }

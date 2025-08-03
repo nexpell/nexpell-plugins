@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use nexpell\LanguageService;
 use nexpell\AccessControl;
+use nexpell\NavigationUpdater;// SEO Anpassung
 
 $_SESSION['language'] = $_SESSION['language'] ?? 'de';
 
@@ -53,6 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rule'])) {
                 VALUES ('" . $title . "', '" . $text . "', " . $userID . ", " . $sort_order . ", " . $is_active . ")
             ");
         }
+
+            /////////////////////////////////////////////////////////////////////////////
+            // Datei-Name des aktuellen Admin-Moduls ermitteln
+            $admin_file = basename(__FILE__, '.php');
+
+            // Aktualisiert das Änderungsdatum in der Navigation für dieses Modul
+            // Warum das wichtig ist:
+            // ✅ Google liest das Änderungsdatum über die sitemap.xml (Tag <lastmod>)
+            // ✅ Wenn sich Inhalte ändern, soll Google das bemerken
+            // ✅ Dadurch werden Seiten öfter und gezielter gecrawlt (besseres SEO)
+            // ✅ Das Datum bleibt so immer aktuell – automatisch und ohne Pflegeaufwand
+            $admin_file = basename(__FILE__, '.php');
+            echo NavigationUpdater::updateFromAdminFile($admin_file);
+            /////////////////////////////////////////////////////////////////////////////
 
         header("Location: admincenter.php?site=admin_rules");
         exit;

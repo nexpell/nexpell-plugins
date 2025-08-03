@@ -27,14 +27,11 @@ safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modu
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
-('', 7, 'footer_easy', '[[lang:de]]Footer Easy[[lang:en]]Footer Easy[[lang:it]]PiÃ¨ di pagina Easy', 'admincenter.php?site=admin_footer_easy', 0)");
+('', 7, 'footer_easy', '[[lang:de]]Footer Easy[[lang:en]]Footer Easy[[lang:it]]PiÃ¨ di pagina Easy', 'footer_easy', 'admincenter.php?site=admin_footer_easy', 0)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'plugin_footer_easy', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'plugin_footer_easy' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'footer_easy')
 ");
-  
  ?>

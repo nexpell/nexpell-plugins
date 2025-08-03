@@ -23,7 +23,7 @@ $class = htmlspecialchars($config['selected_style']);
 $data_array = [
     'class'    => $class,
     'title'    => $languageService->get('title'),
-    'subtitle' => 'Pricing'
+    'subtitle' => 'SShoutbox'
 ];
 
 echo $tpl->loadTemplate("shoutbox", "head", $data_array, 'plugin');

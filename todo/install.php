@@ -17,14 +17,12 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 8, '[[lang:de]]Todo[[lang:en]]Todo[[lang:it]]Todo', 'todo', 'admincenter.php?site=admin_todo', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 3, '[[lang:de]]Todo[[lang:en]]Todo[[lang:it]]Todo', 'todo', 'index.php?site=todo', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 3, '[[lang:de]]Todo[[lang:en]]Todo[[lang:it]]Todo', 'todo', 'index.php?site=todo', 1, 1)");
 
 #######################################################################################################################################
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'todo', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'todo' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'todo')
 ");
  ?>

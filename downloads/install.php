@@ -48,16 +48,12 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 13, '[[lang:de]]Download[[lang:en]]Download[[lang:it]]Download', 'downloads', 'admincenter.php?site=admin_downloads', 1)");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown, themes_modulname) VALUES
-('', 4, '[[lang:de]]Download[[lang:en]]Download[[lang:it]]Download', 'downloads', 'index.php?site=downloads', 1, 1, 'default')");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
+('', 5, '[[lang:de]]Download[[lang:en]]Download[[lang:it]]Download', 'downloads', 'index.php?site=downloads', 1, 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'downloads', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'downloads' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'downloads')
 ");
-  
  ?>

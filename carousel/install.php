@@ -55,13 +55,9 @@ safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, 
 ('', 10, '[[lang:de]]Carousel[[lang:en]]Carousel[[lang:it]]Carosello Immagini', 'carousel', 'admincenter.php?site=admin_carousel', 1)");
 
 #######################################################################################################################################
-
 safe_query("
-  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname, accessID)
-  VALUES ('', 1, 'link', 'carousel', (
-    SELECT linkID FROM navigation_dashboard_links WHERE modulname = 'carousel' LIMIT 1
-  ))
+  INSERT IGNORE INTO user_role_admin_navi_rights (id, roleID, type, modulname)
+  VALUES ('', 1, 'link', 'carousel')
 ");
-  
  ?>
 

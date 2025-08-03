@@ -104,9 +104,9 @@ if ($result && $result->num_rows > 0) {
             <div class="<?= $colClass ?> portfolio-item filter-<?= $image['category_id'] ?> <?= htmlspecialchars($image['class']) ?>">
                 <a href="#" 
                    class="lightbox-trigger d-block mb-4" 
-                   data-src="/includes/plugins/gallery/images/<?= rawurlencode($image['filename']) ?>"
+                   data-src="/includes/plugins/gallery/images/upload/<?= rawurlencode($image['filename']) ?>"
                    title="<?= htmlspecialchars($image['category_name']) ?>">
-                    <img src="/includes/plugins/gallery/images/<?= rawurlencode($image['filename']) ?>" 
+                    <img src="/includes/plugins/gallery/images/upload/thumbs/<?= rawurlencode($image['filename']) ?>" 
                          class=" rounded" 
                          alt="<?= htmlspecialchars($image['category_name']) ?>" loading="lazy" aria-label="Bild in Kategorie <?= htmlspecialchars($image['category_name']) ?>">
                 </a>
