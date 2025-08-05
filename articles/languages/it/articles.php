@@ -85,7 +85,10 @@ $language_array = array(
     'votes'                    => 'Voti',
     'yes'                      => 'Sì',
     'you_have_already_rated'   => 'Hai già votato.',
-    'your_comment'             => 'Il tuo commento'
+    'your_comment'             => 'Il tuo commento',
+
+    'new' => 'NUOVO',
+    'read_more' => 'Leggi tutto',
 );
 
 

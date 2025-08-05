@@ -28,7 +28,7 @@ $class = htmlspecialchars($config['selected_style']);
     $data_array = [
         'class'    => $class,
         'title' => $languageService->get('title'),
-        'subtitle' => 'About'
+        'subtitle' => 'Articles'
     ];
     
     echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
@@ -40,32 +40,32 @@ if (isset($_GET['action'])) {
 }
 
 if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $id = (int)$_GET['id'];
+    $category_id = (int)$_GET['id'];
 
     $page = isset($_GET['page']) ? max((int)$_GET['page'], 1) : 1;
     $limit = 6;
     $offset = ($page - 1) * $limit;
 
     // Kategorie laden
-    $getcat = safe_query("SELECT * FROM plugins_articles_categories WHERE id='$id'");
+    $getcat = safe_query("SELECT * FROM plugins_articles_categories WHERE id='$category_id'");
     $ds = mysqli_fetch_array($getcat);
     $name = $ds['name'];
 
     // Gesamtanzahl Artikel für Paginierung
-    $total_articles_query = safe_query("SELECT COUNT(*) as total FROM plugins_articles WHERE id='$id' AND is_active ='1'");
+    $total_articles_query = safe_query("SELECT COUNT(*) as total FROM plugins_articles WHERE category_id='$category_id' AND is_active='1'");
     $total_articles_result = mysqli_fetch_array($total_articles_query);
     $total_articles = (int)$total_articles_result['total'];
     $total_pages = ceil($total_articles / $limit);
 
     // Artikel laden
-    $ergebnis = safe_query("SELECT * FROM plugins_articles WHERE id='$id' AND is_active ='1' ORDER BY updated_at DESC LIMIT $offset, $limit");
+    $ergebnis = safe_query("SELECT * FROM plugins_articles WHERE category_id='$category_id' AND is_active='1' ORDER BY updated_at DESC LIMIT $offset, $limit");
 
     $data_array = [
-        'name'    => $name,
-        'title' => $languageService->get('title'),
-        'title_categories' => $languageService->get('title_categories'),
-        'categories' => $languageService->get('categories'),
-        'category' => $languageService->get('category'),
+        'name'              => $name,
+        'title'             => $languageService->get('title'),
+        'title_categories'  => $languageService->get('title_categories'),
+        'categories'        => $languageService->get('categories'),
+        'category'          => $languageService->get('category'),
     ];
 
     echo $tpl->loadTemplate("articles", "details_head", $data_array, 'plugin');
@@ -82,8 +82,7 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
         ];
 
         while ($ds = mysqli_fetch_array($ergebnis)) {
-
-            $timestamp = (int)($ds['updated_at']);
+            $timestamp = (int)$ds['updated_at'];
             $tag = date("d", $timestamp);
             $monat = date("n", $timestamp);
             $year = date("Y", $timestamp);
@@ -91,35 +90,38 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
             $username = getusername($ds['userID']);
 
             $banner_image = $ds['banner_image'];
-            $image = $banner_image ? "/includes/plugins/articles/images/article/" . $banner_image : "/includes/plugins/articles/images/no-image.jpg";
+            $image = $banner_image
+                ? "/includes/plugins/articles/images/article/" . $banner_image
+                : "/includes/plugins/articles/images/no-image.jpg";
 
             // Übersetzung laden
             $translate = new multiLanguage($lang);
             $title = $translate->getTextByLanguage($ds['title']);
 
-            // Optionale Kürzung
+            // Optional kürzen
             $maxblogchars = 15;
             $short_content = (mb_strlen($title) > $maxblogchars)
                 ? mb_substr($title, 0, $maxblogchars) . '...'
                 : $title;
-            $id = (int)$ds['id'];
+
+            $article_id = (int)$ds['id'];
 
             $data_array = [
-                'name' => $name,
-                'title' => $title,
-                'username' => $username,
-                'image' => $image,
-                'tag' => $tag,
-                'monat' => $monatname,
-                'year' => $year,
-                'id'             => $id,
-                'lang_rating' => $languageService->get('rating'),
-                'lang_votes' => $languageService->get('votes'),
-                'link' => $languageService->get('link'),
-                'info' => $languageService->get('info'),
-                'stand' => $languageService->get('stand'),
-                'by' => $languageService->get('by'),
-                'on' => $languageService->get('on'),
+                'name'          => $name,
+                'title'         => $title,
+                'username'      => $username,
+                'image'         => $image,
+                'tag'           => $tag,
+                'monat'         => $monatname,
+                'year'          => $year,
+                'id'            => $article_id,
+                'lang_rating'   => $languageService->get('rating'),
+                'lang_votes'    => $languageService->get('votes'),
+                'link'          => $languageService->get('link'),
+                'info'          => $languageService->get('info'),
+                'stand'         => $languageService->get('stand'),
+                'by'            => $languageService->get('by'),
+                'on'            => $languageService->get('on'),
             ];
 
             echo $tpl->loadTemplate("articles", "details", $data_array, 'plugin');
@@ -133,7 +135,7 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
             for ($i = 1; $i <= $total_pages; $i++) {
                 $active = ($i == $page) ? ' active' : '';
                 echo '<li class="page-item' . $active . '">
-                        <a class="page-link" href="index.php?site=articles&action=show&id=' . $id . '&page=' . $i . '">' . $i . '</a>
+                        <a class="page-link" href="index.php?site=articles&action=show&id=' . $category_id . '&page=' . $i . '">' . $i . '</a>
                       </li>';
             }
             echo '</ul></nav>';
@@ -142,6 +144,7 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
         echo $plugin_language['no_articles'] . '<br><br>[ <a href="index.php?site=articles" class="alert-article">' . $plugin_language['go_back'] . '</a> ]';
     }
 }
+
 
 
 
@@ -270,7 +273,7 @@ if ($action == "watch" && is_numeric($_GET['id'])) {
         $data_array = [
             'name' => $name,
             'title' => htmlspecialchars($article['title']),
-            'id' => $article['id'],
+            'id' => $article['category_id'],
             'title_categories' => $languageService->get('title_categories'),
             'categories' => $languageService->get('categories'),
             'category' => $languageService->get('category'),

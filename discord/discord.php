@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\RoleManager;
 
 global $_database, $languageService;
 
@@ -31,10 +32,21 @@ function getPluginConfig($key) {
     return '';
 }
 
-// Konfig-Wert abrufen
+// Konfig-Wert Admin Roles abrufen
+// Angenommen, User-ID aus Session
+$userID = $_SESSION['userID'] ?? null;
+
+$roles = [];
+$isAdmin = false;
+
+if ($userID !== null) {
+    $roles = RoleManager::getUserRoles($userID);
+    $isAdmin = in_array('Admin', $roles);
+}
+
+// Beispiel: Server-ID holen
 $serverID = getPluginConfig('server_id');
-$roles = $_SESSION['user']['roles'] ?? [];
-$isAdmin = is_array($roles) && in_array('admin', $roles);
+
 ?>
 
 <!-- Discord Widget (nur wenn konfiguriert) -->

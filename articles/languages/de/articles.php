@@ -6,6 +6,7 @@ $language_array = array(
     'add_articles'             => 'Artikel hinzufügen',
     'add_category'             => 'Kategorie hinzufügen',
     'answer'                   => 'Antwort',
+    'aug'                      => 'August', 
     'article_description'      => 'Artikel-Kategoriebeschreibung',
     'articles'                 => 'Artikel',
     'articles_categorys'       => 'Artikel Kategorien',
@@ -85,5 +86,8 @@ $language_array = array(
     'votes'                    => 'Stimmen',
     'yes'                      => 'Ja',
     'you_have_already_rated'   => 'Du hast bereits bewertet.',
-    'your_comment'             => 'Dein Kommentar'
+    'your_comment'             => 'Dein Kommentar',
+
+    'new' => 'NEU',
+    'read_more' => 'Mehr lesen',
 );

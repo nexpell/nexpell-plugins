@@ -76,10 +76,80 @@ if ($action === 'download' && $id > 0) {
     exit;
 }
 
+if ($action === 'cat_list' && isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $categoryID = (int)$_GET['id'];
+
+    // Kategorie-Titel holen
+    $catResult = safe_query("SELECT title FROM plugins_downloads_categories WHERE categoryID = $categoryID");
+    $catRow = mysqli_fetch_assoc($catResult);
+    $catTitle = $catRow['title'] ?? 'Kategorie';
+
+    echo '<nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+            <li class="breadcrumb-item">' . htmlspecialchars($catTitle) . '</li>
+        </ol>
+    </nav>';
+
+    $result = safe_query("SELECT * FROM plugins_downloads WHERE categoryID = $categoryID ORDER BY updated_at DESC");
+
+    if (mysqli_num_rows($result)) {
+        echo '<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">';
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            $title      = htmlspecialchars($row['title']);
+            $descText   = strip_tags($row['description']);
+            $descShort  = (mb_strlen($descText) > 150) ? mb_substr($descText, 0, 150) . '…' : $descText;
+            $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
+        $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
+            $downloads  = (int)$row['downloads'];
+            $detailLink = 'index.php?site=downloads&action=watch&id=' . (int)$row['id'];
+
+           ?>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">
+                            <span class="text-primary"><?= $title ?></span>
+                        </h5>
+
+                        <?php if (!empty($descText)): ?>
+                            <p class="card-text text-truncate" title="<?= htmlspecialchars($descText) ?>"><?= $descShort ?></p>
+                        <?php endif; ?>
+
+                        <div class="mt-auto">
+                            <ul class="list-unstyled mb-2 small text-muted">
+                                <?php if ($uploaded): ?>
+                                    <li><i class="bi bi-upload me-2"></i><strong>Hochgeladen am:</strong> <?= $uploaded ?></li>
+                                <?php endif; ?>
+                                <?php if ($updated && $updated !== $uploaded): ?>
+                                    <li><i class="bi bi-pencil-square me-2"></i><strong>Zuletzt aktualisiert:</strong> <span class="text-warning fw-bold"><?= $updated ?></span></li>
+                                <?php endif; ?>
+                                <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
+                            </ul>
+
+                            <a href="<?= $detailLink ?>" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-info-circle"></i> Details & Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        }
+
+        echo '</div>';
+    } else {
+        echo '<div class="alert alert-info">' . $languageService->get('no_downloads_in_this_category') . '</div>';
+    }
+}
+
+ 
+
 // Aktion: Detailansicht
 
 // Detailansicht
-if ($action === 'detail' && $id > 0) {
+elseif ($action === 'detail' && $id > 0) {
     // JOIN, damit auch Kategorie geladen wird
     $sql = "
         SELECT d.*, c.title AS category_title, c.categoryID,
@@ -108,7 +178,7 @@ if ($action === 'detail' && $id > 0) {
     // Kategorie
     $catTitle = htmlspecialchars($dl['category_title']);
     $catID = intval($dl['categoryID']);
-    $catLink = "index.php?site=downloads&action=list&category=$catID";
+    $catLink = "index.php?site=downloads&action=cat_list&id=$catID";
 
     ?>
 
@@ -142,157 +212,160 @@ if ($action === 'detail' && $id > 0) {
 
     <?php
     exit;
-}
+} else {
 
 
 
-// Aktion: Übersicht (Standard oder ?action=list)
-$sql = "
-SELECT
-    c.categoryID,
-    c.title AS cat_title,
-    c.description AS cat_desc,
-    d.id AS downloadID,
-    d.title AS dl_title,
-    d.description AS dl_desc,
-    d.access_roles,
-    d.uploaded_at,
-    d.updated_at,
-    (SELECT COUNT(*) FROM plugins_downloads_logs l WHERE l.fileID = d.id) AS download_count
-FROM plugins_downloads_categories c
-LEFT JOIN plugins_downloads d ON d.categoryID = c.categoryID
-ORDER BY c.categoryID, d.uploaded_at DESC
-";
+    // Aktion: Übersicht (Standard oder ?action=list)
+    $sql = "
+    SELECT
+        c.categoryID,
+        c.title AS cat_title,
+        c.description AS cat_desc,
+        d.id AS downloadID,
+        d.title AS dl_title,
+        d.description AS dl_desc,
+        d.access_roles,
+        d.uploaded_at,
+        d.updated_at,
+        (SELECT COUNT(*) FROM plugins_downloads_logs l WHERE l.fileID = d.id) AS download_count
+    FROM plugins_downloads_categories c
+    LEFT JOIN plugins_downloads d ON d.categoryID = c.categoryID
+    ORDER BY c.categoryID, d.uploaded_at DESC
+    ";
 
-$result = safe_query($sql);
-if (!$result) {
-    echo '<div class="alert alert-danger">Fehler beim Laden der Downloads.</div>';
-    exit;
-}
-
-$catID = isset($_GET['category']) ? (int)$_GET['category'] : null;
-$catTitle = '';
-$catLink = '';
-
-// Falls Kategorie gesetzt, aus DB Titel holen
-if ($catID) {
-    $catSql = "SELECT title FROM plugins_downloads_categories WHERE categoryID = $catID LIMIT 1";
-    $catResult = safe_query($catSql);
-    if ($catResult && $catRow = $catResult->fetch_assoc()) {
-        $catTitle = htmlspecialchars($catRow['title']);
-        $catLink = "index.php?site=downloads&action=list&category=$catID";
+    $result = safe_query($sql);
+    if (!$result) {
+        echo '<div class="alert alert-danger">Fehler beim Laden der Downloads.</div>';
+        exit;
     }
-}
 
-// Beispiel: Falls Detailseite, Titel des Downloads setzen (optional)
-$title = '';
-if (isset($_GET['action']) && $_GET['action'] === 'detail' && isset($_GET['id'])) {
-    $dlID = (int)$_GET['id'];
-    $dlSql = "SELECT title FROM plugins_downloads WHERE id = $dlID LIMIT 1";
-    $dlResult = safe_query($dlSql);
-    if ($dlResult && $dlRow = $dlResult->fetch_assoc()) {
-        $title = htmlspecialchars($dlRow['title']);
-    }
-}
+    $catID = isset($_GET['category']) ? (int)$_GET['category'] : null;
+    $catTitle = '';
+    $catLink = '';
 
-
-?>
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
-
-    <?php if ($catID && $catTitle): ?>
-        <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
-    <?php endif; ?>
-
-    <?php if (!empty($title)): ?>
-        <li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
-    <?php endif; ?>
-  </ol>
-</nav>
-<?php
-
-$currentCatID = null;
-$hasVisibleInCategory = false;
-
-while ($row = $result->fetch_assoc()) {
-    if ($currentCatID !== $row['categoryID']) {
-        if ($currentCatID !== null) {
-            if (!$hasVisibleInCategory) {
-                echo '<div class="alert alert-info">Keine sichtbaren Downloads.</div>';
-            }
-            echo '</div></section>';
+    // Falls Kategorie gesetzt, aus DB Titel holen
+    if ($catID) {
+        $catSql = "SELECT title FROM plugins_downloads_categories WHERE categoryID = $catID LIMIT 1";
+        $catResult = safe_query($catSql);
+        if ($catResult && $catRow = $catResult->fetch_assoc()) {
+            $catTitle = htmlspecialchars($catRow['title']);
+            $catLink = "index.php?site=downloads&action=cat_list&id=$catID";
         }
+    }
 
-        echo '<section class="mb-5">';
-        echo '<h4>' . htmlspecialchars($row['cat_title']) . '</h4>';
-        if (!empty($row['cat_desc'])) {
-            echo '<p class="text-secondary">' . htmlspecialchars($row['cat_desc']) . '</p>';
+    // Beispiel: Falls Detailseite, Titel des Downloads setzen (optional)
+    $title = '';
+    if (isset($_GET['action']) && $_GET['action'] === 'detail' && isset($_GET['id'])) {
+        $dlID = (int)$_GET['id'];
+        $dlSql = "SELECT title FROM plugins_downloads WHERE id = $dlID LIMIT 1";
+        $dlResult = safe_query($dlSql);
+        if ($dlResult && $dlRow = $dlResult->fetch_assoc()) {
+            $title = htmlspecialchars($dlRow['title']);
         }
-        echo '<div class="row row-cols-1 row-cols-md-3 g-4">';
-        $currentCatID = $row['categoryID'];
-        $hasVisibleInCategory = false;
     }
 
-    if (empty($row['downloadID']) || !hasAccess($row['access_roles'])) {
-        continue;
-    }
 
-    $hasVisibleInCategory = true;
-    $title = htmlspecialchars($row['dl_title']);
-    #$desc = $row['dl_desc'];
-    $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
-    $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
-    $downloads = intval($row['download_count']);
-    $detailLink = 'index.php?site=downloads&action=detail&id=' . intval($row['downloadID']);
-    $downloadLink = 'index.php?site=downloads&action=download&id=' . intval($row['downloadID']);
-
-    $descText = strip_tags($row['dl_desc']); // HTML entfernen
-    $maxLength = 100; // max Zeichen
-    if (mb_strlen($descText) > $maxLength) {
-        $descShort = mb_substr($descText, 0, $maxLength) . '...';
-    } else {
-        $descShort = $descText;
-    }
     ?>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
 
-    <div class="col">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <span class="text-primary"><?= $title ?></span>
-                </h5>
+        <?php if ($catID && $catTitle): ?>
+            <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
+        <?php endif; ?>
 
-                <?php if (!empty($descText)): ?>
-                    <p class="card-text text-truncate" title="<?= htmlspecialchars($descText) ?>"><?= $descShort ?></p>
-                <?php endif; ?>
+        <?php if (!empty($title)): ?>
+            <li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
+        <?php endif; ?>
+      </ol>
+    </nav>
+    <?php
 
-                <div class="mt-auto">
-                    <ul class="list-unstyled mb-2 small text-muted">
-                        <?php if ($uploaded): ?>
-                            <li><i class="bi bi-upload me-2"></i><strong>Hochgeladen am:</strong> <?= $uploaded ?></li>
-                        <?php endif; ?>
-                        <?php if ($updated && $updated !== $uploaded): ?>
-                            <li><i class="bi bi-pencil-square me-2"></i><strong>Zuletzt aktualisiert:</strong> <?= $updated ?></li>
-                        <?php endif; ?>
-                        <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
-                    </ul>
+    $currentCatID = null;
+    $hasVisibleInCategory = false;
 
-                    <a href="<?= $detailLink ?>" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-info-circle"></i> Details & Download
-                    </a>
+    while ($row = $result->fetch_assoc()) {
+        if ($currentCatID !== $row['categoryID']) {
+            if ($currentCatID !== null) {
+                if (!$hasVisibleInCategory) {
+                    echo '<div class="alert alert-info">Keine sichtbaren Downloads.</div>';
+                }
+                echo '</div></section>';
+            }
+
+            echo '<section class="mb-5">';
+            echo '<h4>' . htmlspecialchars($row['cat_title']) . '</h4>';
+            if (!empty($row['cat_desc'])) {
+                echo '<p class="text-secondary">' . htmlspecialchars($row['cat_desc']) . '</p>';
+            }
+            echo '<div class="row row-cols-1 row-cols-md-3 g-4">';
+            $currentCatID = $row['categoryID'];
+            $hasVisibleInCategory = false;
+        }
+
+        if (empty($row['downloadID']) || !hasAccess($row['access_roles'])) {
+            continue;
+        }
+
+        $hasVisibleInCategory = true;
+        $title = htmlspecialchars($row['dl_title']);
+        #$desc = $row['dl_desc'];
+        $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
+        $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
+        $downloads = intval($row['download_count']);
+        $detailLink = 'index.php?site=downloads&action=detail&id=' . intval($row['downloadID']);
+        $downloadLink = 'index.php?site=downloads&action=download&id=' . intval($row['downloadID']);
+
+        $descText = strip_tags($row['dl_desc']); // HTML entfernen
+        $maxLength = 100; // max Zeichen
+        if (mb_strlen($descText) > $maxLength) {
+            $descShort = mb_substr($descText, 0, $maxLength) . '...';
+        } else {
+            $descShort = $descText;
+        }
+        ?>
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">
+                        <span class="text-primary"><?= $title ?></span>
+                    </h5>
+
+                    <?php if (!empty($descText)): ?>
+                        <p class="card-text text-truncate" title="<?= htmlspecialchars($descText) ?>"><?= $descShort ?></p>
+                    <?php endif; ?>
+
+                    <div class="mt-auto">
+                        <ul class="list-unstyled mb-2 small text-muted">
+                            <?php if ($uploaded): ?>
+                                <li><i class="bi bi-upload me-2"></i><strong>Hochgeladen am:</strong> <?= $uploaded ?></li>
+                            <?php endif; ?>
+                            <?php if ($updated && $updated !== $uploaded): ?>
+                                <li><i class="bi bi-pencil-square me-2"></i><strong>Zuletzt aktualisiert:</strong> <span class="text-warning fw-bold"><?= $updated ?></span></li>
+                            <?php endif; ?>
+                            <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
+                        </ul>
+
+                        <a href="<?= $detailLink ?>" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-info-circle"></i> Details & Download
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <?php
-}
-
-if ($currentCatID !== null) {
-    if (!$hasVisibleInCategory) {
-        echo '<div class="alert alert-info">Keine sichtbaren Downloads in dieser Kategorie.</div>';
+        <?php
     }
-    echo '</div></section>';
+
+    if ($currentCatID !== null) {
+        if (!$hasVisibleInCategory) {
+            echo '<div class="alert alert-info">Keine sichtbaren Downloads in dieser Kategorie.</div>';
+        }
+        echo '</div></section>';
+    } else {
+        echo '<div class="alert alert-warning">Es sind derzeit keine Downloads verfügbar.</div>';
+    }
 }
 ?>
