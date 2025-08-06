@@ -7,6 +7,12 @@
     <p class="head-boxes-foot">{subtitle}</p>
 </div>
 <!-- END -->
+ <!-- articles_category_show_head -->
+<div class="category-header">
+    <h1>{category_name}</h1>
+    <p>{category_description}</p>
+</div>
+<!-- END -->
 <!-- articles_category -->
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
@@ -25,31 +31,35 @@
 <!-- END -->
 <!-- articles_details_header -->
 
-
 <!-- END -->
 <!-- articles_details -->
-<div class="col-lg-4 col-md-6 col-sm-6">
-        <div class="card card-2">
-            <div class="card-img-wrapper overlay-rounded-top">
-                <img class="img-cat" src="{image}" alt="">
-            </div>
-            <div class="card-body p-0">
-                <div class="d-flex">
-                    <div class="py-3 px-4 border-end text-center">
-                        <h4 class="text-primary mb-0">{tag}</h4>
-                        <p class="mb-0"></p>{monat}
-                        <p class="mb-0"></p>{year}
-                    </div>
-                    <div class="p-3">
-                    	<small>{name}</small><hr>
-    	                <a href="index.php?site=articles&action=watch&id={id}" class="font-primary">{title}</a>
-    	                <br>
-                        <small>{by} {username}</small>
-                    </div>
-                </div>
-            </div>
+  <div class="col-lg-4 col-md-6 col-sm-6">
+    <div class="card news-card">
+      <div class="news-img-container">
+        <span class="badge text-bg-secondary category-badge">{name}</span>
+          <img src="{image}" class="img-cat" alt="">
+      </div>
+      <div class="p-3">
+        <div class="d-flex">
+          <div class="py-3 px-4 border-end text-center">
+            <h4 class="text-primary mb-0">{tag}</h4>
+            <p class="mb-0"></p>{monat}
+            <p class="mb-0"></p>{year}
+          </div>
+          <h5 class="p-3 d-flex align-items-center">
+            {title}
+          </h5>
         </div>
-    </div>	
+        <div class="mt-2 border-top pt-2 small text-muted text-end">
+          {by} {username} | {tag} {monat} {year}
+        </div>
+        <a href="index.php?site=articles&action=watch&id={id}" class="stretched-link"></a>
+        <div class="d-grid gap-2">
+          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 <!-- END -->
 <!-- articles_content_details_head -->
 <nav aria-label="breadcrumb">
@@ -61,17 +71,18 @@
 </nav>
 <!-- END -->
 <!-- articles_content_details -->
-<div class="card">
-	<div class="card-body">
-		<h4>{title}</h4>
+<div class="card news-full-card">
+	<div class="news-full-card-body">
 		<img class="img-art" src="{image}" alt="">
+    <div class="d-flex justify-content-between align-items-center">
+      <h3 class="mt-4 mb-4">{title}</h3>
+      <span class="text-end"><small>{info} {username} - {stand} {date}</small></span>
+    </div>
 		{content}
-		<br><br>
-		{lang_link}: {link}
+		{link}
 		<hr>
 		<small>({views} {lang_views})</small>
 		{lang_rating}: {ratingpic} ({votes} {lang_votes})<br><br>{rateform}
-		<small>{info} {username} {stand} {date}</small>
 	</div>
 </div>
 <!-- END -->
@@ -80,28 +91,33 @@
 <!-- END -->
 
 <!-- articles_content_all -->
-	<div class="col-lg-4 col-md-6 col-sm-6 mb-4">
-        <div class="card card-2">
-            <div class="card-img-wrapper overlay-rounded-top">
-                <img class="img-cat" src="{image}" alt="">
-            </div>
-            <div class="card-body p-0">
-                <div class="d-flex">
-                    <div class="py-3 px-4 border-end text-center">
-                        <h4 class="text-primary mb-0">{tag}</h4>
-                        <p class="mb-0"></p>{monat}
-                        <p class="mb-0"></p>{year}
-                    </div>
-                    <div class="p-3">
-                    	<small>{name}</small><hr>
-    	                <a href="index.php?site=articles&action=watch&id={id}" class="font-primary">{title}</a>
-    	                <br>
-                        <small>{by} {username}</small>
-                    </div>
-                </div>
-            </div>
+  <div class="col-lg-4 col-md-6 col-sm-6">
+    <div class="card news-card">
+      <div class="news-img-container">
+        <span class="badge text-bg-secondary category-badge">{name}</span>
+          <img src="{image}" class="img-cat" alt="">
+      </div>
+      <div class="p-3">
+        <div class="d-flex">
+          <div class="py-3 px-4 border-end text-center">
+            <h4 class="text-primary mb-0">{tag}</h4>
+            <p class="mb-0"></p>{monat}
+            <p class="mb-0"></p>{year}
+          </div>
+          <h5 class="p-3 d-flex align-items-center">
+            {title}
+          </h5>
         </div>
-    </div>			
+        <div class="mt-2 border-top pt-2 small text-muted text-end">
+          {by} {username} | {tag} {monat} {year}
+        </div>
+        <a href="index.php?site=articles&action=watch&id={id}" class="stretched-link"></a>
+        <div class="d-grid gap-2">
+          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
+        </div>
+      </div>
+    </div>
+  </div>	
 <!-- END -->
 <!-- articles_content_all_foot -->
 </div>
@@ -154,32 +170,28 @@
 <!-- END -->
 
 <!-- articles_widget_content_content -->
-    <div class="col-lg-4 col-md-6">
-      <div class="card">
-        <div class="position-relative">
+  <div class="col-md-4">
+    <div class="card news-card">
+      <div class="news-img-container">
+        <span class="badge text-bg-secondary category-badge">{name}</span>
           <img src="{image}" class="img-cat" alt="">
-          <div class="position-absolute top-0 end-0 bg-primary text-white px-2 py-1 rounded-start small">
-            {tag} {monat} {year}
-          </div>
+      </div>
+      <div class="p-3">
+        <h5 class="mb-2">{title}</h5>
+        <p>{text}</p>
+        <div class="mt-2 border-top pt-2 small text-muted text-end">
+          {by} {username} | {tag} {monat} {year}
         </div>
-        <div class="card-body d-flex flex-column justify-content-between p-3">
-          <div>
-            <h5 class="card-title mb-2">
-                {title}
-            </h5>
-            <small class="text-muted">{text}</small>
-          </div>
-          <div class="mt-2 border-top pt-2 small text-muted">
-            {by} {username}
-          </div>
+        <a href="{link}" class="stretched-link"></a>
+        <div class="d-grid gap-2">
+          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
         </div>
       </div>
     </div>
+  </div>
 <!-- END -->
 
 <!-- articles_widget_content_articles_foot -->
   </div>
 </div>
 <!-- END -->
-
-
