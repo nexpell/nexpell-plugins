@@ -220,6 +220,18 @@ $cats = [];
 while ($row = mysqli_fetch_array($resultCats, MYSQLI_ASSOC)) {
     $cats[$row['categoryID']] = $row['title'];
 }
+
+// Download-Zähler aus der Log-Tabelle abrufen
+$resultLogCounts = safe_query("
+    SELECT fileID, COUNT(*) AS download_count
+    FROM plugins_downloads_logs
+    GROUP BY fileID
+");
+
+$downloadCounts = [];
+while ($row = mysqli_fetch_array($resultLogCounts, MYSQLI_ASSOC)) {
+    $downloadCounts[$row['fileID']] = $row['download_count'];
+}
 ?>
 
 
@@ -377,7 +389,7 @@ while ($row = mysqli_fetch_array($resultCats, MYSQLI_ASSOC)) {
           <td><?= htmlspecialchars($d['category_title']) ?></td>
           <td><?= htmlspecialchars($d['title']) ?></td>
           <td><?= htmlspecialchars($d['file']) ?></td>
-          <td><?= $d['downloads'] ?></td>
+          <td><?= isset($downloadCounts[$d['id']]) ? $downloadCounts[$d['id']] : 0 ?></td>
           <td>
             <?php
               $roles = json_decode($d['access_roles'],true) ?: [];
