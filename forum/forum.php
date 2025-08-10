@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use nexpell\AccessControl;
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $_database, $languageService;
 
@@ -258,19 +259,33 @@ switch ($action) {
         ?>
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
     <li class="breadcrumb-item">
-        <?php $urlString = 'index.php?site=forum&action=overview&id=' . (isset($board['id']) ? intval($board['id']) : 0);?>
-        <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>">
-            <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
-        </a>
+      <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a>
     </li>
+
+    <?php if (!empty($board) && !empty($board['id'])): ?>
     <li class="breadcrumb-item">
-        <?php $urlString = 'index.php?site=forum&action=category&id=' . (isset($category['catID']) ? intval($category['catID']) : 0);?>
-        <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>">
-            <?= htmlspecialchars($category['title'] ?? 'Unbekanntes Board') ?>
-        </a>
+      <?php $urlString = 'index.php?site=forum&action=overview&id=' . intval($board['id']); ?>
+      <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($urlString)) ?>">
+          <?= htmlspecialchars($board['title']) ?>
+      </a>
     </li>
+    <?php else: ?>
+    <li class="breadcrumb-item">Kein Board ausgewählt</li>
+    <?php endif; ?>
+
+    <?php if (!empty($category) && !empty($category['catID'])): ?>
+    <li class="breadcrumb-item">
+      <?php #$urlString = 'index.php?site=forum&action=category&id=' . intval($category['catID']); ?>
+      <?php $urlString = 'index.php?site=forum&action=category&id=' . (isset($category['catID']) ? intval($category['catID']) : 0); ?>
+      <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($urlString)) ?>">
+          <?= htmlspecialchars($category['title']) ?>
+      </a>
+    </li>
+    <?php else: ?>
+    <li class="breadcrumb-item">Keine Kategorie ausgewählt</li>
+    <?php endif; ?>
+
     <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($thread['title']) ?></li>
   </ol>
 </nav>
@@ -340,101 +355,74 @@ switch ($action) {
                         <div class="col-md-10">
                             <div class="d-flex justify-content-between">
                                 <div><i class="bi bi-calendar-plus"></i> <?= date('d.m.Y H:i', $post['created_at']) ?></div>
-                                <div>
-                                    <?php /* if (isset($_SESSION['userID']) && $uid == (int)$_SESSION['userID']): ?>
-                                        <a href="index.php?site=forum&action=quote&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-secondary">Zitieren</a>
-                                        <a href="index.php?site=forum&action=edit&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-primary">Bearbeiten</a>
-                                    <?php endif; */?>
+                                    <div>
+                                        <?php
+                                        $currentUserID = $_SESSION['userID'] ?? 0;
+                                        $userRoles = [];
 
+                                        if ($currentUserID > 0) {
+                                            $currentUserID = (int)$currentUserID;
+                                            $res = safe_query("
+                                                SELECT ur.role_name
+                                                FROM user_role_assignments ura
+                                                JOIN user_roles ur ON ura.roleID = ur.roleID
+                                                WHERE ura.userID = $currentUserID
+                                            ");
 
-<?php
-$currentUserID = $_SESSION['userID'] ?? 0;
-$userRoles = [];
+                                            while ($row = mysqli_fetch_assoc($res)) {
+                                                $userRoles[] = $row['role_name'];
+                                            }
+                                        }
 
-if ($currentUserID > 0) {
-    $currentUserID = (int) $currentUserID;
-    $res = safe_query("
-        SELECT ur.role_name
-        FROM user_role_assignments ura
-        JOIN user_roles ur ON ura.roleID = ur.roleID
-        WHERE ura.userID = $currentUserID
-    ");
-    
-    while ($row = mysqli_fetch_assoc($res)) {
-        $userRoles[] = $row['role_name'];
-    }
-}
+                                        $uid = $post['userID'] ?? 0;
+                                        $mayEdit = ($uid == $currentUserID) || in_array('Admin', $userRoles) || in_array('Moderator', $userRoles);
+                                        ?>
 
-$uid = $post['userID'] ?? 0;
-$mayEdit = ($uid == $currentUserID) || in_array('Admin', $userRoles) || in_array('Moderator', $userRoles);
-?>
+                                        <?php if (isset($_SESSION['userID'])): ?>
+                                            <?php
+                                            $urlString = 'index.php?site=forum&action=quote&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
+                                            ?>
+                                            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-secondary">Zitieren</a>
+                                        <?php endif; ?>
 
-<div>
-<?php if (isset($_SESSION['userID'])): ?>
-    <a href="index.php?site=forum&action=quote&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-secondary">
-        Zitieren
-    </a>
-    <?php
-    $urlString = 'index.php?site=forum&action=quote&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
-    ?>
-    <a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-secondary">
-        Zitieren
-    </a>
-<?php endif; ?>
-
-<?php if ($mayEdit): ?>
-    <a href="index.php?site=forum&action=edit&postID=<?= $post['postID'] ?>&threadID=<?= $threadID ?>" class="btn btn-sm btn-outline-primary">
-        Bearbeiten
-    </a>
-    <?php
-    $urlString = 'index.php?site=forum&action=edit&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
-?>
-<a href="<?= htmlspecialchars(convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-primary">
-    Bearbeiten
-</a>
-<?php endif; ?>
-</div>
-
-
-
-
-
-
-
+                                        <?php if ($mayEdit): ?>
+                                            <?php
+                                            $urlString = 'index.php?site=forum&action=edit&postID=' . intval($post['postID']) . '&threadID=' . intval($threadID);
+                                            ?>
+                                            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($urlString)) ?>" class="btn btn-sm btn-outline-primary">Bearbeiten</a>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                            </div>
-                            <hr>
-                            <div><?= $post['content'] ?></div>
-                            <div class="mt-4 pt-2 border-top text-muted" style="font-size: 0.9em;">
-                                <?= $post['signatur'] ?>
-                            </div>
-                            <div class="mt-3 text-end">
-                            <?php 
-                                $postID = $post['postID'];
-                                $userID = isset($_SESSION['userID']) ? (int)$_SESSION['userID'] : 0;
-
-                                // Like-Anzahl immer holen – egal ob eingeloggt oder nicht
-                                $likeCount = getLikeCount($postID);
-
-                                if ($userID > 0) {
-                                    $liked = userLikedPost($postID, $userID);
-                                    ?>
-                                    <button class="btn btn-outline-primary btn-sm like-btn" 
-                                            data-postid="<?= $postID ?>" 
-                                            data-liked="<?= $liked ? '1' : '0' ?>">
-                                        <?= $liked ? 'Unlike' : 'Like' ?>
-                                    </button>
+                                <hr>
+                                <div><?= $post['content'] ?></div>
+                                <div class="mt-4 pt-2 border-top text-muted" style="font-size: 0.9em;">
+                                    <?= $post['signatur'] ?>
+                                </div>
+                                <div class="mt-3 text-end">
                                 <?php 
-                                } else {
-                                    // Nicht eingeloggt → Nur Text
-                                    echo '<span class="text-muted">Like</span>';
-                                }
-                            ?>
-                            <span class="like-count ms-2"><?= $likeCount ?></span>
-                            </div>
-                                                    <?php if (!empty($post['signatur'])): ?>
-                            
+                                    $postID = $post['postID'];
+                                    $userID = isset($_SESSION['userID']) ? (int)$_SESSION['userID'] : 0;
 
+                                    // Like-Anzahl immer holen – egal ob eingeloggt oder nicht
+                                    $likeCount = getLikeCount($postID);
+
+                                    if ($userID > 0) {
+                                        $liked = userLikedPost($postID, $userID);
+                                        ?>
+                                        <button class="btn btn-outline-primary btn-sm like-btn" 
+                                                data-postid="<?= $postID ?>" 
+                                                data-liked="<?= $liked ? '1' : '0' ?>">
+                                            <?= $liked ? 'Unlike' : 'Like' ?>
+                                        </button>
+                                    <?php 
+                                    } else {
+                                        // Nicht eingeloggt → Nur Text
+                                        echo '<span class="text-muted">Like</span>';
+                                    }
+                                ?>
+                                <span class="like-count ms-2"><?= $likeCount ?></span>
+                                </div>
+                                <?php if (!empty($post['signatur'])): ?> 
                         <?php endif; ?>
                         </div>
                     </div>
@@ -464,7 +452,10 @@ $mayEdit = ($uid == $currentUserID) || in_array('Admin', $userRoles) || in_array
             <ul class="pagination justify-content-center">
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                     <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
-                        <a class="page-link" href="index.php?site=forum&action=thread&id=<?= $threadID ?>&page=<?= $i ?>"><?= $i ?></a>
+                        <?php
+                        $url = "index.php?site=forum&action=thread&id=$threadID&page=$i";
+                        ?>
+                        <a class="page-link" href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>"><?= $i ?></a>
                     </li>
                 <?php endfor; ?>
             </ul>
@@ -490,7 +481,10 @@ $mayEdit = ($uid == $currentUserID) || in_array('Admin', $userRoles) || in_array
         <?php endif; ?>
     </div>
 </div>
-<a href="index.php?site=forum">Zurück zur Übersicht</a>
+<?php
+$url = "index.php?site=forum";
+?>
+<a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">Zurück zur Übersicht</a>
 
 
 <script>
@@ -540,7 +534,9 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         $total = mysqli_fetch_assoc($total_res)['total'];
         $page = ceil($total / $per_Page);
 
-        header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
+        $url = "index.php?site=forum&action=thread&id=$threadID&page=$page";
+        $seoUrl = SeoUrlHandler::convertToSeoUrl($url);
+        header("Location: " . $seoUrl);
         exit;
     }
     break;
@@ -624,7 +620,9 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         $per_Page = 10; // Falls $per_Page nicht definiert ist, sonst entfernen
         $page = ceil($position / $per_Page);
 
-        header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
+        $url = "index.php?site=forum&action=thread&id=$threadID&pagenr=$page";
+        $seoUrl = SeoUrlHandler::convertToSeoUrl($url);
+        header("Location: " . $seoUrl);
         exit;
     }
 
@@ -650,22 +648,25 @@ document.querySelectorAll('.like-btn').forEach(btn => {
 
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
         <li class="breadcrumb-item">
-            <a href="index.php?site=forum&action=overview&id=<?= intval($board['id'] ?? 0) ?>">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id'] ?? 0))) ?>">
                 <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="index.php?site=forum&action=category&id=<?= intval($category['catID'] ?? 0) ?>">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=category&id=' . intval($category['catID'] ?? 0))) ?>">
                 <?= htmlspecialchars($category['title'] ?? 'Unbekannte Kategorie') ?>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="index.php?site=forum&action=thread&id=<?= intval($thread['threadID'] ?? 0) ?>">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($thread['threadID'] ?? 0))) ?>">
                 <?= htmlspecialchars($thread['title'] ?? 'Unbekannte Kategorie') ?>
             </a>
         </li>
+
         <li class="breadcrumb-item active" aria-current="page">Beitrag bearbeiten</li>
       </ol>
     </nav>
@@ -682,7 +683,8 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                 <input type="file" id="uploadImage" accept="image/*" style="display: none;"><br/>
 
                 <button type="submit" class="btn btn-primary">Speichern</button>
-                <a href="index.php?site=forum&action=thread&id=<?= $threadID ?>" class="btn btn-secondary">Abbrechen</a>
+                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($threadID))) ?>" class="btn btn-secondary">Abbrechen</a>
+
             </form>
         </div>
     </div>
@@ -692,36 +694,63 @@ document.querySelectorAll('.like-btn').forEach(btn => {
 
 
     case 'quote':
-        $postID = intval($_GET['postID'] ?? 0);
-        $threadID = intval($_GET['threadID'] ?? 0);
-        if ($postID <= 0 || $threadID <= 0) die("Ungültige Anfrage.");
+    $lang = $_GET['lang'] ?? 'de';
+    $per_Page = 10;
 
-        $res = safe_query("SELECT p.content, u.username FROM plugins_forum_posts p LEFT JOIN users u ON p.userID = u.userID WHERE postID = $postID");
-        if (mysqli_num_rows($res) > 0) {
-            $post = mysqli_fetch_assoc($res);
+    $threadID = $_GET['threadID'] ?? ($_GET['id'] ?? 0);
+    $postID = $_GET['postID'] ?? 0;
 
-            $quote = '<blockquote class="blockquote-primary">
-              ' . htmlspecialchars($post['username']) . ' schrieb:<br>
-              ' . htmlspecialchars($post['content']) . '
-          </blockquote>';
+    $threadID = (int)$threadID;
+    $postID = (int)$postID;
 
-            $_SESSION['quote_content'] = $quote;
+    if ($postID <= 0 || $threadID <= 0) {
+        die("Ungültige Anfrage.");
+    }
+
+    $res = safe_query("SELECT p.content, u.username 
+                       FROM plugins_forum_posts p 
+                       LEFT JOIN users u ON p.userID = u.userID 
+                       WHERE postID = $postID");
+
+    if (mysqli_num_rows($res) > 0) {
+        $post = mysqli_fetch_assoc($res);
+
+        $quote = '<blockquote class="blockquote-primary">'
+               . htmlspecialchars($post['username']) . ' schrieb:<br>'
+               . htmlspecialchars($post['content']) .
+               '</blockquote>';
+
+        $_SESSION['quote_content'] = $quote;
+    }
+
+    $order_res = safe_query("SELECT postID FROM plugins_forum_posts WHERE threadID = $threadID ORDER BY created_at ASC");
+
+    $position = 1;
+    while ($row = mysqli_fetch_assoc($order_res)) {
+        if ($row['postID'] == $postID) break;
+        $position++;
+    }
+
+    $page = ceil($position / $per_Page);
+
+    if (defined('SEO_URLS') && SEO_URLS) {
+        $url = "/$lang/forum/thread/id/$threadID/pagenr/$page#replyform";
+
+        // Nur umwandeln, wenn keine "schon fertige" SEO-URL
+        if (!preg_match('#^/[a-z]{2}/#i', $url)) {
+            $url = SeoUrlHandler::convertToSeoUrl($url);
         }
+    } else {
+        $url = "index.php?site=forum&action=thread&id=$threadID&page=$page#replyform";
+        $url = SeoUrlHandler::convertToSeoUrl($url); // optional
+    }
 
-        // 🔍 Position des bearbeiteten Posts im Thread ermitteln (nach created_at sortiert)
-        $order_res = safe_query("SELECT postID FROM plugins_forum_posts WHERE threadID = $threadID ORDER BY created_at ASC");
-        $position = 1;
-        while ($row = mysqli_fetch_assoc($order_res)) {
-            if ($row['postID'] == $postID) break;
-            $position++;
-        }
+    header("Location: " . $url);
+    exit;
 
-        // 📄 Seite berechnen (10 Beiträge pro Seite)
-        $page = ceil($position / $per_Page);
 
-        #header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page");
-        header("Location: index.php?site=forum&action=thread&id=$threadID&page=$page#replyform");
-        exit;
+
+
 
     case 'new_thread':
         $catID = intval($_GET['catID'] ?? 0);
@@ -740,7 +769,9 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             $threadID = mysqli_insert_id($_database);
             safe_query("INSERT INTO plugins_forum_posts (threadID, userID, content, created_at) VALUES ($threadID, $userID, '$content', $created_at)");
 
-            header("Location: index.php?site=forum&action=thread&id=$threadID");
+            $url = "index.php?site=forum&action=thread&id=$threadID";
+            $seoUrl = SeoUrlHandler::convertToSeoUrl($url);
+            header("Location: " . $seoUrl);
             exit;
         }
 
@@ -764,17 +795,18 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=overview&id=<?= isset($board['id']) ? intval($board['id']) : 0 ?>">
+                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . (isset($board['id']) ? intval($board['id']) : 0))) ?>">
                     <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
                 </a>
             </li>
             <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=category&id=<?= isset($category['catID']) ? intval($category['catID']) : 0 ?>">
+                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=category&id=' . (isset($category['catID']) ? intval($category['catID']) : 0))) ?>">
                     <?= htmlspecialchars($category['title'] ?? 'Unbekannte Kategorie') ?>
                 </a>
             </li>
+
           </ol>
         </nav>
 
@@ -799,9 +831,10 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                 </form>
             </div>
         </div>
-        <a href="index.php?site=forum&action=overview&id=<?= intval($board['id']) ?>" class="btn btn-sm btn-outline-secondary mb-3">
+        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>" class="btn btn-sm btn-outline-secondary mb-3">
             &larr; Zurück zum Board "<?= htmlspecialchars($board['title']) ?>"
         </a>
+
         <?php
         break;
 
@@ -822,9 +855,10 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <a href="index.php?site=forum&action=overview&id=<?= intval($board['id']) ?>">
+                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
                             <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
                         </a>
+
                     </h5>
                     <p class="card-text"><?= nl2br(htmlspecialchars($board['description'] ?? 'Keine Beschreibung')) ?></p>
 
@@ -891,9 +925,10 @@ document.querySelectorAll('.like-btn').forEach(btn => {
 
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <a href="index.php?site=forum&action=category&id=<?= intval($cat['catID']) ?>">
+                                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=category&id=' . intval($cat['catID']))) ?>">
                                     <?= htmlspecialchars($cat['title'] ?? 'Unbekannte Kategorie') ?>
                                 </a>
+
                                 <br>
                                 <small class="text-muted"><?= htmlspecialchars($cat['description'] ?? '') ?></small>
                             </div>
@@ -903,9 +938,13 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                                 <div class="small text-muted">
                                     Letzter Beitrag: 
                                     <?php if ($lastPostTime): ?>
-                                        <a href="index.php?site=forum&action=thread&id=<?= intval($lastPostThreadID) ?>&page=<?= $lastPostPage ?>#post<?= intval($lastPostID) ?>">
+                                        <?php
+                                        $url = 'index.php?site=forum&action=thread&id=' . intval($lastPostThreadID) . '&page=' . intval($lastPostPage) . '#post' . intval($lastPostID);
+                                        ?>
+                                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
                                             <?= date('d.m.Y H:i', intval($lastPostTime)) ?> von <?= htmlspecialchars($lastPostUser) ?>
                                         </a>
+
                                     <?php else: ?>
                                         Keine Beiträge
                                     <?php endif; ?>
@@ -950,7 +989,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($board['title']) ?></li>
           </ol>
         </nav>
@@ -1009,9 +1048,13 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                     ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
-                            <a href="index.php?site=forum&action=category&id=<?= intval($category['catID']) ?>">
+                            <?php
+                            $url = 'index.php?site=forum&action=category&id=' . intval($category['catID']);
+                            ?>
+                            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
                                 <?= htmlspecialchars($category['title']) ?>
-                            </a><br>
+                            </a>
+                            <br>
                             <small class="text-muted"><?= htmlspecialchars($category['description']) ?></small>
                         </div>
                         <div class="text-end" style="min-width: 240px;">
@@ -1020,9 +1063,13 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                             <div class="small text-muted">
                                 Letzter Beitrag:
                                 <?php if ($lastPostTime && $lastPostID && $lastPostThreadID): ?>
-                                    <a href="index.php?site=forum&action=thread&id=<?= intval($lastPostThreadID) ?>&page=<?= $lastPostPage ?>#post<?= intval($lastPostID) ?>">
+                                    <?php
+                                    $url = 'index.php?site=forum&action=thread&id=' . intval($lastPostThreadID) . '&page=' . intval($lastPostPage) . '#post' . intval($lastPostID);
+                                    ?>
+                                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
                                         <?= date('d.m.Y H:i', strtotime($lastPostTime)) ?> von <?= htmlspecialchars($lastPostUser) ?>
                                     </a>
+
                                 <?php else: ?>
                                     Keine Beiträge
                                 <?php endif; ?>
@@ -1063,12 +1110,13 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
+            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
             <li class="breadcrumb-item">
-                <a href="index.php?site=forum&action=overview&id=<?= intval($board['id']) ?>">
+                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
                     <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
                 </a>
             </li>
+
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($category['title']) ?></li>
           </ol>
         </nav>
@@ -1079,9 +1127,10 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h5 mb-0"><?= htmlspecialchars($category['title']) ?></h2>
                     <?php if ($userID): ?>
-                        <a href="index.php?site=forum&action=new_thread&catID=<?= intval($category['catID']) ?>" class="btn btn-sm btn-primary">
+                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=new_thread&catID=' . intval($category['catID']))) ?>" class="btn btn-sm btn-primary">
                             Neues Thema erstellen
                         </a>
+
                     <?php endif; ?>
                 </div>
                 <div class="card-body">
@@ -1094,19 +1143,20 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             <?php foreach ($threads as $thread): ?>
                 <li class="list-group-item">
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="index.php?site=forum&action=thread&id=<?= intval($thread['threadID']) ?>" class="text-decoration-none">
+                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($thread['threadID']))) ?>" class="text-decoration-none">
                             <?= htmlspecialchars($thread['title']) ?>
                         </a>
+
                         <div class="text-end">
                             <span class="badge bg-info"><?= intval($thread['replies']) ?> Antworten</span>
                             <span class="badge bg-secondary"><?= intval($thread['views']) ?> Aufrufe</span><br>
                             <small class="text-muted">
                                 Letzter Beitrag:
                                 <?php if ($thread['last_post_id'] > 0): ?>
-                                    <a href="index.php?site=forum&action=thread&id=<?= intval($thread['threadID']) ?>&page=<?= $thread['last_post_page'] ?>#post<?= $thread['last_post_id'] ?>">
-                                        <?= date('d.m.Y H:i', $thread['last_post_time']) ?>
-                                        von <?= htmlspecialchars($thread['last_username']) ?>
+                                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($thread['threadID']) . '&page=' . intval($thread['last_post_page']) . '#post' . intval($thread['last_post_id']))) ?>">
+                                        <?= date('d.m.Y H:i', $thread['last_post_time']) ?> von <?= htmlspecialchars($thread['last_username']) ?>
                                     </a>
+
                                 <?php else: ?>
                                     Keine Beiträge
                                 <?php endif; ?>

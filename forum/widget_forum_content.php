@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -71,23 +72,33 @@ $sql = "
               ? date("d.m.Y", intval($row['last_post_date'])) 
               : "Datum unbekannt";
 
-            $link = "index.php?site=forum&action=thread&id={$threadID}#post{$lastPostID}";
+            $link_seo = "index.php?site=forum&action=thread&id=" . intval($threadID) . "#post" . intval($lastPostID);
+            $link = SeoUrlHandler::convertToSeoUrl($link_seo);
+            
             ?>
-            <div class="d-flex mb-1 align-items-start">
-  <div class="flex-shrink-0 text-center me-3" style="width: 120px;">
-    <span class="badge bg-secondary"><?php echo $lastPostDate; ?></span>
-  </div>
-  <div class="flex-grow-1 text-truncate">
-    <span>Forum: <span class="text-primary"><?php echo $catTitle; ?></span> /</span>
-    <a href="<?php echo $link; ?>" class="text-decoration-none fw-bold text-truncate" style="max-width: 40%;">
-      <?php echo $title; ?>
-    </a> /
-    <small class="text-muted">
-      (<?php echo $replyCount; ?> Antworten) – Letzter Beitrag von <b><?php echo $lastUser; ?></b>
-    </small>
-  </div>
-</div>
-<hr class="my-1">
+            <div class="d-flex flex-wrap mb-1 align-items-start">
+              <div class="flex-shrink-0 text-center me-3 mb-2">
+                <span class="badge bg-secondary"><?php echo $lastPostDate; ?></span>
+              </div>
+
+              <div class="flex-grow-1 text-truncate" style="min-width: 0;">
+                <div class="text-truncate">
+                    <span class="d-inline-flex align-items-center gap-1 flex-wrap">
+                      <span class="text-nowrap">
+                        Forum: <span class="text-primary"><?php echo $catTitle; ?></span> /
+                      </span>
+                      <a href="<?php echo $link; ?>" class="text-decoration-none fw-bold text-truncate" style="max-width: 100%;">
+                        <?php echo $title; ?>
+                      </a>
+                    </span>
+                    <small class="text-muted d-block mt-1">
+                      (<?php echo $replyCount; ?> Antworten) – Letzter Beitrag von <b><?php echo $lastUser; ?></b>
+                    </small>
+                </div>
+              </div>
+            </div>  
+
+            <hr class="my-1">
             <?php
         }
         $result->free();

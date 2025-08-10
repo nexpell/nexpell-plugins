@@ -7,6 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 #$plugin_language = $pm->plugin_language("footer_easy", $plugin_path);
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -31,10 +32,11 @@ while ($r = mysqli_fetch_assoc($res)) {
     $url = htmlspecialchars($r['copyright_link']);
     $txt = htmlspecialchars($name);
     $tgt = $r['new_tab'] ? ' target="_blank"' : '';
-    $data["copyright_link{$num}"]
-      = $url
-      ? "<a class=\"foot_link me-3\" href=\"{$url}\"{$tgt} rel=\"nofollow\">{$txt}</a>"
-      : '';
+    $data["copyright_link{$num}"] = $url
+    ? '<a class="foot_link me-3" href="' . 
+      htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) . 
+      "\" {$tgt} rel=\"nofollow\">{$txt}</a>"
+    : '';
 }
 
 // Template-Daten

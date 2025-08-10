@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -70,7 +71,9 @@ $sql = "
               ? date("d.m.Y", intval($row['last_post_date'])) 
               : "Datum unbekannt";
 
-            $link = "index.php?site=forum&action=thread&id={$threadID}#post{$lastPostID}";
+            $link_seo = "index.php?site=forum&action=thread&id=" . intval($threadID) . "#post" . intval($lastPostID);
+            $link = SeoUrlHandler::convertToSeoUrl($link_seo);
+            
             ?>
             <div class="mb-2 pb-2 border-bottom small">
               <div class="text-muted mb-1" style="font-size: 0.8rem;"><?php echo $lastPostDate; ?></div>
