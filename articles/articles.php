@@ -1,9 +1,12 @@
+<?php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 use nexpell\LanguageService;
 use nexpell\RoleManager;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -17,15 +20,175 @@ if (!isset($_SESSION['csrf_token'])) {
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
 
+    // Header-Daten
+    $data_array = [
+        'class'    => $class,
+        'title' => $languageService->get('title'),
+        'subtitle' => 'Articles'
+    ];
+    
+    echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
+
+if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+} else {
+    $action = '';
+}
+
 $maxStars = 5; // Maximalsterne
 
 // Funktion zum Prüfen der Rolle eines Benutzers
 function has_role(int $userID, string $roleName): bool {
     global $_database;
 
+
     $roleID = RoleManager::getUserRoleID($userID);
     if ($roleID === null) {
         return false;
+    }    
+}
+if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
+    global $_database;
+    $category_id = (int)$_GET['id'];
+
+    $page = isset($_GET['page']) ? max((int)$_GET['page'], 1) : 1;
+    $limit = 6;
+    $offset = ($page - 1) * $limit;
+
+    // Kategorie laden
+    $getcat = safe_query("SELECT * FROM plugins_articles_categories WHERE id='$category_id'");
+    $ds = mysqli_fetch_array($getcat);
+    $name = $ds['name'];
+
+    // Gesamtanzahl Artikel für Paginierung
+    $total_articles_query = safe_query("SELECT COUNT(*) as total FROM plugins_articles WHERE category_id='$category_id' AND is_active='1'");
+    $total_articles_result = mysqli_fetch_array($total_articles_query);
+    $total_articles = (int)$total_articles_result['total'];
+    $total_pages = ceil($total_articles / $limit);
+    $title_url = SeoUrlHandler::convertToSeoUrl('index.php?site=articles');
+
+    // Artikel laden
+    $ergebnis = safe_query("SELECT * FROM plugins_articles WHERE category_id='$category_id' AND is_active='1' ORDER BY updated_at DESC LIMIT $offset, $limit");
+
+    $data_array = [
+        'name'              => $name,
+        'title_url'         => $title_url,
+        'title'             => $languageService->get('title'),
+        'title_categories'  => $languageService->get('title_categories'),
+        'categories'        => $languageService->get('categories'),
+        'category'          => $languageService->get('category'),
+    ];
+
+    echo $tpl->loadTemplate("articles", "details_head", $data_array, 'plugin');
+    echo $tpl->loadTemplate("articles", "content_all_head", $data_array, 'plugin');
+
+    if (mysqli_num_rows($ergebnis)) {
+        $monate = [
+            1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
+            3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
+            5 => $languageService->get('may'), 6 => $languageService->get('jun'),
+            7 => $languageService->get('jul'), 8 => $languageService->get('aug'),
+            9 => $languageService->get('sep'), 10 => $languageService->get('oct'),
+            11 => $languageService->get('nov'), 12 => $languageService->get('dec')
+        ];
+
+        while ($ds = mysqli_fetch_array($ergebnis)) {
+            $timestamp = (int)$ds['updated_at'];
+            $tag = date("d", $timestamp);
+            $monat = date("n", $timestamp);
+            $year = date("Y", $timestamp);
+            $monatname = $monate[$monat];
+            $username = getusername($ds['userID']);
+
+            $banner_image = $ds['banner_image'];
+            $image = $banner_image
+                ? "/includes/plugins/articles/images/article/" . $banner_image
+                : "/includes/plugins/articles/images/no-image.jpg";
+
+            // Übersetzung laden
+            $translate = new multiLanguage($lang);
+            $title = $translate->getTextByLanguage($ds['title']);
+
+            // Optional kürzen
+            $maxblogchars = 15;
+            $short_content = (mb_strlen($title) > $maxblogchars)
+                ? mb_substr($title, 0, $maxblogchars) . '...'
+                : $title;
+
+            $article_id = (int)$ds['id'];
+
+            #$url_watch = "index.php?site=articles&action=watch&id=" . intval($article_id);
+            #$url_watch_seo = SeoUrlHandler::convertToSeoUrl($url_watch);
+
+            $profileUrl = SeoUrlHandler::convertToSeoUrl(
+                'index.php?site=profile&userID=' . intval($ds['userID'])
+            );
+
+            $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+                <img src="' . htmlspecialchars(getavatar($ds['userID'])) . '" 
+                     class="img-fluid align-middle rounded me-1" 
+                     style="height: 23px; width: 23px;" 
+                     alt="' . htmlspecialchars(getusername($ds['userID'])) . '">
+                <strong>' . htmlspecialchars(getusername($ds['userID'])) . '</strong>
+            </a>';
+
+            $catID = (int)$ds['category_id'];
+            $cat_query = safe_query("SELECT name, description FROM plugins_articles_categories WHERE id = $catID");
+            $cat = mysqli_fetch_assoc($cat_query);
+
+            $cat_name = htmlspecialchars($cat['name'] ?? '');
+
+
+            $article_catname = '<a href="' . 
+                htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=articles&action=show&id=$catID")) . 
+                '"><strong style="font-size: 12px">' . 
+                htmlspecialchars($cat_name) . 
+                '</strong></a>';
+            $url_watch = "index.php?site=articles&action=watch&id=" . intval($article_id);
+            $url_watch_seo = SeoUrlHandler::convertToSeoUrl($url_watch);
+
+            $data_array = [
+                'name'          => $article_catname,
+                'title'         => $title,
+                'username'      => $username,
+                'image'         => $image,
+                'tag'           => $tag,
+                'monat'         => $monatname,
+                'year'          => $year,
+                'url_watch'     => $url_watch_seo,
+                'lang_rating'   => $languageService->get('rating'),
+                'lang_votes'    => $languageService->get('votes'),
+                'link'          => $languageService->get('link'),
+                'info'          => $languageService->get('info'),
+                'stand'         => $languageService->get('stand'),
+                'by'            => $languageService->get('by'),
+                'on'            => $languageService->get('on'),
+                'read_more'      => $languageService->get('read_more'),
+            ];
+
+            echo $tpl->loadTemplate("articles", "content_all", $data_array, 'plugin');
+        }
+
+        echo $tpl->loadTemplate("articles", "content_all_foot", $data_array, 'plugin');
+
+        // Pagination
+        if ($total_pages > 1) {
+            echo '<nav aria-label="Page navigation"><ul class="pagination justify-content-center mt-4">';
+            for ($i = 1; $i <= $total_pages; $i++) {
+                $active = ($i == $page) ? ' active' : '';
+                echo '<li class="page-item' . $active . '">
+                        <a class="page-link" href="' . htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=articles&action=show&id=' . intval($category_id) . '&page=' . intval($i))) . '">' . intval($i) . '</a>
+                      </li>';
+            }
+            echo '</ul></nav>';
+        }
+    } else {
+        echo $plugin_language['no_articles'] . '<br><br>[ <a href="' . 
+         htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=articles')) . 
+         '" class="alert-article">' . 
+         $plugin_language['go_back'] . 
+         '</a> ]';
+
     }
 
     $stmt = $_database->prepare("SELECT role_name FROM user_roles WHERE roleID = ?");
@@ -50,13 +213,13 @@ $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
 $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
 
 // Header-Daten
-$data_array = [
+/*$data_array = [
     'class' => $class,
     'title' => $languageService->get('title'),
     'subtitle' => 'Articles'
 ];
 
-echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');
+echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');*/
 
 $action = $_GET['action'] ?? '';
 
@@ -69,6 +232,7 @@ if (
     $rating = (int)$_POST['rating'];
     $itemID = (int)$_POST['itemID'];
 
+    $userID = $_SESSION['userID'] ?? 0;
     if (!$userID) {
         die('<div class="alert alert-warning">Du musst eingeloggt sein, um zu bewerten.</div>');
     }
@@ -90,7 +254,8 @@ if (
         safe_query("UPDATE plugins_articles SET rating = $avg_rating WHERE id = $itemID");
     }
 
-    header("Location: index.php?site=articles&action=watch&id=$itemID");
+    $url = "index.php?site=articles&action=watch&id=$itemID";
+    header("Location: " . SeoUrlHandler::convertToSeoUrl($url));
     exit();
 }
 
@@ -110,7 +275,8 @@ if (isset($_POST['submit_comment'])) {
 
         safe_query("INSERT INTO comments (plugin, itemID, userID, comment, date, parentID, modulname) VALUES ('articles', $itemID, $userID, '$comment', NOW(), 0, 'articles')");
 
-        header("Location: index.php?site=articles&action=watch&id=$itemID");
+        $url = "index.php?site=articles&action=watch&id=$itemID";
+        header("Location: " . htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)));
         exit;
     } else {
         die("Ungültiger CSRF-Token oder fehlende Eingaben.");
@@ -138,7 +304,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'deletecomment' && isset($_GET
     $res = safe_query("DELETE FROM comments WHERE commentID = $commentID");
 
     if ($res) {
-        header("Location: $referer");
+        header("Location: " . htmlspecialchars(SeoUrlHandler::convertToSeoUrl($referer)));
         exit();
     } else {
         die('<div class="alert alert-danger">Fehler beim Löschen des Kommentars.</div>');
@@ -156,12 +322,20 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
         $categoryQuery = safe_query("SELECT * FROM plugins_articles_categories WHERE id = " . (int)$article['category_id']);
         $category = mysqli_fetch_array($categoryQuery);
 
-        $name = $category ? htmlspecialchars($category['name']) : 'Unbekannte Kategorie';
+        if ($category) {
+            $name = htmlspecialchars($category['name']);
+        } else {
+            $name = 'Unbekannte Kategorie';
+        }
+
+        $title_url = SeoUrlHandler::convertToSeoUrl('index.php?site=articles');
+        $title_url_show = SeoUrlHandler::convertToSeoUrl('index.php?site=articles&action=show&id=' . intval($article['category_id']));
 
         $data_array = [
             'name' => $name,
-            'title' => htmlspecialchars($article['title']),
-            'id' => $article['category_id'],
+            'title_url' => $title_url,
+            'title_url_show' => $title_url_show,
+            'title' => htmlspecialchars($article['title']),            
             'title_categories' => $languageService->get('title_categories'),
             'categories' => $languageService->get('categories'),
             'category' => $languageService->get('category'),
@@ -305,12 +479,26 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
 
         $image = $article['banner_image'] ? "includes/plugins/articles/images/article/{$article['banner_image']}" : "includes/plugins/articles/images/no-image.jpg";
 
-        $username = '<a href="index.php?site=profile&amp;userID=' . $article['userID'] . '">
-        <img src="' . getavatar($article['userID']) . '" class="img-fluid align-middle rounded-circle me-1" style="height: 23px; width: 23px;" alt="' . getusername($article['userID']) . '">
-        <strong>' . getusername($article['userID']) . '</strong></a>';
+        $profileUrl = SeoUrlHandler::convertToSeoUrl(
+            'index.php?site=profile&userID=' . intval($article['userID'])
+        );
+
+        $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+            <img src="' . htmlspecialchars(getavatar($article['userID'])) . '" 
+                 class="img-fluid align-middle rounded-circle me-1" 
+                 style="height: 23px; width: 23px;" 
+                 alt="' . htmlspecialchars(getusername($article['userID'])) . '">
+            <strong>' . htmlspecialchars(getusername($article['userID'])) . '</strong>
+        </a>';
 
         $link = $article['slug'] ? $languageService->get('link') . ': <a href="' . $article['slug'] . '" target="_blank">' . $article['slug'] . '</a>' : '';
 
+        // Beispiel: Link zum Artikel (wenn slug vorhanden)
+        if (!empty($article['slug'])) {
+            $link = '<a href="' . htmlspecialchars($article['slug']) . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($article['slug']) . '</a>';
+        } else {
+            $link = $languageService->get('no_link');
+        }
         $data_array = [
             'title' => $article['title'],
             'content' => $article['content'],
@@ -362,26 +550,26 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                 }
 
                 echo '<li class="list-group-item border-bottom">
-    <div class="d-flex mt-4">
-        <div class="flex-shrink-0">
-            <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
-                <img src="' . getavatar((int)$row['userID']) . '" class="img-fluid rounded-circle me-3" style="height: 60px; width: 60px;" alt="' . htmlspecialchars($row['username']) . '">
-            </a>
-        </div>
-        <div class="flex-grow-1">
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
-                    <strong>' . htmlspecialchars($row['username']) . '</strong>
-                </a>
-                <span class="text-muted small">' . date('d.m.Y H:i', strtotime($row['date'])) . '</span>
-                ' . $deleteLink . '
-            </div>
-            <div class="mt-2 mb-4">
-                ' . nl2br(htmlspecialchars($row['comment'])) . '
-            </div>
-        </div>
-    </div>
-</li>';
+                    <div class="d-flex mt-4">
+                        <div class="flex-shrink-0">
+                            <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
+                                <img src="' . getavatar((int)$row['userID']) . '" class="img-fluid rounded-circle me-3" style="height: 60px; width: 60px;" alt="' . htmlspecialchars($row['username']) . '">
+                            </a>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
+                                    <strong>' . htmlspecialchars($row['username']) . '</strong>
+                                </a>
+                                <span class="text-muted small">' . date('d.m.Y H:i', strtotime($row['date'])) . '</span>
+                                ' . $deleteLink . '
+                            </div>
+                            <div class="mt-2 mb-4">
+                                ' . nl2br(htmlspecialchars($row['comment'])) . '
+                            </div>
+                        </div>
+                    </div>
+                </li>';
             }
             echo '</ul></div>';
 
@@ -399,104 +587,7 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
     } else {
         echo $languageService->get('article_not_found');
     }
-} elseif ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $categoryID = (int)$_GET['id'];
 
-    $cat_query = safe_query("SELECT * FROM plugins_articles_categories WHERE id = $categoryID");
-    if (mysqli_num_rows($cat_query) === 0) {
-        echo $languageService->get('no_categories');
-        exit;
-    }
-    $category = mysqli_fetch_assoc($cat_query);
-    $cat_name = htmlspecialchars($category['name']);
-    $cat_description = htmlspecialchars($category['description']);
-
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    if ($page < 1) $page = 1;
-    $limit = 6;
-    $offset = ($page - 1) * $limit;
-
-    $total_articles_result = safe_query("SELECT COUNT(*) AS total FROM plugins_articles WHERE is_active = 1 AND category_id = $categoryID");
-    $total_articles_row = mysqli_fetch_assoc($total_articles_result);
-    $total_articles = (int)$total_articles_row['total'];
-    $total_pages = ceil($total_articles / $limit);
-
-    $articles_result = safe_query("SELECT * FROM plugins_articles WHERE is_active = 1 AND category_id = $categoryID ORDER BY updated_at DESC LIMIT $offset, $limit");
-
-    if (mysqli_num_rows($articles_result) > 0) {
-        $monate = [
-            1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
-            3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
-            5 => $languageService->get('may'), 6 => $languageService->get('jun'),
-            7 => $languageService->get('jul'), 8 => $languageService->get('aug'),
-            9 => $languageService->get('sep'), 10 => $languageService->get('oct'),
-            11 => $languageService->get('nov'), 12 => $languageService->get('dec')
-        ];
-
-        $data_array = [
-            'title_categories' => $languageService->get('title_categories'),
-            'category_name' => $cat_name,
-            'category_description' => $cat_description
-        ];
-        echo $tpl->loadTemplate("articles", "category_show_head", $data_array, 'plugin');
-
-        while ($article = mysqli_fetch_assoc($articles_result)) {
-            $id = (int)$article['id'];
-            $timestamp = (int)$article['updated_at'];
-            $tag = date("d", $timestamp);
-            $monat = (int)date("n", $timestamp);
-            $year = date("Y", $timestamp);
-
-            $monatname = $monate[$monat] ?? '';
-
-            $banner_image = $article['banner_image'];
-            $image = $banner_image ? "/includes/plugins/articles/images/article/" . $banner_image : "/includes/plugins/articles/images/no-image.jpg";
-
-            $username = '<a href="index.php?site=profile&amp;userID=' . $article['userID'] . '">
-            <img src="' . getavatar($article['userID']) . '" class="img-fluid align-middle rounded me-1" style="height: 23px; width: 23px;" alt="' . getusername($article['userID']) . '">
-            <strong>' . getusername($article['userID']) . '</strong></a>';
-
-            $translate = new multiLanguage($lang);
-            $translate->detectLanguages($article['title']);
-            $title = $translate->getTextByLanguage($article['title']);
-
-            $maxTitleChars = 50;
-            $short_title = $title;
-            if (mb_strlen($short_title) > $maxTitleChars) {
-                $short_title = mb_substr($short_title, 0, $maxTitleChars) . '...';
-            }
-
-            $article_catname = '<a data-toggle="tooltip" title="' . htmlspecialchars($category['description'] ?? '') . '">' . $cat_name . '</a>';
-
-            $data_array = [
-                'name'           => $article_catname,
-                'title'          => htmlspecialchars($short_title),
-                'tag'            => $tag,
-                'monat'          => $monatname,
-                'year'           => $year,
-                'image'          => $image,
-                'username'       => $username,
-                'id'             => $id,
-                'by'             => $languageService->get('by'),
-                'read_more'      => $languageService->get('read_more'),
-            ];
-
-            echo $tpl->loadTemplate("articles", "content_all", $data_array, 'plugin');
-        }
-
-        echo $tpl->loadTemplate("articles", "content_all_foot", $data_array, 'plugin');
-
-        if ($total_pages > 1) {
-            echo '<nav><ul class="pagination justify-content-center">';
-            for ($i = 1; $i <= $total_pages; $i++) {
-                $active = ($i === $page) ? 'active' : '';
-                echo '<li class="page-item ' . $active . '"><a class="page-link" href="index.php?site=articles&action=show&id=' . $categoryID . '&page=' . $i . '">' . $i . '</a></li>';
-            }
-            echo '</ul></nav>';
-        }
-    } else {
-        echo $languageService->get('no_articles_in_category');
-    }
 } elseif ($action == "") {
     // Kategorien laden und anzeigen
     $cats_result = safe_query("SELECT * FROM plugins_articles_categories ORDER BY sort_order ASC");
@@ -546,9 +637,17 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                 $banner_image = $article['banner_image'];
                 $image = $banner_image ? "/includes/plugins/articles/images/article/" . $banner_image : "/includes/plugins/articles/images/no-image.jpg";
 
-                $username = '<a href="index.php?site=profile&amp;userID=' . $article['userID'] . '">
-                <img src="' . getavatar($article['userID']) . '" class="img-fluid align-middle rounded me-1" style="height: 23px; width: 23px;" alt="' . getusername($article['userID']) . '">
-                <strong>' . getusername($article['userID']) . '</strong></a>';
+                $profileUrl = SeoUrlHandler::convertToSeoUrl(
+                    'index.php?site=profile&userID=' . intval($article['userID'])
+                );
+
+                $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+                    <img src="' . htmlspecialchars(getavatar($article['userID'])) . '" 
+                         class="img-fluid align-middle rounded me-1" 
+                         style="height: 23px; width: 23px;" 
+                         alt="' . htmlspecialchars(getusername($article['userID'])) . '">
+                    <strong>' . htmlspecialchars(getusername($article['userID'])) . '</strong>
+                </a>';
 
                 $translate = new multiLanguage($lang);
 
@@ -566,9 +665,17 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                 $cat = mysqli_fetch_assoc($cat_query);
 
                 $cat_name = htmlspecialchars($cat['name'] ?? '');
-                $cat_description = htmlspecialchars($cat['description'] ?? '');
+                
 
-                $article_catname = '<a data-toggle="tooltip" title="' . $cat_description . '">' . $cat_name . '</a>';
+                $article_catname = '<a href="' . 
+                    htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=articles&action=show&id=$catID")) . 
+                    '"><strong style="font-size: 12px">' . 
+                    htmlspecialchars($cat_name) . 
+                    '</strong></a>';
+                $url_watch = "index.php?site=articles&action=watch&id=" . intval($id);
+                $url_watch_seo = SeoUrlHandler::convertToSeoUrl($url_watch);
+
+
 
                 $data_array = [
                     'name'           => $article_catname,
@@ -578,7 +685,7 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                     'year'           => $year,
                     'image'          => $image,
                     'username'       => $username,
-                    'id'             => $id,
+                    'url_watch'      => $url_watch_seo,
                     'by'             => $languageService->get('by'),
                     'read_more'      => $languageService->get('read_more'),
                 ];

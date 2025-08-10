@@ -24,7 +24,7 @@
 <!-- articles_details_head -->
 <nav aria-label="breadcrumb">
 	<ol class="breadcrumb">
-		<li class="breadcrumb-item"><a href="index.php?site=articles">{title_categories}</a></li>
+		<li class="breadcrumb-item"><a href="{title_url}">{title_categories}</a></li>
 		<li class="breadcrumb-item active" aria-current="page">{categories}: {name}</li>
 	</ol>
 </nav>
@@ -33,10 +33,12 @@
 
 <!-- END -->
 <!-- articles_details -->
-  <div class="col-lg-4 col-md-6 col-sm-6">
+ <!-- <div class="col-lg-4 col-md-6 col-sm-6">
     <div class="card news-card">
       <div class="news-img-container">
-        <span class="badge text-bg-secondary category-badge">{name}</span>
+        <span class="badge text-bg-secondary category-badge">
+            <a href="{title_url_show}">{name}</a>
+        </span>
           <img src="{image}" class="img-cat" alt="">
       </div>
       <div class="p-3">
@@ -53,19 +55,18 @@
         <div class="mt-2 border-top pt-2 small text-muted text-end">
           {by} {username} | {tag} {monat} {year}
         </div>
-        <a href="index.php?site=articles&action=watch&id={id}" class="stretched-link"></a>
         <div class="d-grid gap-2">
-          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
+          <a href="{url_watch}" class="btn btn-primary mt-2 pointer-events-none">{read_more}</a>
         </div>
       </div>
     </div>
-  </div>
+  </div>-->
 <!-- END -->
 <!-- articles_content_details_head -->
 <nav aria-label="breadcrumb">
 	<ol class="breadcrumb">
-		<li class="breadcrumb-item"><a href="index.php?site=articles">{title_categories}</a></li>
-		<li class="breadcrumb-item"><a href="index.php?site=articles&action=show&id={id}">{categories}: {name}</a></li>
+		<li class="breadcrumb-item"><a href="{title_url}">{title_categories}</a></li>
+		<li class="breadcrumb-item"><a href="{title_url_show}">{categories}: {name}</a></li>
 		<li class="breadcrumb-item active" aria-current="page">{title}</li>
 	</ol>
 </nav>
@@ -94,7 +95,9 @@
   <div class="col-lg-4 col-md-6 col-sm-6">
     <div class="card news-card">
       <div class="news-img-container">
-        <span class="badge text-bg-secondary category-badge">{name}</span>
+        <span class="badge text-bg-secondary category-badge">
+            {name}
+        </span>
           <img src="{image}" class="img-cat" alt="">
       </div>
       <div class="p-3">
@@ -111,13 +114,12 @@
         <div class="mt-2 border-top pt-2 small text-muted text-end">
           {by} {username} | {tag} {monat} {year}
         </div>
-        <a href="index.php?site=articles&action=watch&id={id}" class="stretched-link"></a>
         <div class="d-grid gap-2">
-          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
+          <a href="{url_watch}" class="btn btn-primary mt-2 pointer-events-none">{read_more}</a>
         </div>
       </div>
     </div>
-  </div>	
+  </div>
 <!-- END -->
 <!-- articles_content_all_foot -->
 </div>
@@ -165,8 +167,8 @@
   <!-- END -->
 
 <!-- articles_widget_content_articles_head -->
-<div class="container my-5">
-  <div class="row g-4">
+
+  <div class="row g-4 mt-1">
 <!-- END -->
 
 <!-- articles_widget_content_content -->
@@ -193,5 +195,5 @@
 
 <!-- articles_widget_content_articles_foot -->
   </div>
-</div>
+
 <!-- END -->
