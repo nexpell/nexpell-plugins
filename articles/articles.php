@@ -117,9 +117,6 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
 
             $article_id = (int)$ds['id'];
 
-            #$url_watch = "index.php?site=articles&action=watch&id=" . intval($article_id);
-            #$url_watch_seo = SeoUrlHandler::convertToSeoUrl($url_watch);
-
             $profileUrl = SeoUrlHandler::convertToSeoUrl(
                 'index.php?site=profile&userID=' . intval($ds['userID'])
             );
@@ -285,10 +282,6 @@ if (isset($_POST['submit_comment'])) {
 
 // Kommentar löschen
 if (isset($_GET['action']) && $_GET['action'] === 'deletecomment' && isset($_GET['id']) && is_numeric($_GET['id'])) {
-
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
 
     function slugdecode(string $slug): string {
         return urldecode(str_replace('-', ' ', $slug));

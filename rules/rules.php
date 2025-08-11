@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -42,7 +43,8 @@ $ergebnis = safe_query(
 
 if (mysqli_num_rows($ergebnis) > 0) {
     while ($ds = mysqli_fetch_array($ergebnis)) {
-        $poster = '<a href="index.php?site=profile&amp;id=' . $ds['userID'] . '"><strong>' . getusername($ds['userID']) . '</strong></a>';
+        $poster = '<a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=profile&id=' . $ds['userID']) . '"><strong>' . getusername($ds['userID']) . '</strong></a>';
+
 
         $translate = new multiLanguage($lang);
         $translate->detectLanguages($ds['title']);
