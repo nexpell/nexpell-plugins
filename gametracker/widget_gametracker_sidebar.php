@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $_database, $languageService, $tpl;
 
@@ -132,7 +133,9 @@ foreach ($queryList as $server) {
 
 echo '</ul>';
 echo '<div class="card-footer text-center p-2">';
-echo '<a href="index.php?site=gametracker" class="btn btn-sm btn-outline-primary w-100">Alle Server anzeigen</a>';
+echo '<a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=gametracker') . '" 
+    class="btn btn-sm btn-outline-primary w-100">Alle Server anzeigen</a>';
+
 echo '</div>';
 echo '</div>';
 

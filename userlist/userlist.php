@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $_database,$languageService;
 
@@ -70,8 +71,16 @@ if (mysqli_num_rows($ergebnis)) {
 
     // Sortier-Icon und Link für aktuelle Sortierung
     $typeToggle = ($type === 'ASC') ? 'DESC' : 'ASC';
-    $sorter = '<a href="index.php?site=userlist&amp;page=' . $page . '&amp;sort=' . $sort . '&amp;type=' . $typeToggle . '">'
-        . $languageService->get('sort') . '</a>';
+    
+    $sorterUrl = SeoUrlHandler::convertToSeoUrl(
+        'index.php?site=userlist&page=' . intval($page) . 
+        '&sort=' . urlencode($sort) . 
+        '&type=' . urlencode($typeToggle)
+    );
+
+    $sorter = '<a href="' . htmlspecialchars($sorterUrl) . '">'
+            . $languageService->get('sort') . '</a>';
+
     $sorter .= $type === 'ASC' ? ' <i class="bi bi-arrow-down"></i>' : ' <i class="bi bi-arrow-up"></i>';
 
     // Header-Daten für Template
@@ -95,7 +104,7 @@ if (mysqli_num_rows($ergebnis)) {
     while ($ds = mysqli_fetch_array($ergebnis)) {
         $id = $ds['userID'];
         //$username = '<a href="index.php?site=profile&amp;userID=' . $id . '">' . getusername($id) . '</a>';
-        $username = '<a href="' . htmlspecialchars(convertToSeoUrl("index.php?site=profile&userID=" . $id)) . '">' . getusername($id) . '</a>';
+        $username = '<a href="' . htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=profile&userID=" . $id)) . '">' . getusername($id) . '</a>';
 
         // Prüfen, ob Squad-Modul aktiv und User Mitglied
         $dx = mysqli_fetch_array(safe_query("SELECT * FROM settings_plugins WHERE modulname='squads'"));

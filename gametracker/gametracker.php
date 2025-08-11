@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $_database, $languageService, $tpl;
 
@@ -435,7 +436,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'serverdetails' && isset($_GET
 
         echo '</div>';
         echo '<div class="card-footer text-end">';
-        echo '<a href="index.php?site=gametracker&action=gametracker" class="btn btn-secondary">Zurück</a>';
+        echo '<a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=gametracker&action=gametracker') . '" 
+           class="btn btn-secondary">Zurück</a>';
         echo '</div></div>';
 
     } else {
@@ -531,7 +533,10 @@ if (mysqli_num_rows($servers)) {
             echo '<div class="alert alert-danger mb-0">Server nicht erreichbar</div>';
         }
 
-        echo '<a href="index.php?site=gametracker&action=serverdetails&id=' . (int)str_replace('server_', '', $id) . '" class="btn btn-outline-primary mt-2 w-100">Details anzeigen</a>';
+        echo '<a href="' . SeoUrlHandler::convertToSeoUrl(
+            'index.php?site=gametracker&action=serverdetails&id=' . (int)str_replace('server_', '', $id)
+        ) . '" class="btn btn-outline-primary mt-2 w-100">Details anzeigen</a>';
+
         echo '</div>';
         echo '</div></div>';
     }

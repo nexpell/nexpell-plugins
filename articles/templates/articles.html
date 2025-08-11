@@ -172,21 +172,30 @@
 <!-- END -->
 
 <!-- articles_widget_content_content -->
-  <div class="col-md-4">
+  <div class="col-lg-4 col-md-6 col-sm-6">
     <div class="card news-card">
       <div class="news-img-container">
-        <span class="badge text-bg-secondary category-badge">{name}</span>
+        <span class="badge text-bg-secondary category-badge">
+            {name}
+        </span>
           <img src="{image}" class="img-cat" alt="">
       </div>
       <div class="p-3">
-        <h5 class="mb-2">{title}</h5>
-        <p>{text}</p>
+        <div class="d-flex">
+          <div class="py-3 px-4 border-end text-center">
+            <h4 class="text-primary mb-0">{tag}</h4>
+            <p class="mb-0"></p>{monat}
+            <p class="mb-0"></p>{year}
+          </div>
+          <h5 class="p-3 d-flex align-items-center">
+            {title}
+          </h5>
+        </div>
         <div class="mt-2 border-top pt-2 small text-muted text-end">
           {by} {username} | {tag} {monat} {year}
         </div>
-        <a href="{link}" class="stretched-link"></a>
         <div class="d-grid gap-2">
-          <span class="btn btn-primary mt-2 pointer-events-none">{read_more}</span>
+          <a href="{url_watch}" class="btn btn-primary mt-2 pointer-events-none">{read_more}</a>
         </div>
       </div>
     </div>

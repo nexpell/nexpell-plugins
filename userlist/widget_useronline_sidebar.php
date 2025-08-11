@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -66,7 +67,9 @@ while ($ds = mysqli_fetch_array($ergebnis)) {
         $last_active = $languageService->get('was_online') . ': ' . $hours_text . $minutes_text . ' ' . $languageService->get('minutes');
     }
 
-    $username = '<a href="index.php?site=profile&amp;id=' . (int)$ds['userID'] . '">' . htmlspecialchars($ds['username']) . '</a>';
+    $username = '<a href="' . SeoUrlHandler::convertToSeoUrl(
+        'index.php?site=profile&id=' . (int)$ds['userID']
+    ) . '">' . htmlspecialchars($ds['username']) . '</a>';
     // Avatar prüfen
     $avatar = '';
     if ($getavatar = getavatar($ds['userID'])) {

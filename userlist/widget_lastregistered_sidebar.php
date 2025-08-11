@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -33,7 +34,9 @@ echo $tpl->loadTemplate("userlist","widget_lastregistered_head", $data_array, 'p
 // Benutzerliste durchlaufen
 while ($row = mysqli_fetch_array($result)) {
     
-    $username = '<a href="index.php?site=profile&amp;id=' . (int)$row['userID'] . '">' . htmlspecialchars($row['username']) . '</a>';
+    $username = '<a href="' . SeoUrlHandler::convertToSeoUrl(
+        'index.php?site=profile&id=' . (int)$row['userID']
+    ) . '">' . htmlspecialchars($row['username']) . '</a>';
 
     // Registerdate als DateTime-Objekt erzeugen (korrekt aus String)
     $register_date = new DateTime($row['registerdate']);

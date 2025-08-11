@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $languageService;
 
@@ -73,8 +74,8 @@ if ($anz) {
             $answer = mb_substr($answer, 0, $maxarticleschars) . '...';
         }
 
-        $title = '<a href="index.php?site=articles&action=watch&id='.$id.'" class="text-decoration-none fw-bold text-truncate" title="
-        '.htmlspecialchars($question_lang).'">'.htmlspecialchars($question).'</a>';
+        $articleUrl = SeoUrlHandler::convertToSeoUrl('index.php?site=articles&action=watch&id=' . intval($id));
+        $title = '<a href="' . htmlspecialchars($articleUrl) . '">' . htmlspecialchars($question) . '</a>';
 
         $data_array = [
             'title'    => $title,
