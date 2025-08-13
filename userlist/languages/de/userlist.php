@@ -11,7 +11,7 @@ $language_array = array(
     'registration' => 'Registrierung',
     'message' => 'Nachricht',
     'now_on' => 'Jetzt online',
-    'was_online' => 'War online vor',
+    
     'online' => 'Online',
     'offline' => 'Offline',
     'lastregistered' => 'Zuletzt registriert',
@@ -26,5 +26,9 @@ $language_array = array(
     'minutes' => 'Min.',
     'email_hidden' => 'E-Mail verborgen',
     'no_messenger' => 'Nachrichten deaktiviert',
+
+
+    'was_online' => 'War online am',
+    'ago' => 'Gesamt Onlinezeit:',
 
 );

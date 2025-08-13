@@ -155,26 +155,32 @@ if (mysqli_num_rows($ergebnis)) {
         $registerdate = $ds['registerdate'] ?? '1970-01-01 00:00:00';
 
         $lastActivityTimestamp = strtotime($lastlogin);
-        $nowTimestamp = time();
-        $onlineTimeout = 10 * 60; // 10 Minuten Timeout
+        #$nowTimestamp = time();
+        #$onlineTimeout = 10 * 60; // 10 Minuten Timeout
 
         // Status prüfen (online/offline)
-        if ($lastlogin === '1970-01-01 00:00:00' || $lastlogin === $registerdate) {
-            $status = "offline";
+        // Werte aus DB
+        $isOnline = (int) $ds['is_online']; // 0 = offline, 1 = online
+        $lastlogin = $ds['lastlogin'];
+        $registerdate = $ds['registerdate'];
+        $lastActivityTimestamp = strtotime($ds['last_activity'] ?? '');
+
+        // Status direkt über DB-Spalte bestimmen
+        if ($isOnline === 1) {
+            $status = "online";
         } else {
-            $status = ($lastActivityTimestamp !== false && ($nowTimestamp - $lastActivityTimestamp) <= $onlineTimeout)
-                ? "online"
-                : "offline";
+            $status = "offline";
         }
 
         // Anzeige des Loginstatus
         if ($status === "offline") {
             $login = ($lastlogin === '1970-01-01 00:00:00' || $lastlogin === $registerdate)
                 ? $languageService->get('n_a')
-                : date("d.m.Y - H:i", $lastActivityTimestamp);
+                : date("d.m.Y - H:i", $lastActivityTimestamp ?: strtotime($lastlogin));
         } else {
-            $login = '<span class="badge bg-success">' . $languageService->get('online') . '</span> ' . $languageService->get('now_on');
+            $login = '<span class="badge bg-success">' . $languageService->get('now_on') . '</span>';
         }
+
 
         // Avatar anzeigen falls vorhanden
         $avatar = '';
