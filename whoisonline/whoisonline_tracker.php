@@ -49,7 +49,12 @@ $user_id_int = $user_id === null ? null : intval($user_id);
 // DB Verbindung $_database (mysqli) vorausgesetzt
 
 // Cleanup veralteter Einträge (Timeout 10 Min)
-$_database->query("DELETE FROM plugins_whoisonline WHERE last_activity < DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
+#$_database->query("DELETE FROM plugins_whoisonline WHERE last_activity < DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
+// Cleanup: Alle Einträge > 30 Tage alt löschen
+#$_database->query("DELETE FROM plugins_whoisonline WHERE last_activity < DATE_SUB(NOW(), INTERVAL 30 DAY)");
+$_database->query("DELETE FROM plugins_whoisonline WHERE last_activity < DATE_SUB(NOW(), INTERVAL 1 DAY)");
+
+
 
 // Prüfen, ob Session existiert
 $stmt = $_database->prepare("SELECT id, last_activity FROM plugins_whoisonline WHERE session_id = ?");

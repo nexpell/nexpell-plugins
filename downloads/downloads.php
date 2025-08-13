@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use nexpell\AccessControl;
 use nexpell\LanguageService;
+use nexpell\SeoUrlHandler;
 
 global $_database, $languageService;
 
@@ -86,7 +87,11 @@ if ($action === 'cat_list' && isset($_GET['id']) && is_numeric($_GET['id'])) {
 
     echo '<nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+            <li class="breadcrumb-item">
+                <a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=downloads') ?>">
+                    <?= $languageService->get('downloads') . '
+                </a>
+            </li>
             <li class="breadcrumb-item">' . htmlspecialchars($catTitle) . '</li>
         </ol>
     </nav>';
@@ -101,9 +106,9 @@ if ($action === 'cat_list' && isset($_GET['id']) && is_numeric($_GET['id'])) {
             $descText   = strip_tags($row['description']);
             $descShort  = (mb_strlen($descText) > 150) ? mb_substr($descText, 0, 150) . '…' : $descText;
             $uploaded = !empty($row['uploaded_at']) ? date("d.m.Y", strtotime($row['uploaded_at'])) : null;
-        $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
+            $updated = !empty($row['updated_at']) ? date("d.m.Y", strtotime($row['updated_at'])) : null;
             $downloads  = (int)$row['downloads'];
-            $detailLink = 'index.php?site=downloads&action=watch&id=' . (int)$row['id'];
+            $detailLink = SeoUrlHandler::convertToSeoUrl('index.php?site=downloads&action=detail&id=' . (int)$row['id']);
 
            ?>
             <div class="col">
@@ -127,7 +132,6 @@ if ($action === 'cat_list' && isset($_GET['id']) && is_numeric($_GET['id'])) {
                                 <?php endif; ?>
                                 <li><i class="bi bi-download me-2"></i><strong>Downloads:</strong> <?= $downloads ?></li>
                             </ul>
-
                             <a href="<?= $detailLink ?>" class="btn btn-primary btn-sm w-100">
                                 <i class="bi bi-info-circle"></i> Details & Download
                             </a>
@@ -173,18 +177,18 @@ elseif ($action === 'detail' && $id > 0) {
     $uploaded = !empty($dl['uploaded_at']) ? date("d.m.Y", strtotime($dl['uploaded_at'])) : '–';
     $updated = !empty($dl['updated_at']) ? date("d.m.Y", strtotime($dl['updated_at'])) : '–';
     $downloads = intval($dl['download_count']);
-    $downloadLink = "index.php?site=downloads&action=download&id=$id";
+    $downloadLink = SeoUrlHandler::convertToSeoUrl('index.php?site=downloads&action=download&id=' . (int)$id);
 
     // Kategorie
     $catTitle = htmlspecialchars($dl['category_title']);
     $catID = intval($dl['categoryID']);
-    $catLink = "index.php?site=downloads&action=cat_list&id=$catID";
+    $catLink = SeoUrlHandler::convertToSeoUrl('index.php?site=downloads&action=cat_list&id=' . (int)$catID);
 
     ?>
 
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+        <li class="breadcrumb-item"><a href="<?= SeoUrlHandler::convertToSeoUrl('index.php?site=downloads') ?>">Downloads</a></li>
         <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
         <li class="breadcrumb-item active" aria-current="page"><?= $title ?></li>
       </ol>
@@ -269,7 +273,8 @@ elseif ($action === 'detail' && $id > 0) {
     ?>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>
+        <!--<li class="breadcrumb-item"><a href="index.php?site=downloads">Downloads</a></li>-->
+        <li class="breadcrumb-item">Downloads</li>
 
         <?php if ($catID && $catTitle): ?>
             <li class="breadcrumb-item"><a href="<?= $catLink ?>"><?= $catTitle ?></a></li>
