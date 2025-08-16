@@ -14,6 +14,22 @@ $userID = (int)$_SESSION['userID'];
 $postID = isset($_POST['postID']) ? (int)$_POST['postID'] : 0;
 $action = $_POST['action'] ?? '';
 
+if ($postID <= 0 || $userID <= 0) {
+    echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage.']);
+    exit;
+}
+
+// Hole die userID des Post-Autors
+$res_author = safe_query("SELECT userID FROM plugins_forum_posts WHERE postID = " . intval($postID));
+$row_author = mysqli_fetch_assoc($res_author);
+$post_author_id = (int)($row_author['userID'] ?? 0);
+
+// Verhindern, dass Benutzer ihren eigenen Beitrag liken
+if ($userID === $post_author_id) {
+    echo json_encode(['success' => false, 'error' => 'Du kannst deinen eigenen Beitrag nicht liken.']);
+    exit;
+}
+
 if ($postID <= 0 || !in_array($action, ['like', 'unlike'])) {
     echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage']);
     exit;
