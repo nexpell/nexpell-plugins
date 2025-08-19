@@ -1,0 +1,59 @@
+<!-- search_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+
+<!-- search_form -->
+<form action="index.php" method="get" class="row g-2 mb-4">
+  <input type="hidden" name="site" value="search">
+  <div class="col-12 col-md-9">
+    <input type="text" name="q" value="{query}" class="form-control" placeholder="{placeholder}" required>
+  </div>
+  <div class="col-12 col-md-3 d-grid">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-search"></i> {button}
+    </button>
+  </div>
+</form>
+<!-- END -->
+
+<!-- search_result_item -->
+<div class="card mb-3 shadow-sm">
+  <div class="card-body">
+    <div class="mb-3"><span class="badge bg-info text-dark">{type}</span></div>
+    <h2 class="h5 mb-2"><a href="{url}" class="text-decoration-none">{title}</a></h2>
+    <p class="mb-0 text-muted">{snippet}</p>
+    <a href="{url}" class="btn btn-sm btn-outline-primary mt-3">Beitrag öffnen</a>
+  </div>
+</div>
+<!-- END -->
+
+<!-- search_no_results -->
+<div class="alert alert-warning" role="alert">
+  <i class="bi bi-info-circle me-2"></i> {no_results}
+</div>
+<!-- END -->
+
+<!-- search_foot -->
+<p></p>
+<!-- END -->
+
+<!-- search_quick -->
+
+<form action="/de/search" method="get" class="row g-2 mb-4">
+  <div class="col-12">
+    <input type="text" name="q" value="{query}" class="form-control" placeholder="{placeholder}" required>
+  </div>
+  <div class="col-12 d-grid">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-search"></i> {button}
+    </button>
+  </div>
+</form>
+
+<!-- END -->
