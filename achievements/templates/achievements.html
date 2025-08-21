@@ -1,0 +1,47 @@
+<!-- achievements_content -->
+<div class="row">
+    {achievements_grid_items}
+</div>
+<!-- END -->
+
+<!-- achievements_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+
+<!-- achievements_overview_content -->
+<div>
+    <div>
+        <div class="row mt-2">
+            {achievements_list}
+        </div>
+    </div>
+</div>
+<!-- END -->
+
+<!-- achievements_overview_item -->
+<div class="col-lg-4 col-md-6 mb-4">
+    <div class="card h-100 achievement-card {unlocked_class}">
+        <div class="card-body d-flex flex-column">
+            <div class="text-center">
+                <img src="{image_url}" alt="{name}" style="width: 80px; height: 80px;" class="rounded mb-3">
+                <h5 class="card-title">{name}</h5>
+            </div>
+            <p class="card-text text-center flex-grow-1">{description}</p>
+            <div class="mt-auto">
+                {if requirement}
+                <small class="text-muted d-block mb-1">{requirement}</small>
+                {endif}
+                {if progress_html}
+                {progress_html}
+                {endif}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END -->
