@@ -155,8 +155,7 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
                     banner_image = '$filename',
                     sort_order = '$sort_order',
                     is_active = '$is_active',
-                    allow_comments = '$allow_comments',
-                    updated_at = UNIX_TIMESTAMP()
+                    allow_comments = '$allow_comments'
                     WHERE id = '$id'
                 ");
             } else {

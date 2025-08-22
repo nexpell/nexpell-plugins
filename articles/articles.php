@@ -17,6 +17,14 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// HINZUGEFÜGT: Achievement-Plugin prüfen und Flagge setzen
+$achievements_plugin_active = false;
+$achievements_plugin_path = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/achievements/engine_achievements.php';
+if (file_exists($achievements_plugin_path)) {
+    require_once($achievements_plugin_path);
+    $achievements_plugin_active = true;
+}
+
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
 
@@ -110,7 +118,7 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
             $title = $translate->getTextByLanguage($ds['title']);
 
             // Optional kürzen
-            $maxblogchars = 15;
+            $maxblogchars = 25;
             $short_content = (mb_strlen($title) > $maxblogchars)
                 ? mb_substr($title, 0, $maxblogchars) . '...'
                 : $title;
@@ -542,6 +550,12 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                     $deleteLink = '<a href="index.php?site=articles&action=deletecomment&id=' . $row['commentID'] . '&ref=' . urlencode($_SERVER['REQUEST_URI']) . '&token=' . $_SESSION['csrf_token'] . '" class="btn btn-sm btn-danger ms-2" onclick="return confirm(\'Kommentar wirklich löschen?\')">' . $languageService->get('delete') . '</a>';
                 }
 
+                // KORRIGIERTER Block zum Abrufen der Achievements
+                $achievements_widgets = ''; // Variable initialisieren
+                if ($achievements_plugin_active) {
+                    $achievements_widgets = achievements_get_user_icons_html($commentUserID);
+                }
+
                 echo '<li class="list-group-item border-bottom">
                     <div class="d-flex mt-4">
                         <div class="flex-shrink-0">
@@ -554,6 +568,7 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                                 <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
                                     <strong>' . htmlspecialchars($row['username']) . '</strong>
                                 </a>
+                                ' . $achievements_widgets . '
                                 <span class="text-muted small">' . date('d.m.Y H:i', strtotime($row['date'])) . '</span>
                                 ' . $deleteLink . '
                             </div>
@@ -647,7 +662,7 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
                 $translate->detectLanguages($article['title']);
                 $title = $translate->getTextByLanguage($article['title']);
 
-                $maxTitleChars = 50;
+                $maxTitleChars = 70;
                 $short_title = $title;
                 if (mb_strlen($short_title) > $maxTitleChars) {
                     $short_title = mb_substr($short_title, 0, $maxTitleChars) . '...';

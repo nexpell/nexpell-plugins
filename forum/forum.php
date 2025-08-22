@@ -31,6 +31,13 @@ echo $tpl->loadTemplate("forum", "head", $data_array, 'plugin');
 $userID = $_SESSION['userID'] ?? 0;
 $action = $_GET['action'] ?? 'board';
 
+// HINZUGEFÜGT: Achievement-Plugin prüfen und Flagge setzen
+$achievements_plugin_active = false;
+$achievements_plugin_path = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/achievements/engine_achievements.php';
+if (file_exists($achievements_plugin_path)) {
+    require_once($achievements_plugin_path);
+    $achievements_plugin_active = true;
+}
 
 function getBoards(): array {
     $boards = [];
@@ -298,12 +305,56 @@ switch ($action) {
     <div class="card-body">
         <div class="posts my-4">
             <?php while ($post = mysqli_fetch_assoc($posts_res)):
+
                 $uid = (int)$post['userID'];
-                $username = htmlspecialchars($post['username'] ?? 'Gast');
-                $avatar = getavatar($uid) ?: 'default.png';
-                $points = getPointsForUser($uid);
-                $user_roles = $rolesByUser[$uid] ?? [];
-            ?>
+
+                if ($uid > 0) {
+                    // 1. In "users" nachsehen
+                    $result = $_database->query("SELECT username FROM users WHERE userID = " . $uid);
+                    if ($result && $row = $result->fetch_assoc()) {
+                        // User existiert noch → normaler Name
+                        $username = htmlspecialchars($row['username']);
+                        $avatar = getavatar($uid) ?: 'default.png';
+                                        $points = getPointsForUser($uid);
+                                $user_roles = $rolesByUser[$uid] ?? [];
+                    } else {
+                ?>
+                <style>     
+                    .deleted-user {
+                        color: #888;
+                        font-style: italic;
+                    }
+                    .deleted-gm {
+                        color: #888;
+                        font-style: italic;
+                        font-size: 0.75em;
+                    }
+                </style>
+                <?php
+                        // 2. Fallback: in "user_username" nachsehen
+                        $result2 = $_database->query("SELECT username FROM user_username WHERE userID = " . $uid);
+                        if ($result2 && $row2 = $result2->fetch_assoc()) {
+                            $oldName = htmlspecialchars($row2['username']);
+                            $username = '<span class="deleted-user"><s>' . $oldName . '</s></span><br><span class="deleted-gm"><small>Gelöschtes Mitglied</small></span>';
+                            $avatar = getavatar($uid) ?: 'default.png';
+                            $points = '0';
+                            $user_roles = $rolesByUser[$uid] ?? [];
+                        } else {
+                            // Gar nichts gefunden
+                            $username = 'Gelöschtes Mitglied';
+                            $avatar = getavatar($uid) ?: 'default.png';
+                                            $points = getPointsForUser($uid);
+                                $user_roles = $rolesByUser[$uid] ?? [];
+                        }
+                    }
+                } else {
+                    // Beiträge ohne UserID (z. B. Gastposts)
+                    $username = htmlspecialchars($post['username'] ?? 'Gast');
+                    $avatar = getavatar($uid) ?: 'default.png';
+                                    $points = getPointsForUser($uid);
+                                $user_roles = $rolesByUser[$uid] ?? [];
+                }
+                ?>
                 <div class="card shadow-sm border rounded p-3 mb-4" id="post<?php echo intval($post['postID']); ?>">
                     <div class="row">
                         <div class="col-md-2 text-center border-end border-primary pe-3">
@@ -313,6 +364,18 @@ switch ($action) {
                             <div class="badge bg-primary mt-2">
                                 <i class="bi bi-star-fill me-1"></i><?= $points ?> Punkte
                             </div>
+
+                            <!--// HINZUGEFÜGT: Achievement-Plugin prüfen und Flagge setzen -->
+                            <?php if ($achievements_plugin_active):
+                                $achievement_icons = achievements_get_user_icons_html($uid);
+                                if (!empty($achievement_icons)): // Nur anzeigen, wenn der User auch Icons hat ?>
+                                    <div class="mt-2 text-center">
+                                        <?= $achievement_icons ?>
+                                    </div>
+                                <?php endif; 
+                            endif; ?>
+
+
                             <p class="text-muted mt-2">
 
                                 <?php 
@@ -574,57 +637,57 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     if (!$mayEdit) die("Keine Berechtigung.");
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $content = trim($_POST['content'] ?? '');
-        if ($content === '') die("Inhalt darf nicht leer sein.");
+    $content = trim($_POST['content'] ?? '');
+    if ($content === '') die("Inhalt darf nicht leer sein.");
 
-        // Alte Bilder extrahieren
-        preg_match_all('/<img[^>]+src="([^"]+)"/i', $post['content'], $oldMatches);
-        $oldImages = $oldMatches[1] ?? [];
+    // Alte Bilder aus Datenbank-Beitrag
+    preg_match_all('/<img[^>]+src="([^"]+)"/i', $post['content'], $oldMatches);
+    $oldImages = $oldMatches[1] ?? [];
 
-        // Neue Bilder extrahieren
-        preg_match_all('/<img[^>]+src="([^"]+)"/i', $content, $newMatches);
-        $newImages = $newMatches[1] ?? [];
+    // Neue Bilder aus aktuellem Inhalt
+    preg_match_all('/<img[^>]+src="([^"]+)"/i', $content, $newMatches);
+    $newImages = $newMatches[1] ?? [];
 
-        // Alte Bilder, die nicht mehr verwendet werden
-        $deletedImages = array_diff($oldImages, $newImages);
-
-        foreach ($deletedImages as $filename) {
-            $imagePath = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/forum/uploads/forum_images/' . basename($filename);
-
-            error_log("Lösche Bild: $imagePath");
-            if (file_exists($imagePath)) {
-                error_log("Datei existiert, versuche zu löschen...");
-                if (unlink($imagePath)) {
-                    error_log("Datei gelöscht.");
-                } else {
-                    error_log("Datei konnte nicht gelöscht werden.");
-                }
-            } else {
-                error_log("Datei existiert NICHT: $imagePath");
+    foreach ($oldImages as $oldUrl) {
+        $stillUsed = false;
+        foreach ($newImages as $newUrl) {
+            // Nur Dateiname vergleichen
+            if (basename($oldUrl) === basename($newUrl)) {
+                $stillUsed = true;
+                break;
             }
         }
 
-        // Inhalt speichern (hier solltest du mysqli_real_escape_string oder Prepared Statements nutzen)
-        $escaped_content = $content;
-
-        safe_query("UPDATE plugins_forum_posts SET content = '$escaped_content' WHERE postID = $postID");
-
-        // Position des Posts im Thread finden
-        $order_res = safe_query("SELECT postID FROM plugins_forum_posts WHERE threadID = $threadID ORDER BY created_at ASC");
-        $position = 1;
-        while ($row = mysqli_fetch_assoc($order_res)) {
-            if ($row['postID'] == $postID) break;
-            $position++;
+        // Löschen nur, wenn das Bild wirklich nicht mehr verwendet wird
+        if (!$stillUsed && strpos($oldUrl, '/includes/plugins/forum/uploads/forum_images/') !== false) {
+            $imagePath = $_SERVER['DOCUMENT_ROOT'] . $oldUrl;
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
         }
-
-        $per_Page = 10; // Falls $per_Page nicht definiert ist, sonst entfernen
-        $page = ceil($position / $per_Page);
-
-        $url = "index.php?site=forum&action=thread&id=$threadID&pagenr=$page";
-        $seoUrl = SeoUrlHandler::convertToSeoUrl($url);
-        header("Location: " . $seoUrl);
-        exit;
     }
+
+    // Inhalt speichern
+    $escaped_content = $content; // besser: mysqli_real_escape_string oder Prepared Statement
+    safe_query("UPDATE plugins_forum_posts SET content = '$escaped_content' WHERE postID = $postID");
+
+    // Position des Posts im Thread finden
+    $order_res = safe_query("SELECT postID FROM plugins_forum_posts WHERE threadID = $threadID ORDER BY created_at ASC");
+    $position = 1;
+    while ($row = mysqli_fetch_assoc($order_res)) {
+        if ($row['postID'] == $postID) break;
+        $position++;
+    }
+
+    $per_Page = 10;
+    $page = ceil($position / $per_Page);
+
+    $url = "index.php?site=forum&action=thread&id=$threadID&pagenr=$page";
+    $seoUrl = SeoUrlHandler::convertToSeoUrl($url);
+    header("Location: " . $seoUrl);
+    exit;
+}
+
 
     // Thread laden, um catID zu bekommen
     $threadRes = safe_query("SELECT * FROM plugins_forum_threads WHERE threadID = " . intval($post['threadID']));
@@ -675,7 +738,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         <div class="card-header"><h4>Beitrag bearbeiten</h4></div>
         <div class="card-body">
             <form method="post">
-                <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" placeholder="Dein Beitrag..."><?= htmlspecialchars($post['content']) ?></textarea>
+                <textarea id="ckeditor" name="content" class="ckeditor form-control" rows="6" placeholder="Dein Beitrag..."><?= $post['content'] ?></textarea>
 
                 <div id="dropArea" class="mt-2 p-4 text-center border border-secondary rounded bg-light" style="cursor: pointer;">
                   📎 Hier klicken oder Bild per Drag & Drop einfügen
@@ -1176,19 +1239,12 @@ document.querySelectorAll('.like-btn').forEach(btn => {
 document.addEventListener('DOMContentLoaded', function () {
   const dropArea = document.getElementById('dropArea');
   const fileInput = document.getElementById('uploadImage');
-
   let editor = null;
 
-  // CKEditor bereit?
-  if (typeof CKEDITOR === 'undefined') {
-    console.error('CKEditor wurde nicht gefunden.');
-    return;
-  }
-
+  // CKEditor-Instanz beobachten
   CKEDITOR.on('instanceReady', function(evt) {
     if (evt.editor.name === 'ckeditor') {
       editor = evt.editor;
-      console.log('Editor bereit:', editor.name);
     }
   });
 
@@ -1225,23 +1281,17 @@ document.addEventListener('DOMContentLoaded', function () {
       method: 'POST',
       body: formData
     })
-    .then(res => res.text())
-    .then(text => {
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        alert('Fehlerhafte Serverantwort:\n' + text);
-        return;
-      }
-
+    .then(res => res.json())
+    .then(data => {
       if (data.success && data.url) {
-        if (editor) {
-          editor.focus();
-          editor.insertHtml('<img src="' + data.url + '" alt="">');
-        } else {
-          alert('Editor noch nicht bereit');
+        if (!editor) {
+          console.error('CKEditor ist noch nicht bereit.');
+          return;
         }
+        editor.focus();
+        // Bild als Link einfügen, 75% Breite, klickbar für Original
+        const html = `<a href="${data.url}" target="_blank"><img src="${data.url}" style="width:75%; height:auto;" alt=""></a>`;
+        editor.insertHtml(html);
       } else {
         alert(data.message || 'Upload fehlgeschlagen');
       }
@@ -1251,4 +1301,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+
 </script>

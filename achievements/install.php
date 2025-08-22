@@ -49,7 +49,7 @@ safe_query("INSERT INTO `plugins_achievements` (`id`, `category_id`, `name`, `de
 (12, 3, 'Silber', 'Silber', 'points', '500', '', 'silber.png', 0, 0, 1, 0),
 (13, 3, 'Bronze', 'Bronze', 'points', '300', '', 'bronze.png', 0, 0, 1, 0),
 (14, 0, 'Gold', 'Gold', 'points', '1200', '', 'gold.png', 0, 0, 1, 0),
-(15, 3, 'Diamand', 'Diamand', 'points', '3000', '', 'diamand.png', 0, 0, 1, 0),
+(15, 3, 'Diamond', 'Diamond', 'points', '3000', '', 'diamond.png', 0, 0, 1, 0),
 (16, 3, 'Daumen', 'Daumen hoch', 'activity_count', '5', 'Likes', 'daumen.png', 0, 0, 1, 0),
 (17, 3, 'Flash', 'flash', 'level', '99', '', 'flash.png', 0, 0, 1, 0),
 (18, 3, 'Diamond2', 'Diamond2', 'points', '9000', '', 'diamond2.png', 0, 0, 1, 0),
