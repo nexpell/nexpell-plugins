@@ -1241,6 +1241,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const fileInput = document.getElementById('uploadImage');
   let editor = null;
 
+  // Wenn keine DropArea im DOM -> Script sofort beenden
+  if (!dropArea || !fileInput) {
+    return;
+  }
+
   // CKEditor-Instanz beobachten
   CKEDITOR.on('instanceReady', function(evt) {
     if (evt.editor.name === 'ckeditor') {
@@ -1301,6 +1306,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
-
-
 </script>
+

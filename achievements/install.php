@@ -105,8 +105,8 @@ safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 3, '[[lang:de]]Errungenschaften[[lang:en]]Achievements', 'achievements', 'admincenter.php?site=admin_achievements', 1);");
 
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
-('', 3, '[[lang:de]]Errungenschaften[[lang:en]]Achievements', 'achievements', 'index.php?site=achievements', 1, 1);");
+safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, last_modified, sort, indropdown) VALUES
+('', 3, '[[lang:de]]Errungenschaften[[lang:en]]Achievements', 'achievements', 'index.php?site=achievements', NOW(), 1, 1)");
 
 ## ADMIN NAVIGATION RIGHTS ######################################################
 
