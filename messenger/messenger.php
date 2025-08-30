@@ -1,72 +1,232 @@
-<?php
-// Sitzung starten
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
-// Überprüfe, ob der Benutzer angemeldet ist
-if (!isset($_SESSION['userID'])) {
-    http_response_code(403);
-    echo json_encode(["error" => "Nicht angemeldet. Zugriff verweigert."]);
-    exit();
-}
 
-header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__.'/../../../system/config.inc.php';
+<div class="container py-4">
+  <div class="row">
+    <!-- Linke Spalte: Userliste -->
+    <div class="col-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-secondary">User</div>
+        <div class="list-group list-group-flush" id="user-list">
+          <!-- Benutzer werden hier eingefügt -->
+        </div>
+      </div>
+    </div>
 
-$_database = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($_database->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "DB Fehler"]);
-    exit();
-}
+    <!-- Rechte Spalte: Chatfenster -->
+    <div class="col-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white" id="chat-header">Chat</div>
+        <div class="card-body" id="chat-window" style="height:400px; overflow-y:auto; background:#f8f9fa;">
+          <!-- Nachrichten werden hier eingefügt -->
+        </div>
+        <div class="card-footer d-flex gap-2">
+          <input type="text" id="chat-input" class="form-control" placeholder="Nachricht schreiben...">
+          <button id="send-btn" class="btn btn-primary">Senden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-$method = $_SERVER['REQUEST_METHOD'];
-$currentUser = (int)$_SESSION['userID']; // Aktuelle Benutzer-ID aus der Sitzung
+<script>
+// Globale Variable für die aktuelle Benutzer-ID
+let currentUser = null;
+let activeUser = null;
+let activeUserName = '';
 
-if($method === 'GET') {
-    $receiverId = isset($_GET['receiverId']) ? (int)$_GET['receiverId'] : 0;
-    $afterId = isset($_GET['afterId']) ? (int)$_GET['afterId'] : 0;
-    
-    // Die SQL-Abfrage verwendet jetzt $currentUser korrekt
-    $stmt = $_database->prepare("
-        SELECT m.id, m.sender_id, m.receiver_id, m.text, m.timestamp, u.username AS sender_name
-        FROM plugins_messages m
-        JOIN users u ON m.sender_id = u.userID
-        WHERE ((m.sender_id=? AND m.receiver_id=?) OR (m.sender_id=? AND m.receiver_id=?))
-        AND m.id > ?
-        ORDER BY m.id ASC
-    ");
-    $stmt->bind_param("iiiii", $currentUser, $receiverId, $receiverId, $currentUser, $afterId);
-    $stmt->execute();
-    $result = $stmt->get_result();
+const loadedMessageIds = new Set();
+let lastMessageId = 0;
 
-    $messages = [];
-    while($row = $result->fetch_assoc()) {
-        $messages[] = $row;
+
+// Nachricht anhängen
+function appendMessage(msg) {
+    console.log("Versuche, Nachricht hinzuzufügen:", msg);
+    if(!msg.id) return;
+    const msgId = parseInt(msg.id, 10);
+    if(loadedMessageIds.has(msgId)) return;
+    loadedMessageIds.add(msgId);
+
+    const chatWindow = document.getElementById('chat-window');
+    const isCurrentUser = parseInt(msg.sender_id, 10) === currentUser;
+
+    const container = document.createElement('div');
+    container.className = 'd-flex mb-2 ' + (isCurrentUser ? 'justify-content-end' : 'justify-content-start');
+
+    const bubble = document.createElement('div');
+    bubble.className = `p-2 rounded ${isCurrentUser ? 'bg-info text-white' : 'bg-warning text-dark'}`;
+    bubble.style.maxWidth = '70%';
+    bubble.style.wordWrap = 'break-word';
+    bubble.innerHTML = `
+        <strong>${msg.sender_name}</strong><br>
+        ${msg.text}
+        <div class="text-muted small mt-1">${msg.timestamp}</div>
+    `;
+    container.appendChild(bubble);
+    chatWindow.appendChild(container);
+
+    if (msgId > lastMessageId) {
+        lastMessageId = msgId;
     }
-    echo json_encode($messages);
-    exit();
 }
 
-elseif($method === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    if(!isset($data['receiver_id'], $data['text'])) {
-        http_response_code(400);
-        echo json_encode(["error"=>"Empfänger-ID und Text erforderlich"]);
-        exit();
+
+// Alle Nachrichten laden (einmalig beim Wechsel des Chats)
+async function loadMessages() {
+    if (!activeUser) return;
+    try {
+        const res = await fetch(`/includes/plugins/messenger/messenger_settings.php?receiverId=${activeUser}`);
+        const messages = await res.json();
+
+        document.getElementById('chat-window').innerHTML = '';
+        loadedMessageIds.clear();
+        lastMessageId = 0;
+
+        messages.forEach(msg => appendMessage(msg));
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    } catch (e) {
+        console.error('Fehler beim Laden der Nachrichten:', e);
     }
-    
-    $stmt = $_database->prepare("INSERT INTO plugins_messages (sender_id, receiver_id, text) VALUES (?,?,?)");
-    $stmt->bind_param("iis", $currentUser, $data['receiver_id'], $data['text']);
-    $stmt->execute();
-    
-    echo json_encode(["message"=>"Gesendet","id"=>$_database->insert_id]);
-    exit();
 }
 
-else {
-    http_response_code(405);
-    echo json_encode(["error"=>"Methode nicht erlaubt"]);
+
+// Nur neue Nachrichten laden (im Intervall)
+async function loadNewMessages() {
+    if(!activeUser) return;
+    const chatWindow = document.getElementById('chat-window');
+    const isAtBottom = chatWindow.scrollHeight - chatWindow.scrollTop <= chatWindow.clientHeight + 10;
+    
+    try {
+        const res = await fetch(`/includes/plugins/messenger/messenger_settings.php?receiverId=${activeUser}&afterId=${lastMessageId}`);
+        const messages = await res.json();
+
+        messages.forEach(msg => appendMessage(msg));
+
+        if(isAtBottom) chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch(e) {
+        console.error('Fehler beim Laden neuer Nachrichten:', e);
+    }
 }
-?>
+
+
+// Userliste aus der Datenbank laden
+async function loadUserList() {
+    try {
+        const res = await fetch(`/includes/plugins/messenger/get_users.php`);
+        const users = await res.json();
+        const list = document.getElementById('user-list');
+        list.innerHTML = '';
+
+        if (users.length === 0) {
+            list.innerHTML = '<div class="p-3 text-center text-muted">Keine anderen Benutzer gefunden.</div>';
+        } else {
+            users.forEach(user => {
+                const btn = document.createElement('button');
+                btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                btn.textContent = user.username;
+
+                let badge = null;
+                if (user.unread_count > 0) {
+                    badge = document.createElement('span');
+                    badge.className = 'badge rounded-pill bg-danger';
+                    badge.textContent = user.unread_count > 99 ? '99+' : user.unread_count;
+                    btn.appendChild(badge);
+                }
+
+                btn.onclick = async () => {
+                    activeUser = user.id;
+                    activeUserName = user.username;
+                    document.getElementById('chat-header').textContent = 'Chat mit ' + activeUserName;
+                    
+                    // Verstecken Sie das Abzeichen sofort
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
+
+                    try {
+                        await markMessagesAsRead(activeUser);
+                    } catch (e) {
+                        console.error('Fehler beim Markieren als gelesen:', e);
+                    }
+
+                    loadMessages();
+                    loadUserList(); // Lädt die Benutzerliste neu, um das Abzeichen zu aktualisieren
+                };
+                list.appendChild(btn);
+            });
+        }
+    } catch(e) {
+        console.error('Fehler beim Laden der Userliste:', e);
+    }
+}
+
+
+// Funktion zum Markieren von Nachrichten als gelesen
+async function markMessagesAsRead(senderId) {
+    try {
+        const res = await fetch('/includes/plugins/messenger/mark_as_read.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ sender_id: senderId })
+        });
+        const result = await res.json();
+        if (result.success) {
+            console.log('Nachrichten als gelesen markiert.');
+        } else {
+            console.error('Fehler beim Markieren als gelesen:', result.error);
+        }
+    } catch(e) {
+        console.error('Fehler beim Markieren von Nachrichten:', e);
+        throw e; // Leitet den Fehler an den onclick-Handler weiter
+    }
+}
+
+
+// Nachricht senden
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if(!text || !activeUser) return;
+
+    try {
+        const res = await fetch('/includes/plugins/messenger/messenger_settings.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({receiver_id: activeUser, text})
+        });
+        const result = await res.json();
+        if(result.error) { alert(result.error); return; }
+        input.value = '';
+        loadNewMessages();
+    } catch(e) {
+        console.error('Fehler beim Senden:', e);
+    }
+}
+
+// Event Listener
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('chat-input').addEventListener('keypress', e => { if(e.key==='Enter') sendMessage(); });
+
+
+// Haupt-Initialisierung
+async function initChat() {
+    try {
+        const res = await fetch('/includes/plugins/messenger/get_current_user.php');
+        const data = await res.json();
+        if (data.userID) {
+            currentUser = data.userID;
+            loadUserList();
+            setInterval(loadNewMessages, 60000);
+        } else {
+            console.error('Benutzer-ID konnte nicht geladen werden.');
+            alert('Sie sind nicht angemeldet. Bitte melden Sie sich an.');
+        }
+    } catch (e) {
+        console.error('Fehler bei der Initialisierung des Chats:', e);
+    }
+}
+
+// Startet den Chat
+initChat();
+</script>
