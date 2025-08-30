@@ -13,7 +13,7 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_messages (
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('', 'Messenger', 'messenger', '[[lang:de]]Mit diesem Plugin könnt ihr eure messenger anzeigen lassen.[[lang:en]]With this plugin you can display your messenger.[[lang:it]]Con questo plugin è possibile mostrare gli Articoli sul sito web.', '', 1, 'T-Seven', 'https://webspell-rm.de', 'chat', '', '0.3', 'includes/plugins/messenger/', 1, 1, 1, 1, 'deactivated')");
+('', 'Messenger', 'messenger', '[[lang:de]]Mit diesem Plugin könnt ihr eure messenger anzeigen lassen.[[lang:en]]With this plugin you can display your messenger.[[lang:it]]Con questo plugin è possibile mostrare gli Articoli sul sito web.', '', 1, 'T-Seven', 'https://webspell-rm.de', 'messenger', '', '0.3', 'includes/plugins/messenger/', 1, 1, 1, 1, 'deactivated')");
 
 ## NAVIGATION #####################################################################################################################################
 

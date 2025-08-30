@@ -1,0 +1,36 @@
+/* Messenger Link */
+.messenger-link {
+    position: relative;
+    padding-right: 2rem; /* Platz rechts für Icon & Badge */
+}
+
+/* Icon */
+.messenger-link #mail-icon {
+    font-size: 1.8rem;     /* größer machen */
+    position: absolute;
+    top: 2px;              /* frei verschieben, ohne die Zeile zu beeinflussen */
+    right: 0;
+}
+
+/* Badge */
+#total-unread-badge {
+    position: absolute;
+    top: -6px;             /* leicht nach oben über das Icon */
+    right: -6px;           /* leicht nach rechts über das Icon */
+
+    display: flex;         /* damit Text mittig */
+    align-items: center;
+    justify-content: center;
+
+    min-width: 1.5rem;     /* Mindestbreite für runden Kreis */
+    height: 1.5rem;        /* Höhe = Breite für Kreis */
+    padding: 0 0.4rem;     /* bei 2–3 Zeichen breiter */
+
+    background-color: #dc3545; /* Bootstrap Danger */
+    color: #fff;
+    border-radius: 50%;    /* rund */
+
+    
+    line-height: 1.6rem;   /* Text vertikal ausbalanciert */
+    white-space: nowrap;
+}
