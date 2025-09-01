@@ -216,17 +216,11 @@ function achievements_get_earned_data($userID) {
     // --- Role-Achievements (mehrere Rollen) ---
     if(isset($all_achievements['role'])) {
         foreach($all_achievements['role'] as $ach) {
-            // Trigger-Rollen in Array umwandeln
             $required_roles = !empty($ach['trigger_value']) 
                 ? array_map('trim', explode(',', $ach['trigger_value'])) 
                 : [];
-
-            // User-Rollen
             $user_roles = $user_stats['roles'] ?? ['Benutzer'];
-
-            // Prüfen, ob der User alle benötigten Rollen hat
             $is_unlocked = !array_diff($required_roles, $user_roles);
-
             if ($is_unlocked) {
                 $earned_achievements_map[$ach['id']] = $ach;
             }
@@ -238,13 +232,27 @@ function achievements_get_earned_data($userID) {
     checkAndAddAchievement($all_achievements['level'] ?? [], $user_stats['level'], $temp_earned);
     checkAndAddAchievement($all_achievements['points'] ?? [], $user_stats['total_points'], $temp_earned);
     
-    if (!empty($user_stats['reg_date'])) {
-        $reg_date = new DateTime($user_stats['reg_date']);
-        $now = new DateTime();
-        $membership_days = $reg_date->diff($now)->days;
-        checkAndAddAchievement($all_achievements['registration_time'] ?? [], $membership_days, $temp_earned);
+    // --- Registration-Time Achievements prüfen ---
+    if (!empty($user_stats['reg_date']) && !empty($all_achievements['registration_time'])) {
+        foreach ($all_achievements['registration_time'] as $ach) {
+            $reg_data = achievements_helper_calculate_registration_progress(
+                $user_stats['reg_date'],
+                $ach['trigger_value'],
+                $ach['trigger_condition']
+            );
+
+            // Für Jahre: 1 Jahr = 365 Tage
+            if ($ach['trigger_condition'] === 'years') {
+                $reg_data['current_units'] = floor($reg_data['current_days'] / 365);
+                $reg_data['required_units'] = $ach['trigger_value'];
+                $reg_data['is_unlocked'] = $reg_data['current_units'] >= $ach['trigger_value'];
+            }
+
+            checkAndAddAchievement([$ach], $reg_data['current_units'], $temp_earned);
+        }
     }
 
+    // --- Activity / Category Points ---
     $activity_types = ['activity_count', 'category_points'];
     foreach($activity_types as $type) {
         if(isset($all_achievements[$type])) {
@@ -283,6 +291,7 @@ function achievements_get_earned_data($userID) {
     $cached_results[$userID] = $earned_achievements_data;
     return $earned_achievements_data;
 }
+
 
 
 // =============================================================================
@@ -419,5 +428,71 @@ function achievements_get_profile_widgets($userID) {
         'achievements_tab_content_html' => '<div class="tab-pane fade" id="achievements" role="tabpanel"><h5>' . $languageService->get('achievements_title') . '</h5><div class="row">' . $achievements_grid_items . '</div></div>'
     ];
 }
+
+/**
+ * Berechnet den Fortschritt für zeitbasierte Achievements.
+ * @return array|null Ein Array mit Fortschrittsdaten oder null bei ungültigem Datum.
+ */
+function achievements_helper_calculate_registration_progress(?string $reg_date_str, int $required_value, string $time_unit): ?array {
+    global $languageService;
+    if (empty($reg_date_str) || $required_value < 0) {
+        return null;
+    }
+
+    $reg = new DateTimeImmutable($reg_date_str);
+    $now = new DateTimeImmutable('now');
+    $days_since = $reg->diff($now)->days; // gesamte Tage seit Registrierung
+
+    $current_units = 0;
+    $required_days = 0;
+    $unit_key = '';
+
+    switch ($time_unit) {
+        case 'days':
+            $current_units = $days_since;
+            $required_days = $required_value;
+            $unit_key = 'day';
+            break;
+
+        case 'weeks':
+            $current_units = floor($days_since / 7);
+            $required_days = $required_value * 7;
+            $unit_key = 'week';
+            break;
+
+        case 'months':
+            $current_units = floor($days_since / 30.44); // Durchschnitt
+            $required_days = (int)round($required_value * 30.44);
+            $unit_key = 'month';
+            break;
+
+        case 'years':
+            $current_units = floor($days_since / 365);   // Jahre ≈ 365 Tage
+            $required_days = $required_value * 365;
+            $unit_key = 'year';
+            break;
+
+        default:
+            return null;
+    }
+
+    $is_unlocked = $days_since >= $required_days;
+
+    // Plural/Singular
+    $unit_name = method_exists($languageService, 'getPlural')
+        ? $languageService->getPlural($unit_key, $required_value)
+        : ($required_value === 1 ? $languageService->get($unit_key) : $languageService->get($unit_key . 's'));
+
+    return [
+        'current_days'    => $days_since,
+        'required_days'   => $required_days,
+        'is_unlocked'     => $is_unlocked,
+        'current_units'   => $current_units,
+        'required_units'  => $required_value,
+        'unit'            => $time_unit,
+        'requirement_text'=> $languageService->get('be_since') . ' ' . $required_value . ' ' . $unit_name . ' ' . $languageService->get('registered'),
+    ];
+}
+
 
 ?>

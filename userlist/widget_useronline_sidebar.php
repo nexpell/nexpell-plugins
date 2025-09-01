@@ -7,8 +7,6 @@ use nexpell\LanguageService;
 use nexpell\SeoUrlHandler;
 
 global $languageService;
-
-$lang = $languageService->detectLanguage();
 $languageService->readPluginModule('userlist');
 
 $tpl = new Template();
@@ -22,104 +20,106 @@ $data_array = [
     'title'    => $languageService->get('userlist_title'),
     'subtitle' => 'User online'
 ];
-
 echo $tpl->loadTemplate("userlist", "head", $data_array, "plugin");
 
-// Einstellungen aus Plugin-Tabelle lesen
-// Einstellungen aus Plugin-Tabelle lesen
-$settings = safe_query("SELECT * FROM plugins_userlist");
-$ds_settings = mysqli_fetch_array($settings);
-$maxusers = (int)$ds_settings['users_online'];
+// === Einstellungen aus Plugin-Tabelle laden ===
+$settingsResult = safe_query("SELECT * FROM plugins_userlist_settings WHERE id=1");
+$settings = mysqli_fetch_assoc($settingsResult);
 
-// Aktuelle Zeitstempel
-$now = time();
+$maxUsers     = (int)($settings['users_widget_count'] ?? 5);
+$widgetSort   = $settings['widget_sort'] ?? 'lastlogin';
+$showOnlyOnline = (int)($settings['widget_show_online'] ?? 1);
 
-// Benutzer abrufen, sortiert nach letzter Aktivität
+// === Sortierung festlegen ===
+$orderBy = match($widgetSort) {
+    'username'    => 'username ASC',
+    'registerdate'=> 'registerdate DESC',
+    default       => 'lastlogin DESC'
+};
+
+// === WHERE-Bedingung (online oder alle) ===
+$where = $showOnlyOnline ? "WHERE is_online = 1" : "";
+
 $ergebnis = safe_query("
-    SELECT userID, username, lastlogin, is_online 
-    FROM users 
-    ORDER BY lastlogin DESC 
-    LIMIT " . $maxusers
-);
+    SELECT userID, username, lastlogin, is_online
+    FROM users
+    $where
+    ORDER BY $orderBy
+    LIMIT $maxUsers
+");
 
 echo $tpl->loadTemplate("userlist", "useronline_head", [], "plugin");
 
-while ($ds = mysqli_fetch_array($ergebnis)) {
-    $isOnline = (int)$ds['is_online']; // 1 oder 0 aus DB
-    $last_activity = strtotime($ds['lastlogin']);
+// === Anzahl Zeilen ermitteln ===
+$numRows = mysqli_num_rows($ergebnis);
 
-    if ($isOnline === 1) {
-        $statuspic = '<span class="badge bg-success">' . $languageService->get('online') . '</span>';
-
-        // Startzeit als Data-Attribut für JS
-        $last_active = $languageService->get('now_on') 
-            . ' (<span class="online-time" data-start="' . $last_activity . '"></span>)';
+if ($numRows === 0) {
+    if ($showOnlyOnline) {
+        echo '<div class="alert alert-info text-center">'
+           . $languageService->get('no_users_online')
+           . '</div>';
     } else {
-        // Offline
-        $statuspic = '<span class="badge bg-danger">' . $languageService->get('offline') . '</span>';
+        echo '<div class="alert alert-warning text-center">'
+           . $languageService->get('no_users_found')
+           . '</div>';
+    }
+} else {
+    while ($ds = mysqli_fetch_array($ergebnis)) {
+        $lastActivity = strtotime($ds['lastlogin']);
 
-        // Zeit seit letztem Login
-        $diff = $now - $last_activity;
-        $hours = floor($diff / 3600);
-        $minutes = floor(($diff % 3600) / 60);
-
-        if ($hours > 1) {
-            $hours_text = $hours . ' ' . $languageService->get('hours_and') . ' ';
-        } elseif ($hours === 1) {
-            $hours_text = $hours . ' ' . $languageService->get('hour_and') . ' ';
+        if ((int)$ds['is_online'] === 1) {
+            $statuspic = '<span class="badge bg-success">' . $languageService->get('online') . '</span>';
+            $lastActiveText = $languageService->get('now_on') 
+                . ' (<span class="online-time" data-start="' . $lastActivity . '"></span>)';
         } else {
-            $hours_text = '';
+            $statuspic = '<span class="badge bg-danger">' . $languageService->get('offline') . '</span>';
+            $diff    = time() - $lastActivity;
+            $days    = floor($diff / 86400); // 1 Tag = 86400 Sekunden
+            $hours   = floor(($diff % 86400) / 3600);
+            $minutes = floor(($diff % 3600) / 60);
+
+            $timeParts = [];
+
+            if ($days > 0) {
+                $timeParts[] = $days . ' ' . $languageService->get($days === 1 ? 'widget_day' : 'widget_days');
+            }
+            if ($hours > 0) {
+                $timeParts[] = $hours . ' ' . $languageService->get($hours === 1 ? 'widget_hour' : 'widget_hours');
+            }
+            if ($minutes > 0 && $days === 0) { 
+                // Minuten nur anzeigen, wenn weniger als 1 Tag vergangen ist
+                $timeParts[] = $minutes . ' ' . $languageService->get($minutes === 1 ? 'widget_minute' : 'widget_minutes');
+            }
+
+            $timeText = implode(' ', $timeParts);
+
+            $lastActiveText = $languageService->get('widget_was_online') . ': ' 
+                . date("d.m.Y - H:i", $lastActivity) 
+                . '<br>(' . $languageService->get('widget_ago') . ' ' . $timeText . ')';
+
+
         }
-        $minutes_text = str_pad($minutes, 2, "0", STR_PAD_LEFT);
 
-        // Letzte Aktivität
-        $last_active = $languageService->get('was_online') . ': ' 
-            . date("d.m.Y - H:i", $last_activity) 
-            . ' <br>(' . $languageService->get('ago') . '' . $hours_text . $minutes_text . ' ' . $languageService->get('minutes') . ')';
+        $username = '<a href="' . SeoUrlHandler::convertToSeoUrl(
+            'index.php?site=profile&id=' . (int)$ds['userID']
+        ) . '">' . htmlspecialchars($ds['username']) . '</a>';
+
+        $avatar = '';
+        if ($getavatar = getavatar($ds['userID'])) {
+            $avatar = htmlspecialchars($getavatar);
+        }
+
+        $data_array = [
+            'statuspic'   => $statuspic,
+            'username'    => $username,
+            'last_active' => $lastActiveText,
+            'avatar'      => $avatar
+        ];
+
+        echo $tpl->loadTemplate("userlist", "useronline_content", $data_array, "plugin");
     }
-
-    $username = '<a href="' . SeoUrlHandler::convertToSeoUrl(
-        'index.php?site=profile&id=' . (int)$ds['userID']
-    ) . '">' . htmlspecialchars($ds['username']) . '</a>';
-
-    // Avatar prüfen
-    $avatar = '';
-    if ($getavatar = getavatar($ds['userID'])) {
-        $avatar = htmlspecialchars($getavatar);
-    }
-
-    $data_array = [
-        'statuspic'    => $statuspic,
-        'username'     => $username,
-        'last_active'  => $last_active,
-        'avatar'       => $avatar
-    ];
-
-    echo $tpl->loadTemplate("userlist", "useronline_content", $data_array, "plugin");
 }
 
 echo $tpl->loadTemplate("userlist", "useronline_foot", [], "plugin");
+
 ?>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    function updateOnlineTimes() {
-        document.querySelectorAll(".online-time").forEach(function(el) {
-            let start = parseInt(el.getAttribute("data-start")) * 1000;
-            let diff = Date.now() - start;
-
-            let hours = Math.floor(diff / (1000 * 60 * 60));
-            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            let timeStr = 
-                String(hours).padStart(2, '0') + ":" +
-                String(minutes).padStart(2, '0') + ":" +
-                String(seconds).padStart(2, '0');
-
-            el.textContent = timeStr;
-        });
-    }
-    updateOnlineTimes();
-    setInterval(updateOnlineTimes, 1000);
-});
-</script>

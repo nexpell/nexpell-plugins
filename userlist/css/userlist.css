@@ -1,0 +1,16 @@
+.userlist-filter { margin-bottom:15px; }
+.userlist-table img { border-radius:50%; }
+.userlist-pagination { margin-top:15px; }
+.userlist-pagination a { margin:0 0px; text-decoration:none; }
+.userlist-pagination strong { margin:0 5px; }
+/* Full Pagination Style */
+.userlist-pagination-full {
+    gap: 0;                 /* kein Abstand zwischen den Buttons */
+    margin-top: 15px;
+}
+
+.userlist-pagination-full .btn {
+    min-width: 40px;
+    padding: 6px 12px;
+    border-radius: 0;       /* keine Rundung, damit die Buttons sauber aneinander stoßen */
+}

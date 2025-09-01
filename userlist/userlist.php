@@ -4,234 +4,308 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use nexpell\LanguageService;
-use nexpell\SeoUrlHandler;
 
-global $_database,$languageService;
+global $_database, $languageService, $tpl;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('userlist');
 
+// Head style
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
 
-// Header-Daten
+// Header
 $data_array = [
-    'class'    => $class,
+    'class' => $class,
     'title' => $languageService->get('registered_users'),
     'subtitle' => 'Userlist'
 ];
 echo $tpl->loadTemplate("userlist", "head", $data_array, "plugin");
 
-// Hilfsfunktion zum Säubern von Texten (optional)
-function clear($text)
-{
-    return str_replace("javascript:", "", strip_tags($text));
+
+// === SETTINGS LADEN ===
+$settings = mysqli_fetch_assoc(safe_query("SELECT * FROM plugins_userlist_settings WHERE id=1"));
+if (!$settings) {
+    safe_query("INSERT INTO plugins_userlist_settings 
+        (id, users_per_page, default_sort, default_order, default_role) 
+        VALUES (1, 10, 'username', 'ASC', '')");
+    $settings = [
+        'users_per_page'=>10,
+        'default_sort'=>'username',
+        'default_order'=>'ASC',
+        'default_role'=>''
+    ];
 }
 
-// Gesamtanzahl der Benutzer ermitteln
+// === GET Parameter oder Fallback zu Settings ===
+$perPage    = isset($_GET['perPage']) ? max(1, intval($_GET['perPage'])) : intval($settings['users_per_page']);
+$page       = max(1, intval($_GET['page'] ?? 1));
+$search     = trim($_GET['search'] ?? '');  // default_search existiert nicht mehr, kann leer bleiben
+$roleFilter = $_GET['role'] ?? $settings['default_role'];
+$sort       = $_GET['sort'] ?? $settings['default_sort'];
+$order      = strtoupper($_GET['order'] ?? $settings['default_order']);
+$offset     = ($page - 1) * $perPage;
+
+// === SETTINGS SPEICHERN (immer bei Aufruf) ===
+safe_query("
+    UPDATE plugins_userlist_settings 
+    SET users_per_page='".intval($perPage)."',
+        default_sort='".mysqli_real_escape_string($_database,$sort)."',
+        default_order='".mysqli_real_escape_string($_database,$order)."',
+        default_role='".mysqli_real_escape_string($_database,$roleFilter)."'
+    WHERE id=1
+");
+
+
+// Rollen Dropdown dynamisch
+$rolesResult = safe_query("SELECT role_name FROM user_roles ORDER BY role_name ASC");
+$roles = [];
+while($r = mysqli_fetch_assoc($rolesResult)) {
+    $roles[] = $r['role_name'];
+}
+
+// WHERE-Bedingungen
+$where = [];
+$params = [];
+
+if($search !== '') {
+    $where[] = "u.username LIKE ?";
+    $params[] = "%$search%";
+}
+if($roleFilter !== '') {
+    $where[] = "u.userID IN (
+        SELECT ura.userID 
+        FROM user_role_assignments ura
+        JOIN user_roles r ON ura.roleID = r.roleID
+        WHERE r.role_name = ?
+    )";
+    $params[] = $roleFilter;
+}
+
+$whereSQL = $where ? "WHERE ".implode(" AND ", $where) : "";
+
+// SQL Abfrage inkl. Rollen + Webseite
+$sqlOrder = ($sort === 'website') ? "username ASC" : "$sort $order";
+
+$sql = "
+SELECT 
+    u.userID,
+    u.username,
+    u.registerdate,
+    u.lastlogin,
+    u.is_online,
+    GROUP_CONCAT(r.role_name ORDER BY r.role_name SEPARATOR ', ') AS roles,
+    (SELECT website FROM user_socials WHERE userID = u.userID LIMIT 1) AS website
+FROM users u
+LEFT JOIN user_role_assignments ura ON u.userID = ura.userID
+LEFT JOIN user_roles r ON ura.roleID = r.roleID
+$whereSQL
+GROUP BY u.userID
+ORDER BY $sqlOrder
+LIMIT ?, ?
+";
+
+$stmt = $_database->prepare($sql);
+if (!$stmt) die("SQL Error: " . $_database->error);
+
+// Parameter binden
+$allParams = array_merge($params, [$offset, $perPage]);
+$bindTypes = str_repeat('s', count($params)) . 'ii';
+$bindRefs = [];
+foreach ($allParams as $key => $val) $bindRefs[$key] = &$allParams[$key];
+call_user_func_array([$stmt, 'bind_param'], array_merge([$bindTypes], $bindRefs));
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Daten in Array sammeln
+$rows = [];
+while($row = $result->fetch_assoc()) $rows[] = $row;
+
+// Sortieren nach Webseite in PHP, falls ausgewählt
+if($sort === 'website') {
+    usort($rows, function($a, $b) use ($order) {
+        $cmp = strcmp($a['website'] ?? '', $b['website'] ?? '');
+        return $order === 'DESC' ? -$cmp : $cmp;
+    });
+}
+
+// Gesamtanzahl für Pagination
+$countSQL = "SELECT COUNT(*) as total FROM users u $whereSQL";
+$countStmt = $_database->prepare($countSQL);
+if (!$countStmt) die("SQL Error: " . $_database->error);
+if(count($params) > 0) {
+    $bindRefs = [];
+    for($i=0; $i<count($params); $i++) $bindRefs[$i] = &$params[$i];
+    call_user_func_array([$countStmt, 'bind_param'], array_merge([str_repeat('s', count($params))], $bindRefs));
+}
+$countStmt->execute();
+$totalUsers = $countStmt->get_result()->fetch_assoc()['total'];
+$totalPages = ceil($totalUsers / $perPage);
+
+// Gesamtanzahl aller User
 $alle = safe_query("SELECT userID FROM users");
 $gesamt = mysqli_num_rows($alle);
 
-// Einstellungen aus Plugin-Tabelle holen
-$settings = safe_query("SELECT * FROM plugins_userlist");
-$ds = mysqli_fetch_array($settings);
-
-// Maximale Benutzer pro Seite (Default 10)
-$maxusers = !empty($ds['users_list']) ? (int)$ds['users_list'] : 10;
-
-// Seitenanzahl berechnen
-$pages = 1;
-for ($n = $maxusers; $n <= $gesamt; $n += $maxusers) {
-    if ($gesamt > $n) $pages++;
+$sqlCount = "
+SELECT COUNT(DISTINCT u.userID) as cnt
+FROM users u
+LEFT JOIN user_role_assignments ura ON u.userID = ura.userID
+LEFT JOIN user_roles r ON ura.roleID = r.roleID
+$whereSQL
+";
+$stmtCount = $_database->prepare($sqlCount);
+if ($params) {
+    $bindTypes = str_repeat('s', count($params));
+    $bindRefs  = [];
+    foreach ($params as $k => $v) $bindRefs[$k] = &$params[$k];
+    call_user_func_array([$stmtCount, 'bind_param'], array_merge([$bindTypes], $bindRefs));
 }
-
-// Aktuelle Seite aus URL, Default 1, min. 1
-$page = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
-
-// Sortierung validieren (Whitelist)
-$allowedSorts = ['username', 'lastlogin', 'registerdate', 'website'];
-$sort = isset($_GET['sort']) && in_array($_GET['sort'], $allowedSorts) ? $_GET['sort'] : 'username';
-
-// Sortier-Typ (ASC / DESC), Default ASC
-$type = (isset($_GET['type']) && $_GET['type'] === 'DESC') ? 'DESC' : 'ASC';
-
-// Pagination-Link vorbereiten (mit Sortierparameter)
-$page_link = $pages > 1 ? makepagelink("index.php?site=userlist&amp;sort=$sort&amp;type=$type", $page, $pages) : '';
-
-// Start-Offset für LIMIT
-$start = ($page - 1) * $maxusers;
-
-// Benutzer abfragen mit Sortierung und Limit
-$ergebnis = safe_query("SELECT * FROM users ORDER BY $sort $type LIMIT $start, $maxusers");
-
-// Zähler je nach Sortierung initialisieren (für Reihenfolge-Anzeige, optional)
-$n = ($type === "DESC") ? $gesamt - $start : $start + 1;
-
-if (mysqli_num_rows($ergebnis)) {
-
-    // Sortier-Icon und Link für aktuelle Sortierung
-    $typeToggle = ($type === 'ASC') ? 'DESC' : 'ASC';
-    
-    $sorterUrl = SeoUrlHandler::convertToSeoUrl(
-        'index.php?site=userlist&page=' . intval($page) . 
-        '&sort=' . urlencode($sort) . 
-        '&type=' . urlencode($typeToggle)
-    );
-
-    $sorter = '<a href="' . htmlspecialchars($sorterUrl) . '">'
-            . $languageService->get('sort') . '</a>';
-
-    $sorter .= $type === 'ASC' ? ' <i class="bi bi-arrow-down"></i>' : ' <i class="bi bi-arrow-up"></i>';
-
-    // Header-Daten für Template
-    $data_array = [
-        'page_link' => $page_link,
-        'gesamt' => $gesamt,
-        'page' => $page,
-        'sorter' => $sorter,
-        'registered_users' => $languageService->get('registered_users'),
-        'username' => $languageService->get('username'),
-        'contact' => $languageService->get('contact'),
-        'homepage' => $languageService->get('homepage'),
-        'last_login' => $languageService->get('last_login'),
-        'registration' => $languageService->get('registration')
-    ];
-
-    // Header-Template laden
-    echo $tpl->loadTemplate("userlist", "header", $data_array, "plugin");
-
-    // Benutzer-Daten ausgeben
-    while ($ds = mysqli_fetch_array($ergebnis)) {
-        $id = $ds['userID'];
-        //$username = '<a href="index.php?site=profile&amp;userID=' . $id . '">' . getusername($id) . '</a>';
-        $username = '<a href="' . htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=profile&userID=" . $id)) . '">' . getusername($id) . '</a>';
-
-        // Prüfen, ob Squad-Modul aktiv und User Mitglied
-        $dx = mysqli_fetch_array(safe_query("SELECT * FROM settings_plugins WHERE modulname='squads'"));
-        $member = (@$dx['modulname'] === 'squads' && isclanmember($id))
-            ? ' <i class="bi bi-person" style="color: #5cb85c"></i>'
-            : '';
-
-        // E-Mail ausblenden wenn gewünscht
-        $email = $ds['email_hide']
-            ? '<span class=""><i class="bi bi-envelope-slash"></i> ' . $languageService->get('email_hidden') . '</span>'
-            : '<a href="mailto:' . htmlspecialchars(mail_protect($ds['email'])) . '"><i class="bi bi-envelope"></i> ' . $languageService->get('email') . '</a>';
-
-        $userID = $ds['userID'];
-                // userID z. B. aus $ds['userID'] oder $id
-        $query = "SELECT website FROM user_socials WHERE userID = " . (int)$userID;
-        $result = mysqli_query($_database, $query);
-
-        if ($row = mysqli_fetch_assoc($result)) {
-            $websiteUrl = $row['website'];
-
-            if (!empty($websiteUrl)) {
-                $protocol = (str_starts_with($websiteUrl, 'http://') || str_starts_with($websiteUrl, 'https://')) ? '' : 'http://';
-                $homepage = '<a href="' . $protocol . htmlspecialchars($websiteUrl) . '" target="_blank" rel="nofollow">'
-                    . '<i class="bi bi-house" style="font-size:18px;"></i> ' . $languageService->get('homepage') . '</a>';
-            } else {
-                $homepage = '<i class="bi bi-house-slash" style="font-size:18px;"></i><i> ' . $languageService->get('homepage') . '</i>';
-            }
-        } else {
-            // Falls kein Eintrag in user_socials vorhanden ist
-            $homepage = '<i class="bi bi-house-slash" style="font-size:18px;"></i><i> ' . $languageService->get('homepage') . '</i>';
-        }
-
-
-        // Aktueller eingeloggter User (für PM-Link)
-        $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
-        $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
-
-        $pm = ' / <i class="bi bi-slash-circle text-muted"></i> ' . $languageService->get('no_messenger');
-        $messengerAvailable = false;
-        if ($loggedin && $id != $userID && $messengerAvailable) {
-            //$pm = ' / <a href="index.php?site=messenger&amp;action=touser&amp;touser=' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">'
-            $pm = ' / <a href="' . htmlspecialchars(convertToSeoUrl("index.php?site=messenger&action=touser&touser=" . $id)) . '">'
-                . '<i class="bi bi-messenger"></i> ' . $languageService->get('message') . '</a>';
-        }    
-
-        // Lastlogin und Registration vorbereiten
-        $lastlogin = $ds['lastlogin'] ?? '1970-01-01 00:00:00';
-        $registerdate = $ds['registerdate'] ?? '1970-01-01 00:00:00';
-
-        $lastActivityTimestamp = strtotime($lastlogin);
-        #$nowTimestamp = time();
-        #$onlineTimeout = 10 * 60; // 10 Minuten Timeout
-
-        // Status prüfen (online/offline)
-        // Werte aus DB
-        $isOnline = (int) $ds['is_online']; // 0 = offline, 1 = online
-        $lastlogin = $ds['lastlogin'];
-        $registerdate = $ds['registerdate'];
-        $lastActivityTimestamp = strtotime($ds['last_activity'] ?? '');
-
-        // Status direkt über DB-Spalte bestimmen
-        if ($isOnline === 1) {
-            $status = "online";
-        } else {
-            $status = "offline";
-        }
-
-        // Anzeige des Loginstatus
-        if ($status === "offline") {
-            $login = ($lastlogin === '1970-01-01 00:00:00' || $lastlogin === $registerdate)
-                ? $languageService->get('n_a')
-                : date("d.m.Y - H:i", $lastActivityTimestamp ?: strtotime($lastlogin));
-        } else {
-            $login = '<span class="badge bg-success">' . $languageService->get('now_on') . '</span>';
-        }
-
-
-        // Avatar anzeigen falls vorhanden
-        $avatar = '';
-        $getavatar = getavatar($id);
-        if ($getavatar) {
-            $avatar_url = '' . htmlspecialchars($getavatar);
-            $avatar = '<img class="img-fluid avatar_small" src="' . $avatar_url . '" alt="Avatar">';
-        }
-
-        // Registrierungstag berechnen (heute, gestern, morgen, Zukunft)
-        $today = (new DateTime())->setTime(0, 0, 0);
-        $regDate = (new DateTime($ds['registerdate']))->setTime(0, 0, 0);
-        $interval = $today->diff($regDate);
-        $difference = (int)$interval->format('%r%a'); // + oder - Tage
-
-        if ($difference === 0) {
-            $register = $languageService->get('today');
-        } elseif ($difference === 1) {
-            $register = $languageService->get('tomorrow');
-        } elseif ($difference === -1) {
-            $register = $languageService->get('yesterday');
-        } elseif ($difference > 1) {
-            $register = $languageService->get('future_date');
-        } else {
-            $register = date("d.m.Y", $regDate->getTimestamp());
-        }
-
-        // Datenarray für Template
-        $data_array = [
-            'username' => $username,
-            'avatar' => $avatar,
-            'member' => $member,
-            'homepage' => $homepage,
-            'email' => $email,
-            'pm' => $pm,
-            'login' => $login,
-            'register' => $register
-        ];
-
-        // Benutzer-Datenblock ausgeben
-        echo $tpl->loadTemplate("userlist", "user", $data_array, "plugin");
-
-        // Zähler inkrementieren (je nach Sortierung)
-        $n = ($type === "DESC") ? $n - 1 : $n + 1;
-    }
-
-    // Footer-Template mit Paging
-    echo $tpl->loadTemplate("userlist", "footer", ['page_link' => $page_link], "plugin");
-
-} else {
-    // Keine Benutzer gefunden
-    echo '<div class="alert alert-warning">' . $languageService->get('no_users_found') . '</div>';
-}
+$stmtCount->execute();
+$resCnt = $stmtCount->get_result();
+$gefiltert = ($row = $resCnt->fetch_assoc()) ? (int)$row['cnt'] : 0;
 ?>
+
+<div class="card">
+  <div class="card-body">
+    <div class="container my-4">
+      <h2><?= $languageService->get('user_list') ?></h2>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <form method="get" class="userlist-filter d-flex gap-2 mb-0">
+                <input type="hidden" name="site" value="userlist">
+
+                <?php if($settings['enable_search']): ?>
+                    <input type="text" name="search" placeholder="<?= $languageService->get('search_placeholder') ?>" value="<?=htmlspecialchars($search)?>" class="form-control">
+                <?php endif; ?>
+
+                <?php if($settings['enable_role_filter']): ?>
+                    <select name="role" class="form-select">
+                        <option value=""><?= $languageService->get('all_roles') ?></option>
+                        <?php foreach($roles as $r): ?>
+                            <option value="<?=htmlspecialchars($r)?>" <?= $roleFilter==$r?'selected':'' ?>><?=htmlspecialchars($r)?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <select name="sort" class="form-select">
+                    <option value="username" <?= $sort=='username'?'selected':'' ?>><?= $languageService->get('username') ?></option>
+                    <option value="registerdate" <?= $sort=='registerdate'?'selected':'' ?>><?= $languageService->get('registered') ?></option>
+                    <option value="lastlogin" <?= $sort=='lastlogin'?'selected':'' ?>><?= $languageService->get('last_login') ?></option>
+                    <option value="is_online" <?= $sort=='is_online'?'selected':'' ?>><?= $languageService->get('online_status') ?></option>
+                    <option value="website" <?= $sort=='website'?'selected':'' ?>><?= $languageService->get('website') ?></option>
+                </select>
+
+                <select name="order" class="form-select">
+                    <option value="ASC" <?= $order=='ASC'?'selected':'' ?>><?= $languageService->get('ascending') ?></option>
+                    <option value="DESC" <?= $order=='DESC'?'selected':'' ?>><?= $languageService->get('descending') ?></option>
+                </select>
+
+                <button type="submit" class="btn btn-primary"><?= $languageService->get('filter') ?></button>
+            </form>
+
+
+
+            <!-- Badges rechts -->
+            <div class="d-flex gap-2">
+                <span class="badge bg-secondary">
+                    <?= $languageService->get('total') ?>: <?= $gesamt ?>
+                </span>
+                <span class="badge bg-primary">
+                    <?= $languageService->get('found') ?>: <?= $gefiltert ?>
+                </span>
+            </div>
+        </div>
+
+
+
+        <table class="table table-<?= $settings['table_style'] ?> userlist-table">
+            <thead>
+                <tr>
+                    <?php if($settings['show_avatars']): ?><th><?= $languageService->get('avatar') ?></th><?php endif; ?>
+                    <th><?= $languageService->get('username') ?></th>
+                    <?php if($settings['show_roles']): ?><th><?= $languageService->get('role') ?></th><?php endif; ?>
+                    <?php if($settings['show_website']): ?><th><?= $languageService->get('homepage') ?></th><?php endif; ?>
+                    <?php if($settings['show_registerdate']): ?><th><?= $languageService->get('registered') ?></th><?php endif; ?>
+                    <?php if($settings['show_lastlogin']): ?><th><?= $languageService->get('last_login') ?></th><?php endif; ?>
+                    <?php if($settings['show_online_status']): ?><th><?= $languageService->get('status') ?></th><?php endif; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($rows as $row):
+                    $avatarFile = getavatar($row['userID']);
+                    $avatar = $avatarFile 
+                        ? '<img src="'.htmlspecialchars($avatarFile).'" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'">' 
+                        : '<img src="default-avatar.png" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'">';
+                    
+                    $status = $row['is_online'] 
+                        ? '<span style="color:green">' . $languageService->get('online') . '</span>' 
+                        : '<span style="color:red">' . $languageService->get('offline') . '</span>';
+
+                    $rolesText = $row['roles'] ? htmlspecialchars($row['roles']) : $languageService->get('user');
+                    $profileUrl = 'index.php?site=profile&id=' . intval($row['userID']); 
+                    $usernameLink = '<a href="' . $profileUrl . '">' . htmlspecialchars($row['username']) . '</a>';
+
+                    $websiteUrl = $row['website'] ?? '';
+                    $homepage = !empty($websiteUrl) 
+                        ? '<a href="'.(str_starts_with($websiteUrl,'http://')||str_starts_with($websiteUrl,'https://')?'':'http://').htmlspecialchars($websiteUrl).'" target="_blank" rel="nofollow">'.$languageService->get('homepage').'</a>' 
+                        : '<s>'.$languageService->get('homepage').'</s>';
+                ?>
+                <tr <?= $settings['highlight_online_users'] && $row['is_online'] ? 'style="font-weight:bold;"' : '' ?>>
+                    <?php if($settings['show_avatars']): ?><td><?= $avatar ?></td><?php endif; ?>
+                    <td><?= $usernameLink ?></td>
+                    <?php if($settings['show_roles']): ?><td><?= $rolesText ?></td><?php endif; ?>
+                    <?php if($settings['show_website']): ?><td><?= $homepage ?></td><?php endif; ?>
+                    <?php if($settings['show_registerdate']): ?><td><?= date("d.m.Y", strtotime($row['registerdate'])) ?></td><?php endif; ?>
+                    <?php if($settings['show_lastlogin']): ?><td><?= date("d.m.Y H:i", strtotime($row['lastlogin'])) ?></td><?php endif; ?>
+                    <?php if($settings['show_online_status']): ?><td><?= $status ?></td><?php endif; ?>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+
+    </div>
+  </div>
+</div>
+
+<div class="userlist-pagination mt-3 d-flex flex-wrap gap-2">
+<?php if($settings['pagination_style'] === 'simple'): ?>
+    <?php if ($page > 1): ?>
+        <a href="?site=userlist&page=<?= $page-1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary">← <?= $languageService->get('previous_page') ?></a>
+    <?php endif; ?>
+    <?php if ($page < $totalPages): ?>
+        <a href="?site=userlist&page=<?= $page+1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary"><?= $languageService->get('next_page') ?> →</a>
+    <?php endif; ?>
+
+<?php else: // full pagination ?>
+<div class="userlist-pagination-full d-flex flex-wrap">
+    <!-- Previous Button -->
+    <a href="<?= $page > 1 
+        ? "?site=userlist&page=".($page-1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
+        : '#' ?>" 
+       class="btn btn-secondary <?= $page <= 1 ? 'disabled' : '' ?>">
+        ← <?= $languageService->get('previous_page') ?>
+    </a>
+
+    <!-- Seitenzahlen -->
+    <?php for($p = 1; $p <= $totalPages; $p++): ?>
+        <a href="?site=userlist&page=<?= $p ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" 
+           class="btn <?= $p == $page ? 'btn-primary' : 'btn-secondary' ?>">
+            <?= $p ?>
+        </a>
+    <?php endfor; ?>
+
+    <!-- Next Button -->
+    <a href="<?= $page < $totalPages 
+        ? "?site=userlist&page=".($page+1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
+        : '#' ?>" 
+       class="btn btn-secondary <?= $page >= $totalPages ? 'disabled' : '' ?>">
+        <?= $languageService->get('next_page') ?> →
+    </a>
+</div>
+<?php endif; ?>
+
+
+
+</div>

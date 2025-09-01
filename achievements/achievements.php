@@ -34,33 +34,70 @@ echo $tpl->loadTemplate("achievements", "head", $data_array_head, 'plugin');
  * Berechnet den Fortschritt für zeitbasierte Achievements.
  * @return array|null Ein Array mit Fortschrittsdaten oder null bei ungültigem Datum.
  */
-function achievements_helper_calculate_registration_progress(?string $reg_date_str, int $required_value, string $time_unit): ?array {
+/*function achievements_helper_calculate_registration_progress(?string $reg_date_str, int $required_value, string $time_unit): ?array {
     global $languageService;
-    if (empty($reg_date_str)) {
+    if (empty($reg_date_str) || $required_value < 0) {
         return null;
     }
 
-    $reg_date = new DateTime($reg_date_str);
-    $now = new DateTime();
-    $days_since_registration = $reg_date->diff($now)->days;
-    
+    $reg = new DateTimeImmutable($reg_date_str);
+    $now = new DateTimeImmutable('now');
+    $days_since = $reg->diff($now)->days; // gesamte Tage seit Registrierung
+
+    $current_units = 0;
     $required_days = 0;
-    $unit_name = '';
+    $unit_key = '';
 
     switch ($time_unit) {
-        case 'days': $required_days = $required_value; $unit_name = ($required_value == 1) ? $languageService->get('day') : $languageService->get('days2'); break;
-        case 'weeks': $required_days = $required_value * 7; $unit_name = ($required_value == 1) ? $languageService->get('week') : $languageService->get('weeks'); break;
-        case 'months': $required_days = $required_value * 30.44; $unit_name = ($required_value == 1) ? $languageService->get('month') : $languageService->get('months'); break;
-        case 'years': $required_days = $required_value * 365.25; $unit_name = ($required_value == 1) ? $languageService->get('year') : $languageService->get('years'); break;
+        case 'days':
+            $current_units = $days_since;
+            $required_days = $required_value;
+            $unit_key = 'day';
+            break;
+
+        case 'weeks':
+            $current_units = floor($days_since / 7);
+            $required_days = $required_value * 7;
+            $unit_key = 'week';
+            break;
+
+        case 'months':
+            $current_units = floor($days_since / 30.44); // Durchschnitt
+            $required_days = (int)round($required_value * 30.44);
+            $unit_key = 'month';
+            break;
+
+        case 'years':
+            $current_units = floor($days_since / 365);   // Jahre ≈ 365 Tage
+            $required_days = $required_value * 365;
+            $unit_key = 'year';
+            break;
+
+        default:
+            return null;
     }
 
+    $is_unlocked = $days_since >= $required_days;
+
+    // Plural/Singular
+    $unit_name = method_exists($languageService, 'getPlural')
+        ? $languageService->getPlural($unit_key, $required_value)
+        : ($required_value === 1 ? $languageService->get($unit_key) : $languageService->get($unit_key . 's'));
+
     return [
-        'current_days' => $days_since_registration,
-        'required_days' => $required_days,
-        'is_unlocked' => ($days_since_registration >= $required_days),
-        'requirement_text' => $languageService->get('be_since') . ' ' . $required_value . ' ' . $unit_name . ' ' . $languageService->get('registered'),
+        'current_days'    => $days_since,
+        'required_days'   => $required_days,
+        'is_unlocked'     => $is_unlocked,
+        'current_units'   => $current_units,
+        'required_units'  => $required_value,
+        'unit'            => $time_unit,
+        'requirement_text'=> $languageService->get('be_since') . ' ' . $required_value . ' ' . $unit_name . ' ' . $languageService->get('registered'),
     ];
 }
+
+*/
+
+
 
 /**
  * Erstellt den HTML-Code für den Fortschrittsbalken.
@@ -233,14 +270,22 @@ case 'role':
 
 
             case 'registration_time':
-                $reg_data = achievements_helper_calculate_registration_progress($user_stats['reg_date'], $trigger_value, $row['trigger_condition']);
-                if ($reg_data) {
-                    $current_value = $reg_data['current_days'];
-                    $is_unlocked = $reg_data['is_unlocked'];
-                    $requirement_text = $reg_data['requirement_text'];
-                    $trigger_value = $reg_data['required_days'];
-                }
-                break;
+    // Berechnung des Fortschritts für ein Achievement,
+    // das sich auf die Registrierungsdauer bezieht
+    $reg_data = achievements_helper_calculate_registration_progress(
+        $user_stats['reg_date'],   // Das Registrierungsdatum des Users
+        $trigger_value,            // Zielwert (z. B. 30 Tage Mitgliedschaft)
+        $row['trigger_condition']  // Bedingung (z. B. >=)
+    );
+
+    // Wenn die Hilfsfunktion etwas zurückgibt, Werte übernehmen
+    if ($reg_data) {
+        $current_value = $reg_data['current_days'];       // wie viele Tage seit Registrierung vergangen sind
+        $is_unlocked   = $reg_data['is_unlocked'];        // true/false, ob Achievement schon erreicht ist
+        $requirement_text = $reg_data['requirement_text']; // Text, z. B. „Sei 30 Tage registriert“
+        $trigger_value = $reg_data['required_days'];      // wie viele Tage nötig sind (kann überschrieben werden)
+    }
+    break;
         }
 
         if ($is_manually_awarded) {

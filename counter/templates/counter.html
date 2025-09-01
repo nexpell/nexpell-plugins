@@ -1,0 +1,56 @@
+<!-- counter_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+<!-- counter_main -->
+    <div class="row g-4">
+
+        <div class="col-lg-4 col-md-6">
+        <div class="card p-3 h-100">
+            <h5>{visits_title}</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">{visits_today} <span class="badge bg-primary">{today}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{visits_yesterday} <span class="badge bg-primary">{yesterday}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{visits_this_month} <span class="badge bg-primary">{month}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{visits_total} <span class="badge bg-primary">{total}</span></li>
+            </ul>
+        </div>
+    </div>
+
+        <div class="col-lg-4 col-md-6">
+        <div class="card p-3 h-100">
+            <h5>{online_title}</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">{online_now} <span class="badge bg-success">{online}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{online_maximum} <span class="badge bg-success">{maxonline}</span></li>
+            </ul>
+        </div>
+    </div>
+
+        <div class="col-lg-4 col-md-12">
+        <div class="card p-3 h-100">
+            <h5>{user_stats_title}</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">{user_registered} <span class="badge bg-warning">{registered_users}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{user_youngest} <span class="badge bg-warning">{youngest_user} {unit_years}</span></li>
+                <li class="list-group-item d-flex justify-content-between">{user_oldest} <span class="badge bg-warning">{oldest_user} {unit_years}</span></li>
+            </ul>
+        </div>
+    </div>
+
+        <div class="col-12">
+        <div class="card p-3">
+            <h5>{month_stats_title}</h5>
+            <ul class="list-group">
+                {month_stats}
+            </ul>
+        </div>
+    </div>
+
+</div>
+    <!-- END -->
