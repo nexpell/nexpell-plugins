@@ -56,8 +56,8 @@ $maxonline = 100;
 $res_users = $_database->query("
     SELECT 
         COUNT(u.userID) AS registered_users,
-        MIN(up.birthday) AS youngest_birthdate,
-        MAX(up.birthday) AS oldest_birthdate
+        MIN(NULLIF(up.birthday,'0000-00-00')) AS oldest_birthdate,
+        MAX(NULLIF(up.birthday,'0000-00-00')) AS youngest_birthdate
     FROM users u
     LEFT JOIN user_profiles up ON u.userID = up.userID
     WHERE u.is_active = 1
@@ -69,6 +69,7 @@ $registered_users = (int) $user_data['registered_users'];
 // Alter berechnen
 $youngest_user = $user_data['youngest_birthdate'] ? date_diff(date_create($user_data['youngest_birthdate']), date_create('now'))->y : 0;
 $oldest_user = $user_data['oldest_birthdate'] ? date_diff(date_create($user_data['oldest_birthdate']), date_create('now'))->y : 0;
+
 
 // Monatsstatistik pro Tag
 $res_month_days = $_database->query("SELECT DATE(created_at) AS day, COUNT(*) AS visits FROM visitor_statistics WHERE created_at >= '$month_start' GROUP BY day ORDER BY day ASC");
