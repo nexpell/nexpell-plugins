@@ -491,22 +491,7 @@ switch ($action) {
                     </div>
                 </div>
             <?php endwhile; ?>
-            <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                  const hash = window.location.hash;
-                  if (hash.startsWith("#post")) {
-                    const target = document.querySelector(hash);
-                    if (target) {
-                      target.classList.add("highlight-post");
-
-                      // optional wieder entfernen nach 4 Sekunden
-                      setTimeout(() => {
-                        target.classList.remove("highlight-post");
-                      }, 4000);
-                    }
-                  }
-                });
-            </script>
+            
         </div>
 
         <!-- Pagination -->
@@ -1235,6 +1220,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     break;
 }
 ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const dropArea = document.getElementById('dropArea');
@@ -1308,3 +1294,19 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const hash = window.location.hash;
+                  if (hash.startsWith("#post")) {
+                    const target = document.querySelector(hash);
+                    if (target) {
+                      target.classList.add("highlight-post");
+
+                      // optional wieder entfernen nach 4 Sekunden
+                      setTimeout(() => {
+                        target.classList.remove("highlight-post");
+                      }, 4000);
+                    }
+                  }
+                });
+            </script>

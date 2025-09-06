@@ -1,7 +1,22 @@
-.progress {
+/*.progress {
     height: 6px;
     border-radius: 3px;
-}
+}*/
 .badge {
     font-size: 0.85rem;
+}
+
+
+.progress {
+  width: 100%;
+  background-color: #eee;
+  margin-bottom: 10px;
+  height: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar {
+    width: 0;
+    transition: width 1s ease-in-out;
 }

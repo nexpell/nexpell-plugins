@@ -23,4 +23,12 @@ $language_array = array(
     'visitor_watched_it' => 'ha guardato',
     'visitor_country' => 'Land:',
     'visitor_last_activity' => 'Letzte Aktivität:',
+
+    'currently_online' => 'Aktuell online',
+'were_online' => 'Waren online (24h)',
+'online_visitors' => 'Besucher online',
+'historical_visitors' => 'Historische Besucher',
+'user' => 'Benutzer',
+'site' => 'Seite',
+'time' => 'Zeit',
 );

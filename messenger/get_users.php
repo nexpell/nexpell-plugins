@@ -22,27 +22,33 @@ if ($_database->connect_error) {
 
 $currentUser = (int)$_SESSION['userID'];
 
-// Holen Sie alle anderen Benutzer und zählen Sie die ungelesenen Nachrichten
+// Holen Sie alle anderen Benutzer inkl. Avatar aus user_profiles
 $stmt = $_database->prepare("
     SELECT 
-        userID, 
-        username,
-        (SELECT COUNT(*) FROM plugins_messages WHERE sender_id = userID AND receiver_id = ? AND is_read = 0) AS unread_count
-    FROM 
-        users 
-    WHERE 
-        userID != ?
+        u.userID,
+        u.username,
+        up.avatar,
+        (SELECT COUNT(*) FROM plugins_messages WHERE sender_id = u.userID AND receiver_id = ? AND is_read = 0) AS unread_count
+    FROM users u
+    LEFT JOIN user_profiles up ON up.userID = u.userID
+    WHERE u.userID != ?
 ");
 $stmt->bind_param("ii", $currentUser, $currentUser);
 $stmt->execute();
-
 $result = $stmt->get_result();
+
 $users = [];
 while ($row = $result->fetch_assoc()) {
+    // Avatar: eigenes Bild oder SVG-Fallback
+    $avatar = !empty($row['avatar'])
+        ? $row['avatar']
+        : '/images/avatars/svg-avatar.php?name=' . urlencode($row['username']);
+
     $users[] = [
-        "id" => $row["userID"],
-        "username" => $row["username"],
-        "unread_count" => (int)$row["unread_count"]
+        "id" => (int)$row['userID'],
+        "username" => $row['username'],
+        "avatar" => $avatar,
+        "unread_count" => (int)$row['unread_count']
     ];
 }
 
