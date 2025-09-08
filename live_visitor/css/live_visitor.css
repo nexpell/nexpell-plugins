@@ -2,6 +2,16 @@
     height: 6px;
     border-radius: 3px;
 }
+.avatar { width:32px; height:32px; border-radius:50%; object-fit:cover; margin-right:0.5rem; }
+.visitor-item { display:flex; justify-content:space-between; align-items:center; padding:0.5rem 1rem; border-bottom:1px solid #dee2e6; }
+.visitor-left { display:flex; align-items:center; gap:0.5rem; flex:1 1 40%; }
+.visitor-middle { flex:1 1 30%; }
+.visitor-right { flex:1 1 20%; text-align:right; font-size:0.85rem; color:#6c757d; }
+.flag-img {
+    width: 34px;        /* Breite */
+    height: auto;       /* Höhe automatisch proportional */
+    display: inline-block;
+}
 .badge {
     font-size: 0.85rem;
 }

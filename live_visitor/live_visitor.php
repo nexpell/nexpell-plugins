@@ -23,7 +23,6 @@ $data_array = [
 
 echo $tpl->loadTemplate("live_visitor", "head", $data_array, 'plugin');
 
-
 function getVisitorCounter(mysqli $_database): array {
     $bot_condition = getBotCondition(); // deine bestehende Funktion
     $today_date    = date('Y-m-d');
@@ -133,11 +132,6 @@ ORDER BY vh.time DESC
 
 $res_history = $_database->query($sql);
 $history_count = $res_history->num_rows;
-
-
-
-
-
 
 $counter = getVisitorCounter($_database);
 ?>

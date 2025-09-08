@@ -23,4 +23,4 @@ function refreshVisitors() {
 }
 
 // Alle 10 Sekunden aktualisieren
-setInterval(refreshVisitors, 10000);
+setInterval(refreshVisitors, 30000); // 30 Sekunden
