@@ -312,7 +312,7 @@ if ($total > 0) {
                     break;
 
                 case 'plugins_wiki':
-                    $url = SeoUrlHandler::convertToSeoUrl("index.php?site=wiki/watch&id=$id");
+                    $url = SeoUrlHandler::convertToSeoUrl("index.php?site=wiki/detail&id=$id");
                     $typeLabel = 'Wiki (Watch)';
                     $content = $row['body'] ?? '';
                     break;
@@ -450,14 +450,20 @@ if ($total > 0) {
 
     }
     
+  
     // Paging-Links
     $totalPages = ceil($total / $perPage);
     if ($totalPages > 1) {
-        echo '<p>';
-        if ($page > 1) echo '<a href="?site=search&q=' . urlencode($q) . '&page=' . ($page - 1) . '">&laquo; Zurück</a> ';
-        if ($page < $totalPages) echo '<a href="?site=search&q=' . urlencode($q) . '&page=' . ($page + 1) . '">Weiter &raquo;</a>';
-        echo '</p>';
+        echo '<div class="d-flex gap-2">'; // flex container mit Abstand zwischen Buttons
+        if ($page > 1) {
+            echo '<a href="?site=search&q=' . urlencode($q) . '&page=' . ($page - 1) . '" class="btn btn-secondary">← Vorherige</a>';
+        }
+        if ($page < $totalPages) {
+            echo '<a href="?site=search&q=' . urlencode($q) . '&page=' . ($page + 1) . '" class="btn btn-secondary">Nächste →</a>';
+        }
+        echo '</div>';
     }
+   
 } else {
     echo '<div class="alert alert-warning" role="alert">
   Keine Treffer gefunden.
