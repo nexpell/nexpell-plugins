@@ -370,7 +370,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'serverdetails' && isset($_GET
 
     echo '<hr><h5>Spieler auf dem Server</h5>';
     echo '<div class="table-responsive">';
-    echo '<table class="table table-sm table-bordered">';
+    echo '<table class="table table-bordered table-striped bg-white shadow-sm">';
 
     // Liste erlaubter Felder (nur diese sollen angezeigt werden)
     $allowedKeys = ['id', 'name', 'score', 'ping', 'time', 'frags'];
@@ -435,8 +435,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'serverdetails' && isset($_GET
         }
 
         echo '</div>';
-        echo '<div class="card-footer text-end">';
-        echo '<a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=gametracker&action=gametracker') . '" 
+        echo '<div class="text-end">';
+        echo '<a href="' . SeoUrlHandler::convertToSeoUrl('index.php?site=gametracker') . '" 
            class="btn btn-secondary">Zurück</a>';
         echo '</div></div>';
 

@@ -272,17 +272,17 @@ $gefiltert = ($row = $resCnt->fetch_assoc()) ? (int)$row['cnt'] : 0;
 <div class="userlist-pagination mt-3 d-flex flex-wrap gap-2">
 <?php if($settings['pagination_style'] === 'simple'): ?>
     <?php if ($page > 1): ?>
-        <a href="?site=userlist&page=<?= $page-1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary">← <?= $languageService->get('previous_page') ?></a>
+        <a href="index.php?site=userlist&page=<?= $page-1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary">← <?= $languageService->get('previous_page') ?></a>
     <?php endif; ?>
     <?php if ($page < $totalPages): ?>
-        <a href="?site=userlist&page=<?= $page+1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary"><?= $languageService->get('next_page') ?> →</a>
+        <a href="index.php?site=userlist&page=<?= $page+1 ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" class="btn btn-secondary"><?= $languageService->get('next_page') ?> →</a>
     <?php endif; ?>
 
 <?php else: // full pagination ?>
 <div class="userlist-pagination-full d-flex flex-wrap">
     <!-- Previous Button -->
     <a href="<?= $page > 1 
-        ? "?site=userlist&page=".($page-1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
+        ? "index.php?site=userlist&page=".($page-1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
         : '#' ?>" 
        class="btn btn-secondary <?= $page <= 1 ? 'disabled' : '' ?>">
         ← <?= $languageService->get('previous_page') ?>
@@ -290,7 +290,7 @@ $gefiltert = ($row = $resCnt->fetch_assoc()) ? (int)$row['cnt'] : 0;
 
     <!-- Seitenzahlen -->
     <?php for($p = 1; $p <= $totalPages; $p++): ?>
-        <a href="?site=userlist&page=<?= $p ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" 
+        <a href="index.php?site=userlist&page=<?= $p ?>&search=<?= urlencode($search) ?>&role=<?= urlencode($roleFilter) ?>&sort=<?= $sort ?>&order=<?= $order ?>" 
            class="btn <?= $p == $page ? 'btn-primary' : 'btn-secondary' ?>">
             <?= $p ?>
         </a>
@@ -298,7 +298,7 @@ $gefiltert = ($row = $resCnt->fetch_assoc()) ? (int)$row['cnt'] : 0;
 
     <!-- Next Button -->
     <a href="<?= $page < $totalPages 
-        ? "?site=userlist&page=".($page+1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
+        ? "index.php?site=userlist&page=".($page+1)."&search=".urlencode($search)."&role=".urlencode($roleFilter)."&sort=$sort&order=$order" 
         : '#' ?>" 
        class="btn btn-secondary <?= $page >= $totalPages ? 'disabled' : '' ?>">
         <?= $languageService->get('next_page') ?> →
