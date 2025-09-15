@@ -22,35 +22,74 @@ if ($_database->connect_error) {
 
 $currentUser = (int)$_SESSION['userID'];
 
-// Holen Sie alle anderen Benutzer inkl. Avatar aus user_profiles
+/**
+ * 1. Nutzer, mit denen schon Nachrichten ausgetauscht wurden
+ */
 $stmt = $_database->prepare("
     SELECT 
         u.userID,
         u.username,
         up.avatar,
-        (SELECT COUNT(*) FROM plugins_messages WHERE sender_id = u.userID AND receiver_id = ? AND is_read = 0) AS unread_count
+        (SELECT COUNT(*) FROM plugins_messages 
+         WHERE sender_id = u.userID AND receiver_id = ? AND is_read = 0) AS unread_count
     FROM users u
     LEFT JOIN user_profiles up ON up.userID = u.userID
     WHERE u.userID != ?
+      AND u.userID IN (
+          SELECT DISTINCT sender_id FROM plugins_messages WHERE receiver_id = ?
+          UNION
+          SELECT DISTINCT receiver_id FROM plugins_messages WHERE sender_id = ?
+      )
+    ORDER BY u.username
 ");
-$stmt->bind_param("ii", $currentUser, $currentUser);
+$stmt->bind_param("iiii", $currentUser, $currentUser, $currentUser, $currentUser);
 $stmt->execute();
 $result = $stmt->get_result();
 
-$users = [];
+$chattedUsers = [];
 while ($row = $result->fetch_assoc()) {
-    // Avatar: eigenes Bild oder SVG-Fallback
     $avatar = !empty($row['avatar'])
         ? $row['avatar']
         : '/images/avatars/svg-avatar.php?name=' . urlencode($row['username']);
 
-    $users[] = [
+    $chattedUsers[] = [
         "id" => (int)$row['userID'],
         "username" => $row['username'],
         "avatar" => $avatar,
         "unread_count" => (int)$row['unread_count']
     ];
 }
+$stmt->close();
 
-echo json_encode($users);
+/**
+ * 2. Alle anderen Nutzer für Select-Auswahl
+ */
+$stmt2 = $_database->prepare("
+    SELECT u.userID, u.username
+    FROM users u
+    WHERE u.userID != ?
+      AND u.userID NOT IN (
+          SELECT DISTINCT sender_id FROM plugins_messages WHERE receiver_id = ?
+          UNION
+          SELECT DISTINCT receiver_id FROM plugins_messages WHERE sender_id = ?
+      )
+    ORDER BY u.username
+");
+$stmt2->bind_param("iii", $currentUser, $currentUser, $currentUser);
+$stmt2->execute();
+$result2 = $stmt2->get_result();
+
+$otherUsers = [];
+while ($row = $result2->fetch_assoc()) {
+    $otherUsers[] = [
+        "id" => (int)$row['userID'],
+        "username" => $row['username']
+    ];
+}
+$stmt2->close();
+
+echo json_encode([
+    "chatted" => $chattedUsers,
+    "others" => $otherUsers
+]);
 ?>

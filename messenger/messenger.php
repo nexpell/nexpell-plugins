@@ -4,6 +4,20 @@
   <div class="row">
     <!-- Linke Spalte: Userliste -->
     <div class="col-4">
+      <div id="chat-users"></div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-secondary">Neuen Chat starten:</div>
+
+        
+            <select id="user-select" class="form-select">
+                <option value="">-- Benutzer auswählen --</option>
+            </select>
+        
+      </div>
+
+
+
       <div class="card shadow-sm">
         <div class="card-header bg-secondary">User</div>
         <div class="list-group list-group-flush" id="user-list">

@@ -83,76 +83,108 @@ async function loadNewMessages() {
 async function loadUserList() {
     try {
         const res = await fetch(`/includes/plugins/messenger/get_users.php`);
-        const users = await res.json();
+        const data = await res.json();
+
         const list = document.getElementById('user-list');
         list.innerHTML = '';
 
-        if (users.length === 0) {
-            list.innerHTML = '<div class="p-3 text-center text-muted">Keine anderen Benutzer gefunden.</div>';
-            return;
-        }
+        const select = document.getElementById('user-select');
+        select.innerHTML = '<option value="">-- Benutzer auswählen --</option>';
 
-        users.forEach(user => {
-            const btn = document.createElement('button');
-            btn.className = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between';
-            btn.classList.add('active');    // Klasse hinzufügen
-            btn.classList.remove('active'); // Klasse entfernen
+        // 1. Bereits gechattete User
+        if (data.chatted.length === 0) {
+            list.innerHTML = '<div class="p-3 text-center text-muted">Noch keine Chats vorhanden.</div>';
+        } else {
+            data.chatted.forEach(user => {
+                const btn = document.createElement('button');
+                btn.className = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between';
 
-            // Avatar
-            const avatarImg = document.createElement('img');
-            avatarImg.src = user.avatar;
-            avatarImg.alt = user.username;
-            avatarImg.className = 'rounded-circle me-2';
-            avatarImg.style.width = '32px';
-            avatarImg.style.height = '32px';
-            avatarImg.style.objectFit = 'cover';
+                // Avatar
+                const avatarImg = document.createElement('img');
+                avatarImg.src = user.avatar;
+                avatarImg.alt = user.username;
+                avatarImg.className = 'rounded-circle me-2';
+                avatarImg.style.width = '32px';
+                avatarImg.style.height = '32px';
+                avatarImg.style.objectFit = 'cover';
 
-            // Username
-            const usernameSpan = document.createElement('span');
-            usernameSpan.textContent = user.username;
-            usernameSpan.style.flexGrow = '1';
+                // Username
+                const usernameSpan = document.createElement('span');
+                usernameSpan.textContent = user.username;
+                usernameSpan.style.flexGrow = '1';
 
-            // Badge
-            let badge = null;
-            if (user.unread_count > 0) {
-                badge = document.createElement('span');
-                badge.className = 'badge rounded-pill bg-danger ms-2';
-                badge.textContent = user.unread_count > 99 ? '99+' : user.unread_count;
-            }
-
-            btn.appendChild(avatarImg);
-            btn.appendChild(usernameSpan);
-            if (badge) btn.appendChild(badge);
-
-            if (activeUser === user.id) {
-                btn.classList.add('user-active');
-            }
-
-            btn.onclick = async () => {
-                activeUser = user.id;
-                activeUserName = user.username;
-
-                document.getElementById('chat-header').textContent = 'Chat mit ' + activeUserName;
-
-                // Badge sofort ausblenden
-                if (badge) badge.style.display = 'none';
-
-                try {
-                    await markMessagesAsRead(activeUser);
-                } catch (e) {
-                    console.error('Fehler beim Markieren als gelesen:', e);
+                // Badge
+                let badge = null;
+                if (user.unread_count > 0) {
+                    badge = document.createElement('span');
+                    badge.className = 'badge rounded-pill bg-danger ms-2';
+                    badge.textContent = user.unread_count > 99 ? '99+' : user.unread_count;
                 }
 
-                loadMessages();
-                loadUserList(); // Neu laden, damit die Markierung aktualisiert wird
-            };
+                btn.appendChild(avatarImg);
+                btn.appendChild(usernameSpan);
+                if (badge) btn.appendChild(badge);
 
-            list.appendChild(btn);
-        });
-    } catch(e) {
+                if (activeUser === user.id) {
+                    btn.classList.add('user-active');
+                }
+
+                btn.onclick = async () => {
+                    activeUser = user.id;
+                    activeUserName = user.username;
+                    document.getElementById('chat-header').textContent = 'Chat mit ' + activeUserName;
+
+                    if (badge) badge.style.display = 'none';
+
+                    try {
+                        await markMessagesAsRead(activeUser);
+                    } catch (e) {
+                        console.error('Fehler beim Markieren als gelesen:', e);
+                    }
+
+                    loadMessages();
+                    loadUserList(); // Refresh
+                };
+
+                list.appendChild(btn);
+            });
+        }
+
+        // 2. Andere User ins Select
+        if (data.others.length > 0) {
+            data.others.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.username;
+                select.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.textContent = "Keine weiteren Benutzer verfügbar";
+            option.disabled = true;
+            select.appendChild(option);
+        }
+
+        // Event-Handler für neues Chat starten
+        select.onchange = () => {
+            const userId = select.value;
+            if (userId) {
+                const username = select.options[select.selectedIndex].text;
+                activeUser = parseInt(userId);
+                activeUserName = username;
+                document.getElementById('chat-header').textContent = 'Chat mit ' + activeUserName;
+
+                // Chatverlauf laden
+                loadMessages();
+                loadUserList();
+            }
+        };
+
+    } catch (e) {
         console.error('Fehler beim Laden der Userliste:', e);
     }
 }
+
 
 
 
@@ -179,7 +211,7 @@ async function markMessagesAsRead(senderId) {
 
 
 // Nachricht senden
-async function sendMessage() {
+/*async function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if(!text || !activeUser) return;
@@ -197,7 +229,40 @@ async function sendMessage() {
     } catch(e) {
         console.error('Fehler beim Senden:', e);
     }
+}*/
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !activeUser) return;
+
+    try {
+        const res = await fetch('/includes/plugins/messenger/messenger_settings.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({receiver_id: activeUser, text})
+        });
+
+        const result = await res.json();
+        if (result.error) { 
+            alert(result.error); 
+            return; 
+        }
+
+        input.value = '';
+
+        // Falls neuer User → in Chatliste übernehmen
+        addUserToChatList(activeUser, activeUserName);
+
+        // Neue Nachrichten laden
+        loadNewMessages();
+
+    } catch(e) {
+        console.error('Fehler beim Senden:', e);
+    }
 }
+
+
 
 // Event Listener
 document.getElementById('send-btn').addEventListener('click', sendMessage);
@@ -221,6 +286,53 @@ async function initChat() {
         console.error('Fehler bei der Initialisierung des Chats:', e);
     }
 }
+
+function addUserToChatList(userId, username) {
+    const list = document.getElementById('user-list');
+    const select = document.getElementById('user-select');
+
+    // Prüfen, ob der User schon in der Liste ist
+    if (list.querySelector(`[data-user-id="${userId}"]`)) {
+        return; // schon vorhanden → nichts tun
+    }
+
+    // Button erstellen (ähnlich wie in loadUserList)
+    const btn = document.createElement('button');
+    btn.className = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between';
+    btn.dataset.userId = userId;
+
+    // Avatar (Fallback = SVG)
+    const avatarImg = document.createElement('img');
+    avatarImg.src = '/images/avatars/svg-avatar.php?name=' + encodeURIComponent(username);
+    avatarImg.alt = username;
+    avatarImg.className = 'rounded-circle me-2';
+    avatarImg.style.width = '32px';
+    avatarImg.style.height = '32px';
+    avatarImg.style.objectFit = 'cover';
+
+    // Username
+    const usernameSpan = document.createElement('span');
+    usernameSpan.textContent = username;
+    usernameSpan.style.flexGrow = '1';
+
+    btn.appendChild(avatarImg);
+    btn.appendChild(usernameSpan);
+
+    btn.onclick = () => {
+        activeUser = userId;
+        activeUserName = username;
+        document.getElementById('chat-header').textContent = 'Chat mit ' + activeUserName;
+        loadMessages();
+    };
+
+    // Oben in die Liste einfügen
+    list.prepend(btn);
+
+    // Aus dem Select entfernen
+    const option = select.querySelector(`option[value="${userId}"]`);
+    if (option) option.remove();
+}
+
 
 // Startet den Chat
 initChat();
