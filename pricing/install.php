@@ -56,7 +56,7 @@ safe_query("INSERT IGNORE INTO plugins_pricing_features (plan_id, feature_text, 
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('', 'Pricing', 'pricing', '[[lang:de]]Mit diesem Plugin könnt ihr ein Pricing auf die Webseite anzeigen lassen.[[lang:en]]With this plugin you can display a Pricing on the website.[[lang:it]]Con questo plugin puoi visualizzare una galleria sul sito web.', 'admin_pricing', 1, 'T-Seven', 'https://webspell-rm.de', 'pricing', '', '0.1', 'includes/plugins/pricing/', 1, 1, 0, 1, 'deactivated')");
+('', 'Pricing', 'pricing', '[[lang:de]]Mit diesem Plugin könnt ihr ein Pricing auf die Webseite anzeigen lassen.[[lang:en]]With this plugin you can display a Pricing on the website.[[lang:it]]Con questo plugin puoi visualizzare una galleria sul sito web.', 'admin_pricing', 1, 'T-Seven', 'https://www.nexpell.de', 'pricing', '', '0.1', 'includes/plugins/pricing/', 1, 1, 0, 1, 'deactivated')");
 
 ## NAVIGATION #####################################################################################################################################
 
