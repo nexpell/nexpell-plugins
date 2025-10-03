@@ -1,0 +1,97 @@
+.news-flip-widget {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: flex-start;
+}
+
+/* Flip Card */
+.flip-card {
+    width: calc(33.333% - 10px);
+    height: 200px; /* feste Höhe */
+    perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d; /* wichtig für 3D-Flip */
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute; /* unbedingt */
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* versteckt die Rückseite, wenn sie hinten ist */
+  top: 0;
+  left: 0;
+}
+
+.flip-card-front {
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.flip-card-front-overlay {
+  background: rgba(0,0,0,0.4);
+  width: 100%;
+  padding: 10px;
+  color: #fff;
+  text-align: center;
+}
+
+.flip-card-back {
+  background-color: #fff;
+  color: #000;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  height: 200px; /* feste Höhe */
+}
+
+
+.flip-card-front-overlay h6 {
+    margin: 0;
+    white-space: nowrap;       /* alles in einer Zeile */
+    overflow: hidden;          /* Überlauf ausblenden */
+    text-overflow: ellipsis;   /* ... am Ende anzeigen */
+    font-size: 1rem;           /* optional anpassen */
+}
+
+
+
+.flip-card-back p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.flip-card-back .badge {
+    align-self: flex-start;
+}
+
+.flip-card-back .btn {
+    margin-top: auto;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .flip-card { width: calc(50% - 10px); }
+}
+@media (max-width: 768px) {

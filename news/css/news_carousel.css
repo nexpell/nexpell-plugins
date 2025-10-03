@@ -1,0 +1,45 @@
+.news-carousel-widget {
+  position: relative;
+}
+
+.news-carousel-widget .swiper {
+  width: 100%;
+  padding-bottom: 1rem; /* Platz für Pagination */
+}
+
+.news-carousel-widget .swiper-slide {
+  display: flex;
+  height: auto;
+}
+
+.news-carousel-widget .swiper-pagination {
+  position: static !important; /* unter dem Slider */
+  margin-top: 0.25rem;
+}
+
+.news-carousel-widget .swiper-button-prev,
+.news-carousel-widget .swiper-button-next {
+  color: #fe821d;
+  font-size: 1.2rem;
+}
+
+/* Card Styling */
+.news-carousel-widget .card {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Pagination: Striche statt Punkte */
+.news-carousel-widget .swiper-pagination-bullet {
+    width: 20px;       /* Länge des Strichs */
+    height: 2px;       /* Höhe des Strichs */
+    border-radius: 2px;
+    background: #333;  /* Farbe inaktiv */
+    margin: 0 3px !important;
+    opacity: 1;
+}
+
+.news-carousel-widget .swiper-pagination-bullet-active {
+    background: #fe821d; /* Farbe aktiv */
+}

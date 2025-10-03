@@ -1,41 +1,33 @@
 <?php
 
-/**
- *¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*
- *                  Webspell-RM      /                        /   /                                          *
- *                  -----------__---/__---__------__----__---/---/-----__---- _  _ -                         *
- *                   | /| /  /___) /   ) (_ `   /   ) /___) /   / __  /     /  /  /                          *
- *                  _|/_|/__(___ _(___/_(__)___/___/_(___ _/___/_____/_____/__/__/_                          *
- *                               Free Content / Management System                                            *
- *                                           /                                                               *
- *¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*
- * @version         webspell-rm                                                                              *
- *                                                                                                           *
- * @copyright       2018-2023 by webspell-rm.de                                                              *
- * @support         For Support, Plugins, Templates and the Full Script visit webspell-rm.de                 *
- * @website         <https://www.webspell-rm.de>                                                             *
- * @forum           <https://www.webspell-rm.de/forum.html>                                                  *
- * @wiki            <https://www.webspell-rm.de/wiki.html>                                                   *
- *                                                                                                           *
- *¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*
- * @license         Script runs under the GNU GENERAL PUBLIC LICENCE                                         *
- *                  It's NOT allowed to remove this copyright-tag                                            *
- *                  <http://www.fsf.org/licensing/licenses/gpl.html>                                         *
- *                                                                                                           *
- *¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*
- * @author          Code based on WebSPELL Clanpackage (Michael Gruber - webspell.at)                        *
- * @copyright       2005-2011 by webspell.org / webspell.info                                                *
- *                                                                                                           *
- *¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*
- */
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-# Sprachdateien aus dem Plugin-Ordner laden
-$pm = new plugin_manager();
-$_lang = $pm->plugin_language("news", $plugin_path);
+use nexpell\LanguageService;
+use nexpell\RoleManager;
+use nexpell\SeoUrlHandler;
 
-// -- COMMENTS INFORMATION -- //
-include_once("news_functions.php");
+global $languageService,$_database;
 
+$lang = $languageService->detectLanguage();
+$languageService->readPluginModule('news');
+
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+$config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
+$class = htmlspecialchars($config['selected_style']);
+
+    // Header-Daten
+    $data_array = [
+        'class'    => $class,
+        'title' => $languageService->get('title'),
+        'subtitle' => 'News'
+    ];
+    
+    echo $tpl->loadTemplate("news", "head", $data_array, 'plugin');
 
 if (isset($_GET['action'])) {
     $action = $_GET['action'];
@@ -43,733 +35,598 @@ if (isset($_GET['action'])) {
     $action = '';
 }
 
+$maxStars = 5; // Maximalsterne
 
-if (isset($_POST['saveeditcomment'])) {
+// Funktion zum Prüfen der Rolle eines Benutzers
+function has_role(int $userID, string $roleName): bool {
+    global $_database;
 
-    if (!isfeedbackadmin($userID) && !isvideocommentposter($userID, $_POST['commentID'])) {
-        die('No access');
+
+    $roleID = RoleManager::getUserRoleID($userID);
+    if ($roleID === null) {
+        return false;
+    }    
+}
+
+
+$segments = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+$slug = end($segments);
+
+
+$category_id = 0;
+$news_id = 0;
+
+if ($slug) {
+    // Prüfen, ob es eine Kategorie ist
+    $stmt = $_database->prepare("SELECT id FROM plugins_news_categories WHERE slug = ? LIMIT 1");
+    $stmt->bind_param("s", $slug);
+    $stmt->execute();
+    $stmt->bind_result($category_id);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($category_id <= 0) {
+        // Wenn keine Kategorie, prüfen ob es ein Beitrag ist
+        $stmt = $_database->prepare("SELECT id FROM plugins_news WHERE slug = ? AND is_active = 1 LIMIT 1");
+        $stmt->bind_param("s", $slug);
+        $stmt->execute();
+        $stmt->bind_result($news_id);
+        $stmt->fetch();
+        $stmt->close();
     }
+}
 
-    $message = $_POST['message'];
-    $author = $_POST['authorID'];
-    $referer = urldecode($_POST['referer']);
 
-    // check if any admin edited the post
-    if (safe_query(
-        "UPDATE
-                `plugins_news_comments`
-            SET
-                newscomments='" . $message . "'
-            WHERE
-                commentID='" . (int)$_POST['commentID'] . "'"
-    )) {
-        header("Location: " . $referer);
-    }
-} elseif ($action == "editcomment") {
 
-    # Sprachdateien aus dem Plugin-Ordner laden
-    $pm = new plugin_manager();
-    $plugin_language = $pm->plugin_language("comments", $plugin_path);
 
-    $id = $_GET['id'];
-    $referer = $_GET['ref'];
+if ($category_id > 0) {
+    $action = 'show';
 
-    if (isfeedbackadmin($userID) || isvideocommentposter($userID, $id)) {
-        if (!empty($id)) {
-            $dt = safe_query("SELECT * FROM plugins_news_comments WHERE commentID='" . (int)$id . "'");
-            if (mysqli_num_rows($dt)) {
-                $ds = mysqli_fetch_array($dt);
-                $poster = '<a href="index.php?site=profile&amp;id=' . $ds['userID'] . '"><b>' .
-                    getnickname($ds['userID']) . '</b></a>';
-                $message = htmlspecialchars($ds['newscomments']);
-                $message = preg_replace("#\n\[br\]\[br\]\[hr]\*\*(.+)#si", '', $message);
-                $message = preg_replace("#\n\[br\]\[br\]\*\*(.+)#si", '', $message);
+if ($category_id <= 0) {
+        echo $languageService->get('no_categories');
+        exit;
+    }    
 
-                $data_array = [
-                    'message' => $message,
-                    'authorID' => $ds['userID'],
-                    'id' => $id,
-                    'userID' => $userID,
-                    'referer' => $referer,
-                    'title_editcomment' => $plugin_language['title_editcomment'],
-                    'edit_comment' => $plugin_language['edit_comment']
-                ];
+    // Pagination
+    $page = isset($_GET['page']) ? max((int)$_GET['page'], 1) : 1;
+    $limit = 6;
+    $offset = ($page - 1) * $limit;
 
-                #$template = $GLOBALS["_template"]->loadTemplate("comments", "edit", $data_array, $plugin_path);
-                #echo $template;
-                echo $tpl->loadTemplate("comments", "edit", $data_array, "plugin");
-            } else {
-                redirect($referer, $plugin_language['no_database_entry'], 2);
-            }
-        } else {
-            redirect($referer, $plugin_language['no_commentid'], 2);
-        }
-    } else {
-        redirect($referer, $plugin_language['access_denied'], 2);
-    }
-} elseif ($action == "") {
+    // Kategorie laden
+    $getcat = safe_query("SELECT * FROM plugins_news_categories WHERE id='$category_id'");
+    $ds = mysqli_fetch_array($getcat);
+    $name = htmlspecialchars($ds['name']);
 
-    if (isset($_GET['page'])) {
-        $page = (int)$_GET['page'];
-    } else {
-        $page = 1;
-    }
+    // Gesamtanzahl News
+    $total_news_query = safe_query("SELECT COUNT(*) as total FROM plugins_news WHERE category_id='$category_id' AND is_active='1'");
+    $total_news_result = mysqli_fetch_array($total_news_query);
+    $total_news = (int)$total_news_result['total'];
+    $total_pages = ceil($total_news / $limit);
 
+    $title_url = SeoUrlHandler::convertToSeoUrl('index.php?site=news');
+
+    // News laden
+    $ergebnis = safe_query("SELECT * FROM plugins_news WHERE category_id='$category_id' AND is_active='1' ORDER BY updated_at DESC LIMIT $offset, $limit");
+
+    // Header
     $data_array = [
-        'title' => $_lang['title'],
-        'subtitle' => 'News',
+        'name'              => $name,
+        'title_url'         => $title_url,
+        'title'             => $languageService->get('title'),
+        'title_categories'  => $languageService->get('title_categories'),
+        'categories'        => $languageService->get('categories'),
+        'category'          => $languageService->get('category'),
     ];
 
-    #$template = $GLOBALS["_template"]->loadTemplate("news", "head", $data_array, $plugin_path);
-    #echo $template;
-    echo $tpl->loadTemplate("news", "head", $data_array, "plugin");
-
-    $alle = safe_query("SELECT newsID FROM plugins_news WHERE displayed = '1'");
-    $gesamt = mysqli_num_rows($alle);
-    $pages = 1;
-
-    $settings = safe_query("SELECT * FROM plugins_news_settings");
-    $dn = mysqli_fetch_array($settings);
-
-    $max = $dn['news'];
-    if (empty($max)) {
-        $max = 10;
-    }
-
-    for ($n = $max; $n <= $gesamt; $n += $max) {
-        if ($gesamt > $n) $pages++;
-    }
-
-
-    if ($pages > 1) $page_link = makepagelink("index.php?site=news", $page, $pages);
-    else $page_link = '';
-
-    if ($page == "1") {
-        $ergebnis = safe_query("SELECT * FROM plugins_news WHERE displayed = '1' ORDER BY date DESC LIMIT 0,$max");
-        $n = 1;
-    } else {
-        $start = $page * $max - $max;
-        $ergebnis = safe_query("SELECT * FROM plugins_news WHERE displayed = '1' ORDER BY date DESC LIMIT $start,$max");
-        $n = ($gesamt + 1) - $page * $max + $max;
-    }
-
-    $ds = safe_query("SELECT * FROM `plugins_news` ORDER BY `date`");
-    $anzcats = mysqli_num_rows($ds);
-    if ($anzcats) {
-
-        #$data_array = array();
-        #$template = $GLOBALS["_template"]->loadTemplate("news", "content_area_head", $data_array, $plugin_path);
-        #echo $template;
-
-        echo $tpl->loadTemplate("news", "content_area_head", $data_array, "plugin");
-
-        $n = 1;
-        if (mysqli_num_rows($ergebnis)) {
-
-            while ($ds = mysqli_fetch_array($ergebnis)) { // ÄNDERN DER MONATSAUSGABE VON ZAHLEN IN BUCHSTABEN //
-                /* $date = getformatdate($ds[ 'date']); */
-                $monatsnamen = array(
-                    1 => $_lang['jan'],
-                    2 => $_lang['feb'],
-                    3 => $_lang['mar'],
-                    4 => $_lang['apr'],
-                    5 => $_lang['may'],
-                    6 => $_lang['jun'],
-                    7 => $_lang['jul'],
-                    8 => $_lang['aug'],
-                    9 => $_lang['sep'],
-                    10 => $_lang['oct'],
-                    11 => $_lang['nov'],
-                    12 => $_lang['dec']
-                );
-
-                // Datum in Timestamp umwandeln (falls String)
-                $timestamp = is_numeric($ds['date']) ? (int)$ds['date'] : strtotime($ds['date']);
-
-                $monatNum = (int)date('n', $timestamp);
-                $monat = $monatsnamen[$monatNum];
-                $tag = date('d', $timestamp);
-                $year = date('Y', $timestamp);
-                $time = date('H:i', $timestamp);
-
-                // HTML-Ausgabe mit Tag, Monat, Jahr und Zeit
-                $date = '<p class="news-block news-day">' . $tag . '</p>' .
-                        '<p class="news-block news-month">' . $monat . '</p>' .
-                        '<p class="news-block news-year">' . $year . '</p>' .
-                        '<p class="news-block news-time">' . $time . '</p>';
-
-
-                // ENDE ÄNDERN DER MONATSAUSGABE VON ZAHLEN IN BUCHSTABEN //
-                $rubrikname = getnewsrubricname($ds['rubric']);
-                $rubrikname_link = htmlspecialchars($rubrikname);
-                $rubricpic_name = getnewsrubricpic($ds['rubric']);
-
-
-                $rubricpic = $plugin_path . 'images/news-rubrics/' . $rubricpic_name;
-                if (!file_exists($rubricpic) || $rubricpic_name == '') {
-                    $rubricpic = '<img style="min-height: 106px;" src="' . $plugin_path . 'images/news-rubrics/no-image.jpg" alt="" class="news-rubric img-fluid card-img-top">';
-                } else {
-                    $rubricpic = '<img style="min-height: 106px;" src="' . $rubricpic . '" alt="" class="news-rubric img-fluid card-img-top">'; // KLASSE FÜR RUBRICPIC DAMIT CONTENT DARAUF ANGEZEIGT WERDEN KANN //
-                    $rubricpic = $rubricpic;
-                }
-
-                if ($ds['comments']) {
-                    if ($ds['newsID']) {
-                        $anzcomments = getanznewscomments($ds['newsID'], 'ne', 're');
-                        $replace = array('$anzcomments', '$url', '$lastposter', '$lastdate');
-                        $vars = array(
-                            $anzcomments,
-                            'index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'],
-                            html_entity_decode(getlastnewscommentposter($ds['newsID'], 'ne')),
-                            getformatdatetime(getlastnewscommentdate($ds['newsID'], 'ne'))
-                        );
-
-                        switch ($anzcomments) {
-                            case 0:
-                                $comments = str_replace($replace, $vars, $_lang['no_comment']);
-                                break;
-                            case 1:
-                                $comments = str_replace($replace, $vars, $_lang['comment']);
-                                break;
-                            default:
-                                $comments = str_replace($replace, $vars, $_lang['comments']);
-                                break;
-                        }
-                    }
-                } else {
-                    $comments = $_lang['off_comments'];
-                }
-
-                #-----------------------------
-
-                $recomments = '';
-
-                if ($ds['comments']) {
-                    if ($ds['newsID']) {
-                        $anzrecomments = getanznewsrecomments($ds['newsID'], 're');
-                        $replace = array('$anzcomments', '$url', '$lastposter');
-                        $vars = array(
-                            $anzrecomments,
-                            'index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'],
-                            html_entity_decode(getlastnewsrecommentposter($ds['newsID'], 're')) #,
-                            #getformatdatetime(getlastnewsrecommentdate($ds[ 'newsID' ], 're'))
-                        );
-
-                        switch ($anzrecomments) {
-                            case 0:
-                                $recomments = str_replace($replace, $vars, $_lang['no_re_comment']);
-                                break;
-                            case 1:
-                                $recomments = str_replace($replace, $vars, $_lang['re_comment']);
-                                break;
-                            default:
-                                $recomments = str_replace($replace, $vars, $_lang['re_comments']);
-                                break;
-                        }
-                    }
-                } else {
-                    $recomments = $_lang['off_comments'];
-                }
-
-                #----------------------------------
-                // ERGÄNZUNG DES AVATARS VOM POSTER //
-                $poster = '<a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">
-                     <img class="avatar_small" src="./images/avatars/' . getavatar($ds['poster']) . '">
-                   </a> by <a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">' . getusername($ds['poster']) . '</a>';
-                // ENDE ERGÄNZUNG DES AVATARS VOM POSTER //
-                $related = "";
-                if ($ds['link1'] && $ds['url1'] != "http://" && $ds['window1']) {
-                    $related .= '<i class="bi bi-link"></i> <a href="' . $ds['url1'] . '" target="_blank">' . $ds['link1'] . '</a> ';
-                }
-                if ($ds['link1'] && $ds['url1'] != "http://" && !$ds['window1']) {
-                    $related .= '<i class="bi bi-link"></i> <a href="' . $ds['url1'] . '">' . $ds['link1'] . '</a> ';
-                }
-
-                if ($ds['link2'] && $ds['url2'] != "http://" && $ds['window2']) {
-                    $related .= '<i class="bi bi-link"></i> <a href="' . $ds['url2'] . '" target="_blank">' . $ds['link2'] . '</a> ';
-                }
-                if ($ds['link2'] && $ds['url2'] != "http://" && !$ds['window2']) {
-                    $related .= '<i class="bi bi-link"></i> <a href="' . $ds['url2'] . '">' . $ds['link2'] . '</a> ';
-                }
-
-                if (empty($related)) {
-                    $related = "";
-                }
-
-                $settings = safe_query("SELECT * FROM plugins_news_settings");
-                $dx = mysqli_fetch_array($settings);
-
-                $maxshownnews = $dx['news'];
-                if (empty($maxshownnews)) {
-                    $maxshownnews = 10;
-                }
-
-                $maxnewschars = $dx['newschars'];
-                if (empty($maxnewschars)) {
-                    $maxnewschars = 500;
-                }
-
-                $headline = $ds['headline'];
-                $content = $ds['content'];
-                $switchen = $dx['switchen'];
-
-                $translate = new multiLanguage(detectCurrentLanguage());
-                $translate->detectLanguages($headline);
-                $headline = $translate->getTextByLanguage($headline);
-                $translate->detectLanguages($content);
-                $content = $translate->getTextByLanguage($content);
-
-                $maxheadlinechars = '35';
-                if (empty($maxheadlinechars)) {
-                    $maxheadlinechars = 200;
-                }
-
-                // Rimuove i tag HTML specificati
-                $headline = preg_replace('/<\/?(div|p|strong|em|s|u|blockquote)>/i', '', $headline);
-                // Tronca il titolo alla lunghezza massima specificata
-                $headline = substr(strip_tags($headline), 0, $maxheadlinechars) . ' ...';
-                $headline = '<a href="index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'] . '" class="h4 font-primary">' . $headline . '</a>';
-
-                // Corregge eventuali tag HTML non chiusi
-                #$headline = closeOpenTags($headline);
-                $headline = closeOpenTags($headline);
-
-                // Rimuove solo i tag specificati, mantenendo gli altri intatti
-                $content = preg_replace('/<\/?(div|p|strong|em|s|u|blockquote|a|b|li|td|tr|table)>/i', '', $content);
-
-                // Applica il ridimensionamento alle Immagini
-                $content = resizeImages($ds['content']);
-
-                // Tronca il contenuto alla lunghezza massima specificata
-                $content = substr(strip_tags($content), 0, $maxnewschars) . ' ...';
-
-                // Corregge eventuali tag HTML non chiusi
-                $content = closeOpenTags($content);
-
-                $data_array = [
-                    'related' => $related,
-                    'headline' => $headline,
-                    'rubrikname' => $rubrikname,
-                    'rubric_pic' => $rubricpic,
-                    'content' => $content,
-                    'poster' => $poster,
-                    'date' => $date,
-                    'comments' => $comments,
-                    'switchen' => $switchen,
-                    're' => $recomments,
-                ];
-
-                #$template = $GLOBALS["_template"]->loadTemplate("news", "content_area", $data_array, $plugin_path);
-                #echo $template;
-                echo $tpl->loadTemplate("news", "content_area", $data_array, "plugin");
-
-                $n++;
-                unset($comments);
-            }
-        }
-        #$template = $GLOBALS["_template"]->loadTemplate("news", "content_area_foot", $data_array, $plugin_path);
-        #echo $template;
-        echo $tpl->loadTemplate("news", "content_area_foot", $data_array, "plugin");
-
-    } else {
-        echo $_lang['no_news'];
-    }
-    if ($pages > 1) echo $page_link;
-} elseif ($action == "news_archive") {
-
-    if (isset($_GET['page'])) {
-        $page = (int)$_GET['page'];
-    } else {
-        $page = 1;
-    }
-
-    $data_array = [
-        'lang_date' => $_lang['date'],
-        'lang_poster' => $_lang['poster'],
-        'lang_rubric' => $_lang['rubric'],
-        'lang_headline' => $_lang['headline'],
-        'title' => $_lang['news'],
-        'subtitle' => 'News Archive',
-    ];
-
-    #$template = $GLOBALS["_template"]->loadTemplate("news", "archive_head", $data_array, $plugin_path);
-    #echo $template;
-    echo $tpl->loadTemplate("news", "archive_head", $data_array, "plugin");
-
-    $alle = safe_query("SELECT newsID FROM plugins_news WHERE displayed = '1' ");
-    $gesamt = mysqli_num_rows($alle);
-    $pages = 1;
-
-    $settings = safe_query("SELECT * FROM plugins_news_settings");
-    $dn = mysqli_fetch_array($settings);
-
-    $max = $dn['newsarchiv'];
-    if (empty($max)) {
-        $max = 10;
-    }
-
-
-    for ($n = $max; $n <= $gesamt; $n += $max) {
-        if ($gesamt > $n) $pages++;
-    }
-
-    if ($pages > 1) $page_link = makepagelink("index.php?site=news&action=news_archive", $page, $pages);
-    else $page_link = '';
-
-    if ($page == "1") {
-        $ergebnis = safe_query("SELECT * FROM plugins_news WHERE displayed = '1' ORDER BY date DESC LIMIT 0,$max");
-        $n = 1;
-    } else {
-        $start = $page * $max - $max;
-        $ergebnis = safe_query("SELECT * FROM plugins_news WHERE displayed = '1' ORDER BY date DESC LIMIT $start,$max");
-        $n = ($gesamt + 1) - $page * $max + $max;
-    }
-
-    $ds = safe_query("SELECT * FROM `plugins_news` ORDER BY `date` ");
-
-    $n = 1;
+    echo $tpl->loadTemplate("news", "details_head", $data_array, 'plugin');
+    echo $tpl->loadTemplate("news", "content_all_head", $data_array, 'plugin');
 
     if (mysqli_num_rows($ergebnis)) {
+        $monate = [
+            1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
+            3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
+            5 => $languageService->get('may'), 6 => $languageService->get('jun'),
+            7 => $languageService->get('jul'), 8 => $languageService->get('aug'),
+            9 => $languageService->get('sep'), 10 => $languageService->get('oct'),
+            11 => $languageService->get('nov'), 12 => $languageService->get('dec')
+        ];
+
         while ($ds = mysqli_fetch_array($ergebnis)) {
-            $timestamp = strtotime($ds['date']); // Wandelt current_timestamp()-Wert in Unix-Timestamp um
+            $timestamp = (int)$ds['updated_at'];
+            $tag = date("d", $timestamp);
+            $monat = date("n", $timestamp);
+            $year = date("Y", $timestamp);
+            $monatname = $monate[$monat];
+            $title     = $ds['title'];
 
-// Uhrzeit, z. B. 14:35
-$time = date('H:i', $timestamp);
+            // Titel kürzen
+            $short_title = mb_strlen($title) > 70 ? mb_substr($title, 0, 70) . '...' : $title;
 
-// Datumsbestandteile
-$tag = date('d', $timestamp);    // 16
-$monat_nr = date('n', $timestamp); // 5
-$year = date('Y', $timestamp);   // 25 (für 2025)
-
-// Monatsnamen-Array (lokalisiert)
-$monatsnamen = array(
-    1 => $_lang['jan'],
-    2 => $_lang['feb'],
-    3 => $_lang['mar'],
-    4 => $_lang['apr'],
-    5 => $_lang['may'],
-    6 => $_lang['jun'],
-    7 => $_lang['jul'],
-    8 => $_lang['aug'],
-    9 => $_lang['sep'],
-    10 => $_lang['oct'],
-    11 => $_lang['nov'],
-    12 => $_lang['dec']
-);
-
-$monat = $monatsnamen[$monat_nr];
-
-// HTML-Ausgabe
-$date = '<p class="news-block news-day">' . $tag . '</p> 
-         <p class="news-block news-month">' . $monat . '</p> 
-         <p class="news-block news-year">' . $year . '</p>';
-
-$date2 = '<p class="news-block news-day">' . $tag . ' / ' . $monat . ' / ' . $year . '</p>';
-
-
-            $rubrikname = getnewsrubricname($ds['rubric']);
-            $rubrikname_link = htmlspecialchars($rubrikname);
-            $rubricpic_name = getnewsrubricpic($ds['rubric']);
-
-            // ERGÄNZUNG DES AVATARS VOM POSTER //
-            $poster = '<a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">
-                     <img class="avatar_small" src="./images/avatars/' . getavatar($ds['poster']) . '"></a> by 
-                     <a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">' . getusername($ds['poster']) . '</a>';
-            // ENDE ERGÄNZUNG DES AVATARS VOM POSTER //
-
-            $rubricpic = $plugin_path . 'images/news-rubrics/' . $rubricpic_name;
-            if (!file_exists($rubricpic) || $rubricpic_name == '') {
-                $rubricpic = '<img style="max-height: 106px;width:100%" src="' . $plugin_path . 'images/news-rubrics/no-image.jpg" alt="" class="news_rubric avatar">';
-            } else {
-                $rubricpic = '<img style="max-height: 106px;width:100%" src="' . $rubricpic . '" alt="" class="news_rubric avatar">'; // KLASSE FÜR RUBRICPIC DAMIT CONTENT DARAUF ANGEZEIGT WERDEN KANN //
-                $rubricpic = $rubricpic;
+            if (!function_exists('truncateHtml')) {
+                /**
+                 * Kürzt HTML-Text auf eine bestimmte Länge.
+                 * @param string $text
+                 * @param int $length
+                 * @param string $ending
+                 * @param bool $considerHtml
+                 * @return string
+                 */
+                function truncateHtml(string $text, int $length = 350, string $ending = '...', bool $considerHtml = true): string {
+                    $plain = strip_tags($text); // alles HTML entfernen
+                    if (mb_strlen($plain) <= $length) {
+                        return $text; // kürzer als Limit, alles zurückgeben
+                    }
+                    return mb_substr($plain, 0, $length) . $ending;
+                }
             }
 
-            $settings = safe_query("SELECT * FROM plugins_news_settings");
-            $dx = mysqli_fetch_array($settings);
+            // Inhalt kürzen
+            $short_content = truncateHtml($ds['content'], 350);
 
-            $maxshownnews = $dx['news'];
-            if (empty($maxshownnews)) {
-                $maxshownnews = 10;
+            $new_id = (int)$ds['id'];
+
+            // Autor-URL
+            $profileUrl = SeoUrlHandler::convertToSeoUrl('index.php?site=profile&userID=' . intval($ds['userID']));
+            $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+                <img src="' . htmlspecialchars(getavatar($ds['userID'])) . '" 
+                     class="img-fluid align-middle rounded me-1" 
+                     style="height: 23px; width: 23px;" 
+                     alt="' . htmlspecialchars(getusername($ds['userID'])) . '">
+                <strong>' . htmlspecialchars(getusername($ds['userID'])) . '</strong>
+            </a>';
+
+            // Kategorie-Link
+            $catID = (int)$ds['category_id'];
+            $cat_query = safe_query("SELECT name, image, slug FROM plugins_news_categories WHERE id = $catID");
+            $cat = mysqli_fetch_assoc($cat_query);
+            $cat_name = htmlspecialchars($cat['name'] ?? '');
+            $cat_slug = $cat['slug'] ?: SeoUrlHandler::slugify($cat_name);
+
+            // Kategorie-Link
+            $new_catname = '<a href="' . 
+                htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=news&action=show&id=$catID&slug=$cat_slug")) . 
+                '"><strong style="font-size: 12px">' . $cat_name . '</strong></a>';
+
+            // News-Link
+            $url_watch_seo = SeoUrlHandler::buildPluginUrl('plugins_news', $new_id, $lang);
+
+            // Kategorie-Bild
+            $image = $cat['image'] 
+                ? "/includes/plugins/news/images/news_categories/" . $cat['image'] 
+                : "/includes/plugins/news/images/no-image.jpg";
+
+            if (!function_exists('truncateHtml')) {
+                /**
+                 * Kürzt HTML-Text auf eine bestimmte Länge.
+                 * @param string $text
+                 * @param int $length
+                 * @param string $ending
+                 * @param bool $considerHtml
+                 * @return string
+                 */
+                function truncateHtml(string $text, int $length = 150, string $ending = '...', bool $considerHtml = true): string {
+                    $plain = strip_tags($text); // alles HTML entfernen
+                    if (mb_strlen($plain) <= $length) {
+                        return $text; // kürzer als Limit, alles zurückgeben
+                    }
+                    return mb_substr($plain, 0, $length) . $ending;
+                }
             }
 
-            $maxnewschars = $dx['newschars'];
-            if (empty($maxnewschars)) {
-                $maxnewschars = 500;
-            }
-
-            $maxheadlineschars = '85';
-            if (empty($maxheadlineschars)) {
-                $maxheadlineschars = 100;
-            }
-
-            $headlines = $ds['headline'];
-            $content = $ds['content'];
-
-            $translate = new multiLanguage(detectCurrentLanguage());
-            $translate->detectLanguages($headlines);
-            $headlines = $translate->getTextByLanguage($headlines);
-            $translate->detectLanguages($content);
-            $content = $translate->getTextByLanguage($content);
-
-            // Rimuove i tag HTML specificati
-            $headlines = preg_replace('/<\/?(div|p|strong|em|s|u|blockquote)>/i', '', $headlines);
-            // Tronca il titolo alla lunghezza massima specificata
-            $headlines = substr(strip_tags($headlines), 0, $maxheadlineschars) . ' ...';
-            $headlines = '<a href="index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'] . '">' . $headlines . '</a>';
-
-            // Corregge eventuali tag HTML non chiusi
-            $headlines = closeOpenTags($headlines);
-
-            // Rimuove solo i tag specificati, mantenendo gli altri intatti
-            $content = preg_replace('/<\/?(div|p|strong|em|s|u|blockquote|a|b|li|td|tr|table)>/i', '', $content);
-
-            // Applica il ridimensionamento alle Immagini
-            $content = resizeImages($ds['content']);
-
-            // Tronca il contenuto alla lunghezza massima specificata
-            $content = substr(strip_tags($content), 0, $maxnewschars) . ' ...';
-
-            // Corregge eventuali tag HTML non chiusi
-            $content = closeOpenTags($content);
+            // Inhalt kürzen
+            $content = truncateHtml($ds['content'], 150);    
 
             $data_array = [
-                'headlines' => $headlines,
-                'rubrikname' => $rubrikname,
-                'rubric_pic' => $rubricpic,
-                'poster' => $poster,
-                'date' => $date,
-                'date2' => $date2,
-                'content' => $content,
-                'lang_rubric' => $_lang['rubric'],
+                'name'          => $new_catname,
+                'title'         => $short_title,
+                'content'       => $content,
+                'username'      => $username,
+                'image'         => $image,
+                'tag'           => $tag,
+                'monat'         => $monatname,
+                'year'          => $year,
+                'url_watch'     => $url_watch_seo,
+                'lang_rating'   => $languageService->get('rating'),
+                'lang_votes'    => $languageService->get('votes'),
+                'link'          => $languageService->get('link'),
+                'info'          => $languageService->get('info'),
+                'stand'         => $languageService->get('stand'),
+                'by'            => $languageService->get('by'),
+                'on'            => $languageService->get('on'),
+                'read_more'     => $languageService->get('read_more'),
             ];
 
-            #$template = $GLOBALS["_template"]->loadTemplate("news", "archive_content", $data_array, $plugin_path);
-            #echo $template;
-            echo $tpl->loadTemplate("news", "archive_content", $data_array, "plugin");
-
-
-            $n++;
+            echo $tpl->loadTemplate("news", "content_all", $data_array, 'plugin');
         }
 
-        #$template = $GLOBALS["_template"]->loadTemplate("news", "archive_foot", $data_array, $plugin_path);
-        #echo $template;
-        echo $tpl->loadTemplate("news", "archive_foot", $data_array, "plugin");
+        echo $tpl->loadTemplate("news", "content_all_foot", $data_array, 'plugin');
+
+        // Pagination
+        if ($total_pages > 1) {
+            echo '<nav aria-label="Page navigation"><ul class="pagination justify-content-center mt-4">';
+            for ($i = 1; $i <= $total_pages; $i++) {
+                $active = ($i == $page) ? ' active' : '';
+                echo '<li class="page-item' . $active . '">
+                        <a class="page-link" href="' . htmlspecialchars(
+                            SeoUrlHandler::convertToSeoUrl("index.php?site=news&action=show/$slug&page=$i")
+                        ) . '">' . intval($i) . '</a>
+                      </li>';
+            }
+            echo '</ul></nav>';
+        }
     } else {
-        echo $_lang['no_news'];
+        echo $plugin_language['no_news'] . '<br><br>[ <a href="' . 
+             htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=news')) . 
+             '" class="alert-new">' . 
+             $plugin_language['go_back'] . 
+             '</a> ]';
     }
-    if ($pages > 1) echo $page_link;
-} elseif ($action == "news_contents") {
+}
 
-    $data_array = [
-        'title' => $_lang['title'],
-        'subtitle' => 'News',
-    ];
 
-    #$template = $GLOBALS["_template"]->loadTemplate("news", "head", $data_array, $plugin_path);
-    #echo $template;
-    echo $tpl->loadTemplate("news", "head", $data_array, "plugin");
+// UserID definieren, damit keine "undefined variable" Warnungen entstehen
+$loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
+$userID = $loggedin ? (int)$_SESSION['userID'] : 0;
 
-    #$template = $GLOBALS["_template"]->loadTemplate("news", "content_area_head", $data_array, $plugin_path);
-    #echo $template;
-    echo $tpl->loadTemplate("news", "content_area_head", $data_array, "plugin");
+// Kommentar speichern
+if (isset($_POST['submit_comment'])) {
+    $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
+    $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
+    if (
+        $loggedin &&
+        !empty($_POST['comment']) &&
+        is_numeric($_POST['id']) &&
+        isset($_POST['csrf_token']) &&
+        hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+    ) {
+        $comment = htmlspecialchars($_POST['comment']);
+        $itemID = (int)$_POST['id'];
 
-    if (isset($newsID)) {
-        unset($newsID);
+        safe_query("INSERT INTO comments (plugin, itemID, userID, comment, date, parentID, modulname) VALUES ('news', $itemID, $userID, '$comment', NOW(), 0, 'news')");
+
+        $url = "index.php?site=news&action=watch&id=$itemID";
+        header("Location: " . htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)));
+        exit;
+    } else {
+        die("Ungültiger CSRF-Token oder fehlende Eingaben.");
     }
-    if (isset($_GET['newsID'])) {
-        $newsID = $_GET['newsID'];
+}
+
+// Kommentar löschen
+if (isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'deletecomment' && is_numeric($_GET['id'])) {
+
+    $commentID = (int)$_GET['id'];
+
+    // Referer korrekt setzen: Entweder aus GET oder HTTP_REFERER fallback
+    if (isset($_GET['ref'])) {
+        $referer = urldecode($_GET['ref']); // z.B. "index.php?site=news&id=123"
+    } elseif (!empty($_SERVER['HTTP_REFERER'])) {
+        $referer = $_SERVER['HTTP_REFERER'];
+    } else {
+        $referer = 'index.php?site=news';
     }
 
-    if (isset($newsID)) {
-        $result = safe_query("SELECT * FROM plugins_news WHERE `newsID` = '" . $newsID . "'");
-        $ds = mysqli_fetch_array($result); {
-            $monatsnamen = array(
-                1 => $_lang['jan'],
-                2 => $_lang['feb'],
-                3 => $_lang['mar'],
-                4 => $_lang['apr'],
-                5 => $_lang['may'],
-                6 => $_lang['jun'],
-                7 => $_lang['jul'],
-                8 => $_lang['aug'],
-                9 => $_lang['sep'],
-                10 => $_lang['oct'],
-                11 => $_lang['nov'],
-                12 => $_lang['dec']
-            );
+    // CSRF prüfen
+    if (!isset($_GET['token']) || !hash_equals($_SESSION['csrf_token'], $_GET['token'])) {
+        die('Ungültiger CSRF-Token.');
+    }
 
-            // Sicherstellen, dass das Datum als Timestamp vorliegt
-            $timestamp = strtotime($ds['date']);
+    // Kommentar löschen
+    $res = safe_query("DELETE FROM comments WHERE commentID = $commentID");
 
-            // Bestandteile extrahieren
-            $monat_num = date('n', $timestamp);
-            $monat     = $monatsnamen[$monat_num];
-            $tag       = date('d', $timestamp);
-            $year      = date('Y', $timestamp);
-            $time      = date('H:i', $timestamp); // z. B. "14:35"
+    if ($res) {
+        // Zurückleiten
+        header("Location: " . htmlspecialchars($referer));
+        exit();
+    } else {
+        die('<div class="alert alert-danger">Fehler beim Löschen des Kommentars.</div>');
+    }
+}
 
-            // Ausgabe für Template
-            $date = '<p class="news-block news-day">' . $tag . '</p> 
-                     <p class="news-block news-month">' . $monat . '</p> 
-                     <p class="news-block news-year">' . $year . '</p>';
 
-            $date2 = '<p class="news-block news-day">' . $tag . ' / ' . $monat . ' / ' . $year . '</p>';
+if ($news_id > 0) {
+    $action = 'watch';
+    $id = $news_id;
+    
+    $pluginName = 'news';
 
-            $rubrikname = getnewsrubricname($ds['rubric']);
-            $rubrikname_link = htmlspecialchars($rubrikname);
-            $rubricpic_name = getnewsrubricpic($ds['rubric']);
-            $rubricpic = $plugin_path . 'images/news-rubrics/' . $rubricpic_name;
+    $newQuery = safe_query("SELECT * FROM plugins_news WHERE id = $id AND is_active = 1");
+    if (mysqli_num_rows($newQuery)) {
+        $new = mysqli_fetch_array($newQuery);
 
-            if (!file_exists($rubricpic) || $rubricpic_name == '') {
-                $rubricpic = '<img style="min-height: 106px;" src="' . $plugin_path . 'images/news-rubrics/no-image.jpg" alt="" class="news-rubric img-fluid card-img-top">';
-            } else {
-                $rubricpic = '<img style="min-height: 106px;" src="' . $rubricpic . '" alt="" class="news-rubric img-fluid card-img-top">'; // KLASSE FÜR RUBRICPIC DAMIT CONTENT DARAUF ANGEZEIGT WERDEN KANN //
-                $rubricpic = $rubricpic;
-            }
+        $categoryQuery = safe_query("SELECT * FROM plugins_news_categories WHERE id = " . (int)$new['category_id']);
+        $category = mysqli_fetch_array($categoryQuery);
 
-            $query = safe_query(
-                "SELECT
-                newsID
-            FROM
-                plugins_news 
-            WHERE
-                newsID='" . $newsID . "'"
-            );
+        if ($category) {
+            $name = htmlspecialchars($category['name']);
+        } else {
+            $name = 'Unbekannte Kategorie';
+        }
 
-            $i = 0;
+        $title_url = SeoUrlHandler::convertToSeoUrl('index.php?site=news');
+        $title_url_show = SeoUrlHandler::convertToSeoUrl('index.php?site=news&action=show&id='.$new['category_id'].'&slug='.$category['slug'].'');
 
-            $comments = '';
+        $data_array = [
+            'name' => $name,
+            'title_url' => $title_url,
+            'title_url_show' => $title_url_show,
+            'title' => htmlspecialchars($new['title']),            
+            'title_categories' => $languageService->get('title_categories'),
+            'categories' => $languageService->get('categories'),
+            'category' => $languageService->get('category'),
+        ];
+        echo $tpl->loadTemplate("news", "content_details_head", $data_array, 'plugin');
 
-            if ($ds['comments']) {
-                if ($ds['newsID']) {
-                    $anzcomments = getanznewscomments($ds['newsID'], 'ne');
-                    $replace = array('$anzcomments', '$url', '$lastposter', '$lastdate');
-                    $vars = array(
-                        $anzcomments,
-                        'index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'],
-                        html_entity_decode(getlastnewscommentposter($ds['newsID'], 'ne')),
-                        getformatdatetime(getlastnewscommentdate($ds['newsID'], 'ne'))
-                    );
+        // Cookie-basierte View-Zählung (max. 1x pro Tag & Browser)
+        $cookieName = 'new_view_' . $id;
+        if (!isset($_COOKIE[$cookieName])) {
+            safe_query("UPDATE plugins_news SET views = views + 1 WHERE id = $id");
+            setcookie($cookieName, '1', time() + 86400, '/', '', isset($_SERVER['HTTPS']), true);
+            $new['views']++;
+        }
 
-                    switch ($anzcomments) {
-                        case 0:
-                            $comments = str_replace($replace, $vars, $_lang['no_comment']);
-                            break;
-                        case 1:
-                            $comments = str_replace($replace, $vars, $_lang['comment']);
-                            break;
-                        default:
-                            $comments = str_replace($replace, $vars, $_lang['comments']);
-                            break;
-                    }
+        $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
+        $userID = $loggedin ? (int)$_SESSION['userID'] : 0;        
+
+        $image = !empty($category['image'])
+            ? "includes/plugins/news/images/news_categories/{$category['image']}"
+            : "includes/plugins/news/images/no-image.jpg";
+
+        $day   = date('d', $new['updated_at']);
+        $month = $languageService->get(strtolower(date('F', $new['updated_at'])));
+        $year  = date('Y', $new['updated_at']);
+        $category_name = htmlspecialchars($category['name']);
+
+
+
+        $profileUrl = SeoUrlHandler::convertToSeoUrl(
+            'index.php?site=profile&userID=' . intval($new['userID'])
+        );
+
+        $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+            <img src="' . htmlspecialchars(getavatar($new['userID'])) . '" 
+                 class="img-fluid align-middle rounded-circle me-1" 
+                 style="height: 23px; width: 23px;" 
+                 alt="' . htmlspecialchars(getusername($new['userID'])) . '">
+            <strong>' . htmlspecialchars(getusername($new['userID'])) . '</strong>
+        </a>';
+
+        $link = $new['link'] ? $languageService->get('link') . ': <a href="' . $new['link'] . '" target="_blank">' . $new['link'] . '</a>' : '';
+
+        // Beispiel: Link zum News (wenn link vorhanden)
+        if (!empty($new['link'])) {
+            $link = '<a href="' . htmlspecialchars($new['link']) . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($new['link']) . '</a>';
+        } else {
+            $link = $languageService->get('no_link');
+        }
+        $data_array = [
+            'title' => $new['title'],
+            'content' => $new['content'],
+            'username' => $username,
+            'date' => date('d.m.Y H:i', $new['updated_at']),            
+            'views' => $new['views'],
+            'image' => $image,
+            'link' => $link, 
+            'lang_link' => $languageService->get('link'),
+            'info' => $languageService->get('info'),
+            'stand' => $languageService->get('stand'),
+            'lang_views' => $languageService->get('views'),
+            // neue Platzhalter
+            'day'        => $day,
+            'month'      => $month,
+            'year'       => $year,
+            'category'   => $category_name,
+        ];
+
+        echo $tpl->loadTemplate("news", "content_details", $data_array, 'plugin');
+
+        // Kommentare anzeigen
+        if ($new['allow_comments']) {
+            $comments = safe_query("
+                SELECT c.*, u.username 
+                FROM comments c 
+                JOIN users u ON c.userID = u.userID 
+                WHERE c.plugin = '$pluginName' AND c.itemID = $id 
+                ORDER BY c.date DESC
+            ");
+
+            echo '<div class="mt-5"><h5 class="border-bottom p-2">' . $languageService->get('comments') . '</h5><ul class="list-group">';
+            while ($row = mysqli_fetch_array($comments)) {
+                $deleteLink = '';
+                $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
+                $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
+
+                // Avatar + Username für den Kommentarautor
+                    $commentUserID = (int)$row['userID'];
+                    $username = '<a href="index.php?site=profile&amp;userID=' . $commentUserID . '">
+                        <img src="' . getavatar($commentUserID) . '" class="img-fluid align-middle rounded me-1" style="height: 23px; width: 23px;" alt="' . getusername($commentUserID) . '">
+                        <strong>' . getusername($commentUserID) . '</strong>
+                    </a>';
+
+                $canDelete = ($userID == $row['userID'] || has_role($userID, 'Admin'));
+
+                if ($canDelete) {
+                    $deleteLink = '<a href="index.php?site=news&action=deletecomment&id=' . $row['commentID'] . '&ref=' . urlencode($_SERVER['REQUEST_URI']) . '&token=' . $_SESSION['csrf_token'] . '" class="btn btn-sm btn-danger ms-2" onclick="return confirm(\'Kommentar wirklich löschen?\')">' . $languageService->get('delete') . '</a>';
                 }
+
+                echo '<li class="list-group-item border-bottom">
+                    <div class="d-flex mt-4">
+                        <div class="flex-shrink-0">
+                            <a href="index.php?site=profile&amp;userID=' . (int)$row['userID'] . '">
+                                <img src="' . getavatar((int)$row['userID']) . '" class="img-fluid rounded-circle me-3" style="height: 60px; width: 60px;" alt="' . htmlspecialchars($row['username']) . '">
+                            </a>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <a href="index.php?site=profile&amp;userID='. (int)$row['userID'] .'">
+                                        <strong>'. htmlspecialchars($row['username']) .'</strong>
+                                    </a>
+                                    <span class="text-muted small">'. date('d.m.Y H:i', strtotime($row['date'])) .'</span>
+                                </div>
+                                <div>
+                                    '. $deleteLink .'
+                                </div>
+                            </div>
+
+                            <div class="mt-2 mb-4">
+                                ' . nl2br(htmlspecialchars($row['comment'])) . '
+                            </div>
+                        </div>
+                    </div>
+                </li>';
+            }
+            echo '</ul></div>';
+
+            if ($loggedin) {
+                echo '<form method="POST" action="index.php?site=news&action=watch&id=' . $id . '" class="mt-4">
+                    <textarea class="form-control" name="comment" rows="6" required></textarea>
+                    <input type="hidden" name="id" value="' . $id . '">
+                    <input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">
+                    <button type="submit" name="submit_comment" class="btn btn-success mt-3">Kommentar abschicken</button>
+                </form>';
             } else {
-                $comments = $_lang['off_comments'];
+                echo '<div class="alert alert-warning">' . $languageService->get('must_login_comment') . '</div>';
             }
+        }
+    } else {
+        echo $languageService->get('new_not_found');
+    }
 
-            #-----------------------------
+} elseif ($action == "") {
+    // Kategorien laden und anzeigen
+    $cats_result = safe_query("SELECT * FROM plugins_news_categories ORDER BY sort_order ASC");
+    if (mysqli_num_rows($cats_result) > 0) {
 
-            $recomments = '';
+        $data_array = [
+            'title_categories' => $languageService->get('title_categories'),
+        ];
 
-            if ($ds['comments']) {
-                if ($ds['newsID']) {
-                    $anzrecomments = getanznewsrecomments($ds['newsID'], 're');
-                    $replace = array('$anzcomments', '$url', '$lastposter');
-                    $vars = array(
-                        $anzrecomments,
-                        'index.php?site=news&action=news_contents&amp;newsID=' . $ds['newsID'],
-                        html_entity_decode(getlastnewsrecommentposter($ds['newsID'], 're')),
-                        #getformatdatetime(getlastnewsrecommentdate($ds[ 'newsID' ], 're'))
-                    );
+        echo $tpl->loadTemplate("news", "category", $data_array, 'plugin');
 
-                    switch ($anzrecomments) {
-                        case 0:
-                            $recomments = str_replace($replace, $vars, $_lang['no_re_comment']);
-                            break;
-                        case 1:
-                            $recomments = str_replace($replace, $vars, $_lang['re_comment']);
-                            break;
-                        default:
-                            $recomments = str_replace($replace, $vars, $_lang['re_comments']);
-                            break;
-                    }
-                }
-            } else {
-                $recomments = $_lang['off_comments'];
-            }
+        // Head-Bereich der Newsliste
+        echo $tpl->loadTemplate("news", "content_all_head", $data_array, 'plugin');
 
-            #----------------------------------
-            // ERGÄNZUNG DES AVATARS VOM POSTER //
-            $poster = '<a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">
-                     <img class="avatar_small" src="./images/avatars/' . getavatar($ds['poster']) . '">
-                   </a> by <a href="index.php?site=profile&amp;id=' . $ds['poster'] . '">' . getusername($ds['poster']) . '</a>';
-            // ENDE ERGÄNZUNG DES AVATARS VOM POSTER //
-            $related = "";
-            if ($ds['link1'] && $ds['url1'] != "http://" && $ds['window1']) {
-                $related .= '&#8226; <a href="' . $ds['url1'] . '" target="_blank">' . $ds['link1'] . '</a> ';
-            }
-            if ($ds['link1'] && $ds['url1'] != "http://" && !$ds['window1']) {
-                $related .= '&#8226; <a href="' . $ds['url1'] . '">' . $ds['link1'] . '</a> ';
-            }
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        if ($page < 1) $page = 1;
+        $limit = 6;
+        $offset = ($page - 1) * $limit;
 
-            if ($ds['link2'] && $ds['url2'] != "http://" && $ds['window2']) {
-                $related .= '&#8226; <a href="' . $ds['url2'] . '" target="_blank">' . $ds['link2'] . '</a> ';
-            }
-            if ($ds['link2'] && $ds['url2'] != "http://" && !$ds['window2']) {
-                $related .= '&#8226; <a href="' . $ds['url2'] . '">' . $ds['link2'] . '</a> ';
-            }
+        $total_news_result = safe_query("SELECT COUNT(*) AS total FROM plugins_news WHERE is_active = 1");
+        $total_news_row = mysqli_fetch_assoc($total_news_result);
+        $total_news = (int)$total_news_row['total'];
+        $total_pages = ceil($total_news / $limit);
 
-            if (empty($related)) {
-                $related = "";
-            }
+        $news_result = safe_query("SELECT * FROM plugins_news WHERE is_active = 1 ORDER BY updated_at DESC LIMIT $offset, $limit");
 
-            $headline = $ds['headline'];
-            $content = $ds['content'];
+        if (mysqli_num_rows($news_result) > 0) {
 
-
-            $translate = new multiLanguage(detectCurrentLanguage());
-            $translate->detectLanguages($headline);
-            $headline = $translate->getTextByLanguage($headline);
-            $translate->detectLanguages($content);
-            $content = $translate->getTextByLanguage($content);
-
-            $tags = \webspell\Tags::getTagsLinked('news', $newsID);
-            // Applica il ridimensionamento alle Immagini
-            $content = resizeImages($ds['content']);
-
-            $data_array = [
-                'related' => $related,
-                'newsID' => $newsID,
-                'headline' => $headline,
-                'rubrikname' => $rubrikname,
-                'rubric_pic' => $rubricpic,
-                'content' => $content,
-                'poster' => $poster,
-                'date' => $date,
-                'comments' => $comments,
-                're' => $recomments,
-                'switchen' => '12',
+            $monate = [
+                1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
+                3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
+                5 => $languageService->get('may'), 6 => $languageService->get('jun'),
+                7 => $languageService->get('jul'), 8 => $languageService->get('aug'),
+                9 => $languageService->get('sep'), 10 => $languageService->get('oct'),
+                11 => $languageService->get('nov'), 12 => $languageService->get('dec')
             ];
 
+            while ($new = mysqli_fetch_assoc($news_result)) {
+                $timestamp = (int)$new['updated_at'];
+                $tag = date("d", $timestamp);
+                $monat = date("n", $timestamp);
+                $year = date("Y", $timestamp);
+                $monatname = $monate[$monat];
+                $id        = (int)$new['id'];
+                $title     = $new['title'];
+                $slug      = $new['slug'] ?: SeoUrlHandler::slugify($title);
 
-            #$news = $GLOBALS["_template"]->loadTemplate("news", "content_area", $data_array, $plugin_path);
-            #echo $news;
-            echo $tpl->loadTemplate("news", "content_area", $data_array, "plugin");
+                // Kategorie
+                $catID     = (int)$new['category_id'];
+                $cat_query = safe_query("SELECT name, slug, image FROM plugins_news_categories WHERE id = $catID");
+                $cat       = mysqli_fetch_assoc($cat_query);
+                $cat_name  = htmlspecialchars($cat['name'] ?? '');
+                $cat_slug  = $cat['slug'] ?: SeoUrlHandler::slugify($cat_name);
 
-            #$template = $GLOBALS["_template"]->loadTemplate("news", "content_area_foot", $data_array, $plugin_path);
-            #echo $template;
-            echo $tpl->loadTemplate("news", "content_area_foot", $data_array, "plugin");
+                // Kategorie-Link
+                $new_catname = '<a href="' . 
+                    htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=news&action=show&id=$catID&slug=$cat_slug")) . 
+                    '"><strong style="font-size: 12px">' . $cat_name . '</strong></a>';
 
-            $comments_allowed = $ds['comments'];
-            if ($ds['newsID']) {
-                $parentID = $newsID;
-                $type = "ne";
+                // News-Link
+                $url_watch_seo = SeoUrlHandler::buildPluginUrl('plugins_news', $id, $lang);
+
+                // Autor
+                $profileUrl = SeoUrlHandler::convertToSeoUrl("/profile/" . intval($new['userID']));
+                $username   = '<a href="' . htmlspecialchars($profileUrl) . '">
+                                    <img src="' . htmlspecialchars(getavatar($new['userID'])) . '" 
+                                         class="img-fluid align-middle rounded me-1" 
+                                         style="height: 23px; width: 23px;" 
+                                         alt="' . htmlspecialchars(getusername($new['userID'])) . '">
+                                    <strong>' . htmlspecialchars(getusername($new['userID'])) . '</strong>
+                                </a>';
+
+                // Titel kürzen
+                $short_title = mb_strlen($title) > 70 ? mb_substr($title, 0, 70) . '...' : $title;
+
+                if (!function_exists('truncateHtml')) {
+                    /**
+                     * Kürzt HTML-Text auf eine bestimmte Länge.
+                     * @param string $text
+                     * @param int $length
+                     * @param string $ending
+                     * @param bool $considerHtml
+                     * @return string
+                     */
+                    function truncateHtml(string $text, int $length = 150, string $ending = '...', bool $considerHtml = true): string {
+                        $plain = strip_tags($text); // alles HTML entfernen
+                        if (mb_strlen($plain) <= $length) {
+                            return $text; // kürzer als Limit, alles zurückgeben
+                        }
+                        return mb_substr($plain, 0, $length) . $ending;
+                    }
+                }
+
+                // Inhalt kürzen
+                $short_content = truncateHtml($new['content'], 150);
+
+
+                // Kategorie-Bild
+                $image = $cat['image'] 
+                    ? "/includes/plugins/news/images/news_categories/" . $cat['image'] 
+                    : "/includes/plugins/news/images/no-image.jpg";
+
+                // Daten an Template
+                $data_array = [
+                    'name'      => $new_catname,
+                    'title'     => htmlspecialchars($short_title),
+                    'content'   => $short_content,
+                    'image'     => $image,
+                    'username'  => $username,
+                    'url_watch' => $url_watch_seo,
+                    'tag'       => $tag,
+                    'monat'     => $monatname,
+                    'year'      => $year,
+                    'by'        => $languageService->get('by'),
+                    'read_more' => $languageService->get('read_more'),
+                ];
+
+                echo $tpl->loadTemplate("news", "content_all", $data_array, 'plugin');
             }
-
-            $referer = "index.php?site=news&action=news_contents&newsID=$newsID";
-
-            include("news_comments.php");
         }
+
+        echo $tpl->loadTemplate("news", "content_all_foot", $data_array, 'plugin');
+
+        // Pagination
+        if ($total_pages > 1) {
+            echo '<nav><ul class="pagination justify-content-center">';
+            for ($i = 1; $i <= $total_pages; $i++) {
+                $active   = ($i === $page) ? 'active' : '';
+                $pagelink = SeoUrlHandler::convertToSeoUrl("/news/page/$i");
+                echo '<li class="page-item ' . $active . '"><a class="page-link" href="' . htmlspecialchars($pagelink) . '">' . $i . '</a></li>';
+            }
+            echo '</ul></nav>';
+        }
+    } else {
+        echo $languageService->get('no_categories');
     }
 }

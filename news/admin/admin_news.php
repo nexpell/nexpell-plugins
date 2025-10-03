@@ -1,1522 +1,782 @@
 <?php
-# Sprachdateien aus dem Plugin-Ordner laden
-$pm = new plugin_manager();
-$plugin_language = $pm->plugin_language("admin_news", $plugin_path);
 
-use webspell\AccessControl;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+use nexpell\LanguageService;
+use nexpell\NavigationUpdater;// SEO Anpassung
+
+// Sprache setzen, falls nicht vorhanden
+$_SESSION['language'] = $_SESSION['language'] ?? 'de';
+
+// LanguageService initialisieren
+global $languageService;
+$lang = $languageService->detectLanguage();
+$languageService = new LanguageService($_database);
+
+// Admin-Modul-Sprache laden
+$languageService->readPluginModule('news');
+
+use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('news');
 
-// -- COMMENTS INFORMATION -- //
-include_once('./includes/plugins/news/news_functions.php');
+$filepath = $plugin_path."images/news_images/";
 
-$filepath = $plugin_path . "images/news-pic/";
+// Parameter aus URL lesen
+$action = $_GET['action'] ?? '';
+$page = max(1, intval($_GET['page'] ?? 1));
+$sortBy = $_GET['sort_by'] ?? 'created_at';
+$sortDir = ($_GET['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
-if (isset($_GET['action'])) {
-    $action = $_GET['action'];
-} else {
-    $action = '';
+// Max News pro Seite
+$perPage = 10;
+
+// Whitelist für Sortierung
+$allowedSorts = ['title', 'created_at'];
+if (!in_array($sortBy, $allowedSorts)) {
+    $sortBy = 'created_at';
 }
 
-# admin_links
-if (isset($_POST['submit'])) {
+$uploadDir = __DIR__ . '/../images/'; // für allgemeine Uploads
 
-    #================================== screen Anfang ===============================
-    $_language->readModule('formvalidation', true);
+// --- AJAX-Löschung ---
+if (($action ?? '') === 'delete' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
 
-    $screen = new \webspell\HttpUpload('screen');
+    
+    if ($stmt->fetch()) {
+        $stmt->close();
 
-    if ($screen->hasFile()) {
-        if ($screen->hasError() === false) {
-            $file = $_POST["newsID"] . '_' . time() . "." . $screen->getExtension();
-            $new_name = $filepath . $file;
-            if ($screen->saveAs($new_name)) {
-                @chmod($new_name, $new_chmod);
-                $ergebnis = safe_query("SELECT screens FROM plugins_news WHERE newsID='" . $_POST["newsID"] . "'");
-                $dx = mysqli_fetch_array($ergebnis);
-                $screens = explode('|', $dx['screens']);
-                $screens[] = $file;
-                $screens_string = implode('|', $screens);
+        // News aus DB löschen
+        $stmtDel = $_database->prepare("DELETE FROM plugins_news WHERE id = ?");
+        $stmtDel->bind_param("i", $id);
+        $stmtDel->execute();
+        $stmtDel->close();
 
-                $ergebnis = safe_query(
-                    "UPDATE
-                    plugins_news
-                    SET
-                        screens='" . $screens_string . "'
-                    
-                WHERE `newsID` = '" . $_POST["newsID"] . "'"
-                );
-            }
+        // Bilddatei löschen, wenn vorhanden
+        if (!empty($imageFilename)) {
+            @unlink($plugin_path . $imageFilename);
         }
+
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'News nicht gefunden']);
     }
-    header("Location: admincenter.php?site=admin_news&action=edit&newsID=" . $_POST["newsID"] . "");
+    exit;
+}
 
+function makeUniqueSlug($slug, $id = 0) {
+    global $_database;
 
+    $baseSlug = $slug;
+    $i = 1;
 
-    #================================== screen Ende ===============================
+    $stmt = $_database->prepare("SELECT id FROM plugins_news WHERE slug = ? AND id != ?");
+    $stmt->bind_param("si", $slug, $id);
 
+    while (true) {
+        $stmt->execute();
+        $stmt->store_result();
 
-
-} elseif (isset($_POST['subadd'])) {
-    #================================== screen Anfang ===============================
-    $_language->readModule('formvalidation', true);
-
-    $screen = new \webspell\HttpUpload('screen');
-
-
-    if ($screen->hasFile()) {
-        if ($screen->hasError() === false) {
-            $file = $_POST["newsID"] . '_' . time() . "." . $screen->getExtension();
-            $new_name = $filepath . $file;
-            if ($screen->saveAs($new_name)) {
-                @chmod($new_name, $new_chmod);
-                $ergebnis = safe_query("SELECT screens FROM plugins_news WHERE newsID='" . $_POST["newsID"] . "'");
-                $ds = mysqli_fetch_array($ergebnis);
-                $screens = explode('|', $ds['screens']);
-                $screens[] = $file;
-                $screens_string = implode('|', $screens);
-                $CAPCLASS = new \webspell\Captcha;
-                if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-
-                    safe_query(
-                        "INSERT INTO
-            plugins_news (
-                screens,
-                date,
-                poster
-            )
-            VALUES (
-            '" . $screens_string . "',
-                '" . time() . "',
-                '" . $userID . "'
-                )"
-                    );
-                    $newsID = mysqli_insert_id($_database);
-                }
-            }
+        if ($stmt->num_rows == 0) {
+            break; // Slug ist frei
         }
-    }
-    header("Location: admincenter.php?site=admin_news&action=edit&newsID=" . $newsID . "");
 
-
-
-    #================================== screen Ende ===============================
-
-
-
-
-    # News add
-} elseif (isset($_POST["news_save"])) {
-
-    $filepath = $plugin_path . "images/news-pic/";
-
-    $headline = $_POST["headline"];
-    $content = $_POST["message"];
-    $content = str_replace('\r\n', "\n", $content);
-
-    $link1 = strip_tags($_POST['link1']);
-    $url1 = strip_tags($_POST['url1']);
-
-    if (isset($_POST["window1"])) {
-        $window1 = 1;
-    } else {
-        $window1 = 0;
-    }
-    if (!$window1) {
-        $window1 = 0;
+        $slug = $baseSlug . '-' . $i;
+        $i++;
     }
 
-    $link2 = strip_tags($_POST['link2']);
-    $url2 = strip_tags($_POST['url2']);
+    $stmt->close();
+    return $slug;
+}
 
-    if (isset($_POST["window2"])) {
-        $window2 = 1;
-    } else {
-        $window2 = 0;
+function makeUniqueSlugCategory(string $slug, int $ignoreId = 0): string {
+    global $_database;
+    $base = $slug;
+    $i = 1;
+    while (true) {
+        if ($ignoreId > 0) {
+            $stmt = $_database->prepare("SELECT id FROM plugins_news_categories WHERE slug = ? AND id != ?");
+            $stmt->bind_param("si", $slug, $ignoreId);
+        } else {
+            $stmt = $_database->prepare("SELECT id FROM plugins_news_categories WHERE slug = ?");
+            $stmt->bind_param("s", $slug);
+        }
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows === 0) {
+            $stmt->close();
+            return $slug;
+        }
+        $stmt->close();
+        $slug = $base . '-' . $i++;
     }
-    if (!$window2) {
-        $window2 = 0;
-    }
+}
 
 
-    if (isset($_POST["displayed"])) {
-        $displayed = 1;
-    } else {
-        $displayed = 0;
-    }
-    if (!$displayed) {
-        $displayed = 0;
-    }
 
-    if (isset($_POST['rubric'])) {
-        $rubric = $_POST['rubric'];
-    } else {
-        $rubric = 0;
-    }
+function generateSlug(string $text): string {
+    // Umlaute & Sonderzeichen ersetzen
+    $text = iconv('UTF-8', 'ASCII//TRANSLIT', $text);
+    // Kleinbuchstaben
+    $text = strtolower($text);
+    // Nicht alphanumerische Zeichen durch Bindestrich
+    $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+    // Mehrfache Bindestriche entfernen
+    $text = preg_replace('/-+/', '-', $text);
+    // Bindestriche am Rand entfernen
+    $text = trim($text, '-');
+    return $text ?: 'news-' . time(); // Fallback
+}
 
-    $comments = $_POST['comments'];
 
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-        safe_query(
-            "INSERT INTO
-                    `plugins_news` (
-                    `rubric`,
-                    `date`,
-                    `poster`,
-                    `headline`,
-                    `content`,
-                    `link1`,
-                    `url1`,
-                    `window1`,
-                    `link2`,
-                    `url2`,
-                    `window2`,
-                    `displayed`,
-                    `comments`
-                )
-                VALUES (
-                    '" . $rubric . "',
-                    CURRENT_TIMESTAMP,
-                    '" . $userID . "',
-                    '" . $headline . "',
-                    '" . $content . "',
-                    '" . $link1 . "',
-                    '" . $url1 . "',
-                    '" . $window1 . "',
-                    '" . $link2 . "',
-                    '" . $url2 . "',
-                    '" . $window2 . "',
-                    '" . $displayed . "',
-                    '" . $comments . "'
-                )"
+
+
+
+// --- News hinzufügen / bearbeiten ---
+if (($action ?? '') === "add" || ($action ?? '') === "edit") {
+    $id = intval($_GET['id'] ?? 0);
+    $isEdit = $id > 0;
+
+    // Default-Daten
+    $data = [
+        'category_id'    => 0,
+        'title'          => '',
+        'slug'           => '',
+        'link'           => '',
+        'content'        => '',
+        'sort_order'     => 0,
+        'is_active'      => 0,
+        'allow_comments' => 0,
+    ];
+
+    $oldSlug = ''; // alter Slug für SEO-Warnung
+
+    // Beim Edit vorhandene Daten laden
+    if ($isEdit) {
+        $stmt = $_database->prepare("
+            SELECT category_id, title, slug, link, content, sort_order, is_active, allow_comments
+            FROM plugins_news
+            WHERE id = ?
+        ");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->bind_result(
+            $data['category_id'],
+            $data['title'],
+            $data['slug'],
+            $data['link'],
+            $data['content'],
+            $data['sort_order'],
+            $data['is_active'],
+            $data['allow_comments']
         );
+        if (!$stmt->fetch()) {
+            echo "<div class='alert alert-danger'>News nicht gefunden.</div>";
+            exit;
+        }
+        $stmt->close();
 
-        $id = mysqli_insert_id($_database);
-        \webspell\Tags::setTags('news', $id, $_POST['tags']);
-        #generate_rss2(); Muss geprüft werden
+        $oldSlug = $data['slug']; // merken für späteren Vergleich
+    }
 
-        $upload = new \webspell\HttpUpload('screen');
-        if ($upload->hasFile()) {
-            if ($upload->hasError() === false) {
-                $mime_types = array('image/jpeg', 'image/png', 'image/gif');
+    $error = '';
+    $slugWarning = '';
 
-                if ($upload->supportedMimeType($mime_types)) {
-                    $imageInformation =  getimagesize($upload->getTempFile());
+    // Hilfsfunktion: Alle Formulardaten als hidden-Felder ausgeben
+    function hiddenFields(array $data): string {
+        $html = '';
+        foreach ($data as $k => $v) {
+            if (is_array($v)) continue; // nur einfache Werte
+            $html .= '<input type="hidden" name="' . htmlspecialchars($k) . '" value="' . htmlspecialchars($v) . '">' . "\n";
+        }
+        return $html;
+    }
 
-                    if (is_array($imageInformation)) {
-                        switch ($imageInformation[2]) {
-                            case 1:
-                                $endung = '.gif';
-                                break;
-                            case 3:
-                                $endung = '.png';
-                                break;
-                            default:
-                                $endung = '.jpg';
-                                break;
-                        }
-                        $file = $id . $endung;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $cat            = intval($_POST['category_id'] ?? 0);
+        $title          = trim($_POST['title'] ?? '');
+        $slugInput      = trim($_POST['slug'] ?? '');
+        $link           = trim($_POST['link'] ?? '');
+        $sort_order     = intval($_POST['sort_order'] ?? 0);
+        $is_active      = isset($_POST['is_active']) ? 1 : 0;
+        $allow_comments = isset($_POST['allow_comments']) ? 1 : 0;
+        $content        = $_POST['content'];
+        $confirmChange  = isset($_POST['confirm_slug_change']); // kommt vom Warn-Dialog
 
-                        if ($upload->saveAs($filepath . $file, true)) {
-                            @chmod($file, $new_chmod);
-                            safe_query(
-                                "UPDATE plugins_news SET screens='" . $file . "' WHERE newsID='" . $id . "'"
-                            );
-                        }
-                    } else {
-                        $errors[] = $plugin_language['broken_image'];
-                    }
-                } else {
-                    $errors[] = $plugin_language['unsupported_image_type'];
-                }
+        if ($content === '') {
+            die("Inhalt darf nicht leer sein.");
+        }
+
+        // Slug automatisch generieren, wenn leer
+        if ($slugInput === '') {
+            $slugInput = generateSlug($title); // deine vorhandene Funktion
+        }
+
+        // Slug automatisch generieren, wenn leer
+        if ($slugInput === '') {
+            if ($title !== '') {
+                $slugInput = generateSlug($title); // deine vorhandene Funktion
             } else {
-                $errors[] = $upload->translateError();
+                // Fallback: Slug aus Timestamp, falls kein Titel vorhanden
+                $slugInput = 'news-' . time();
             }
         }
 
-        $rubrics = '';
-        $newsrubrics = safe_query("SELECT rubricID, rubric FROM plugins_news_rubrics ORDER BY rubric");
-        while ($dr = mysqli_fetch_array($newsrubrics)) {
-            $rubrics .= '<option value="' . $dr['rubricID'] . '">' . $dr['rubric'] . '</option>';
+        // Prüfen ob sich der Slug beim Edit geändert hat (nur wenn noch nicht bestätigt)
+        if ($isEdit && !$confirmChange && $oldSlug !== '' && $slugInput !== $oldSlug) {
+            echo "
+                <div class='alert alert-warning'>
+                    <strong>Achtung:</strong> Der SEO-Slug wurde geändert!<br><br>
+                    Alte URL: <code>/news/{$oldSlug}</code><br>
+                    Neue URL: <code>/news/{$slugInput}</code><br>
+                    <small>Das kann bestehende Links und SEO-Rankings beeinflussen.</small>
+                </div>
+
+                <form method='post'>
+                    " . hiddenFields($_POST) . "
+                    <input type='hidden' name='confirm_slug_change' value='1'>
+                    <button type='submit' class='btn btn-danger'>Weiter & speichern</button>
+                    <a href='admincenter.php?site=admin_news&action=edit&id={$id}' class='btn btn-secondary'>Zurück, nicht speichern</a>
+                </form>
+            ";
+            exit;
+        }
+
+        // Slug eindeutig machen
+        $slug = makeUniqueSlug($slugInput, $isEdit ? $id : 0);
+
+        if (!$error) {
+            if ($isEdit) {
+                safe_query("
+                    UPDATE plugins_news SET
+                        category_id   = '" . (int)$cat . "',
+                        title         = '" . escape($title) . "',
+                        slug          = '" . escape($slug) . "',
+                        link          = '" . escape($link) . "',
+                        content       = '" . $content . "',
+                        sort_order    = '" . (int)$sort_order . "',
+                        is_active     = '" . (int)$is_active . "',
+                        allow_comments= '" . (int)$allow_comments . "'
+                    WHERE id = '" . (int)$id . "'
+                ");
+            } else {
+                $userID = 1;
+                safe_query("
+                    INSERT INTO plugins_news
+                    (category_id, title, slug, link, content, sort_order, updated_at, userID, is_active, allow_comments)
+                    VALUES
+                    ('" . (int)$cat . "', '" . escape($title) . "', '" . escape($slug) . "', '" . escape($link) . "', '" . $content . "',
+                     '" . (int)$sort_order . "', UNIX_TIMESTAMP(), '" . (int)$userID . "', '" . (int)$is_active . "', '" . (int)$allow_comments . "')
+                ");
+            }
+
+            /////////////////////////////////////////////////////////////////////////////
+            // Datei-Name des aktuellen Admin-Moduls ermitteln
+            // Aktualisiert das Änderungsdatum in der Navigation für dieses Modul
+            // Warum das wichtig ist:
+            // ✅ Google liest das Änderungsdatum über die sitemap.xml (Tag <lastmod>)
+            // ✅ Wenn sich Inhalte ändern, soll Google das bemerken
+            // ✅ Dadurch werden Seiten öfter und gezielter gecrawlt (besseres SEO)
+            // ✅ Das Datum bleibt so immer aktuell – automatisch und ohne Pflegeaufwand
+            $admin_file = basename(__FILE__, '.php');
+            echo NavigationUpdater::updateFromAdminFile($admin_file);
+            /////////////////////////////////////////////////////////////////////////////
+
+            header("Location: admincenter.php?site=admin_news");
+            exit;
         }
     }
-} elseif (isset($_POST["saveedit"])) {
+    ?>
 
-    $filepath = $plugin_path . "images/news-pic/";
-
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-        $newsID = $_POST['newsID'];
-        $headline = $_POST["headline"];
-        $content = $_POST["message"];
-
-        if (isset($_POST["displayed"])) {
-            $displayed = 1;
-        } else {
-            $displayed = 0;
-        }
-        if (!$displayed) {
-            $displayed = 0;
-        }
-
-        $date = "";
-
-        if (isset($_POST['rubric'])) {
-            $rubric = $_POST['rubric'];
-        } else {
-            $rubric = 0;
-        }
-
-        $link1 = strip_tags($_POST['link1']);
-        $url1 = strip_tags($_POST['url1']);
-
-        if (isset($_POST["window1"])) {
-            $window1 = 1;
-        } else {
-            $window1 = 0;
-        }
-        if (!$window1) {
-            $window1 = 0;
-        }
-
-        $link2 = strip_tags($_POST['link2']);
-        $url2 = strip_tags($_POST['url2']);
-
-        if (isset($_POST["window2"])) {
-            $window2 = 1;
-        } else {
-            $window2 = 0;
-        }
-        if (!$window2) {
-            $window2 = 0;
-        }
-
-        $comments = $_POST['comments'];
-
-        $date = strtotime($_POST['date']);
-
-
-
-        $ergebnis = safe_query(
-            "UPDATE
-                    `plugins_news`
-                SET
-                    `rubric` = '" . $rubric . "',
-                    `headline` = '" . $headline . "',
-                    `date` = CURRENT_TIMESTAMP,
-                    `content`='" . $_POST['message'] . "',
-                    `link1`='" . $link1 . "',
-                    `url1`='" . $url1 . "',
-                    `window1`='" . $window1 . "',
-                    `link2`='" . $link2 . "',
-                    `url2`='" . $url2 . "',
-                    `window2`='" . $window2 . "',
-                    `displayed`= '" . $displayed . "',
-                    `comments`='" . $comments . "'
-                WHERE `newsID` = '" . $_POST["newsID"] . "'"
-        );
-
-        \webspell\Tags::setTags('news', $newsID, $_POST['tags']);
-
-
-        #generate_rss2(); muss geprüft werden
-        header("Location: admincenter.php?site=admin_news");
-    }
-}
-
-
-
-
-
-
-
-
-
-
-# admin_links_categories
-
-if (isset($_POST['news_categories_save'])) {
-    $filepath = $plugin_path . "images/news-rubrics/";
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-        if (checkforempty(array('name'))) {
-            safe_query("INSERT INTO plugins_news_rubrics ( rubric ) values( '" . $_POST['name'] . "' ) ");
-            $id = mysqli_insert_id($_database);
-
-
-
-            $errors = array();
-
-            //TODO: should be loaded from root language folder
-            $_language->readModule('formvalidation', true);
-
-            $upload = new \webspell\HttpUpload('pic');
-            if ($upload->hasFile()) {
-                if ($upload->hasError() === false) {
-                    $mime_types = array('image/jpeg', 'image/png', 'image/gif');
-
-                    if ($upload->supportedMimeType($mime_types)) {
-                        $imageInformation = getimagesize($upload->getTempFile());
-
-                        if (is_array($imageInformation)) {
-                            switch ($imageInformation[2]) {
-                                case 1:
-                                    $endung = '.gif';
-                                    break;
-                                case 3:
-                                    $endung = '.png';
-                                    break;
-                                default:
-                                    $endung = '.jpg';
-                                    break;
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-journal-text"></i> News <?= $isEdit ? "bearbeiten" : "hinzufügen" ?>
+        </div>
+        <nav class="breadcrumb bg-light p-2">
+            <a class="breadcrumb-item" href="admincenter.php?site=admin_news">News verwalten</a>
+            <span class="breadcrumb-item active"><?= $isEdit ? "Bearbeiten" : "Hinzufügen" ?></span>
+        </nav>
+        <div class="card-body">
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+            <?= $slugWarning ?>
+            <div class="container py-5">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Kategorie:</label>
+                        <select class="form-select" name="category_id" id="category_id" required>
+                            <option value="">Bitte wählen...</option>
+                            <?php
+                            $stmtCat = $_database->prepare("SELECT id, name FROM plugins_news_categories ORDER BY name");
+                            $stmtCat->execute();
+                            $resCat = $stmtCat->get_result();
+                            while ($cat = $resCat->fetch_assoc()) {
+                                $selected = ($cat['id'] == $data['category_id']) ? 'selected' : '';
+                                echo '<option value="' . (int)$cat['id'] . '" ' . $selected . '>' . htmlspecialchars($cat['name']) . '</option>';
                             }
-                            $file = $id . $endung;
+                            $stmtCat->close();
+                            ?>
+                        </select>
+                    </div>
 
-                            if ($upload->saveAs($filepath . $file, true)) {
-                                @chmod($filepath . $file, $new_chmod);
-                                safe_query(
-                                    "UPDATE plugins_news_rubrics
-                                    SET pic='" . $file . "' WHERE rubricID='" . $id . "'"
-                                );
-                            }
-                        } else {
-                            $errors[] = $plugin_language['broken_image'];
-                        }
-                    } else {
-                        $errors[] = $plugin_language['unsupported_image_type'];
-                    }
-                } else {
-                    $errors[] = $upload->translateError();
-                }
-            }
-            if (count($errors)) {
-                $errors = array_unique($errors);
-                echo generateErrorBoxFromArray($plugin_language['errors_there'], $errors);
-            }
-        } else {
-            echo $plugin_language['information_incomplete'];
-        }
-    } else {
-        echo $plugin_language['transaction_invalid'];
-    }
-} elseif (isset($_POST['news_categories_saveedit'])) {
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titel:</label>
+                        <input class="form-control" type="text" name="title" id="title" value="<?= htmlspecialchars($data['title']) ?>" required>
+                    </div>
 
-
-    $filepath = $plugin_path . "images/news-rubrics/";
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-        if (checkforempty(array('name'))) {
-            safe_query(
-                "UPDATE
-                    `plugins_news_rubrics`
-                SET
-                    `rubric` = '" . $_POST['name'] . "'
-                WHERE
-                    `rubricID` = '" . $_POST['rubricID'] . "'"
-            );
-
-            $id = $_POST['rubricID'];
-
-
-            $errors = array();
-
-            //TODO: should be loaded from root language folder
-            $_language->readModule('formvalidation', true);
-
-            $upload = new \webspell\HttpUpload('pic');
-            if ($upload->hasFile()) {
-                if ($upload->hasError() === false) {
-                    $mime_types = array('image/jpeg', 'image/png', 'image/gif');
-
-                    if ($upload->supportedMimeType($mime_types)) {
-                        $imageInformation = getimagesize($upload->getTempFile());
-
-                        if (is_array($imageInformation)) {
-                            switch ($imageInformation[2]) {
-                                case 1:
-                                    $endung = '.gif';
-                                    break;
-                                case 3:
-                                    $endung = '.png';
-                                    break;
-                                default:
-                                    $endung = '.jpg';
-                                    break;
-                            }
-                            $file = $id . $endung;
-
-                            if ($upload->saveAs($filepath . $file, true)) {
-                                @chmod($filepath . $file, $new_chmod);
-                                safe_query(
-                                    "UPDATE plugins_news_rubrics
-                                    SET pic='" . $file . "' WHERE rubricID='" . $id . "'"
-                                );
-                            }
-                        } else {
-                            $errors[] = $plugin_language['broken_image'];
-                        }
-                    } else {
-                        $errors[] = $plugin_language['unsupported_image_type'];
-                    }
-                } else {
-                    $errors[] = $upload->translateError();
-                }
-            }
-            if (count($errors)) {
-                $errors = array_unique($errors);
-                echo generateErrorBoxFromArray($plugin_language['errors_there'], $errors);
-            }
-        } else {
-            echo $plugin_language['information_incomplete'];
-        }
-    } else {
-        echo $plugin_language['transaction_invalid'];
-    }
-} elseif (isset($_POST['news_settings_save'])) {
-
-
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_POST['captcha_hash'])) {
-        safe_query(
-            "UPDATE
-                plugins_news_settings
-            SET
-                
-                admin_news='" . $_POST['admin_news'] . "',
-                news='" . $_POST['news'] . "',
-                newsarchiv='" . $_POST['newsarchiv'] . "',
-                headlines='" . $_POST['headlines'] . "',
-                newschars='" . $_POST['newschars'] . "',
-                headlineschars='" . $_POST['headlineschars'] . "',
-                topnewschars='" . $_POST['topnewschars'] . "',
-                feedback='" . $_POST['feedback'] . "',
-                switchen='" . $_POST['switchen'] . "' "
-        );
-
-        redirect("admincenter.php?site=admin_news&action=admin_news_settings", "", 0);
-    } else {
-        redirect("admincenter.php?site=admin_news&action=admin_news_settings", $plugin_language['transaction_invalid'], 3);
-    }
-} elseif (isset($_GET['delete'])) {
-
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_GET['captcha_hash'])) {
-
-        $newsID = $_GET['newsID'];
-        $dg = mysqli_fetch_array(safe_query("SELECT * FROM plugins_news WHERE newsID='" . $_GET['newsID'] . "'"));
-        $screens = array();
-        if (!empty($dg['screens'])) {
-            $screens = explode("|", $dg['screens']);
-            foreach ($screens as $screen) {
-                if ($screen != "") {
-                    if (file_exists($filepath . $screen . '')) {
-                        @unlink($filepath . $screen . '');
-                    }
-                }
-            }
-        }
-        safe_query("DELETE FROM plugins_news WHERE newsID='" . $_GET['newsID'] . "'");
-        \webspell\Tags::removeTags('news', $newsID);
-    } else {
-        echo $plugin_language['transaction_invalid'];
-    }
-} elseif (isset($_GET['delete_cat'])) {
-
-    $filepath = $plugin_path . "images/news-rubrics/";
-    $CAPCLASS = new \webspell\Captcha;
-    if ($CAPCLASS->checkCaptcha(0, $_GET['captcha_hash'])) {
-        $rubricID = (int)$_GET['rubricID'];
-
-        safe_query("DELETE FROM plugins_news_rubrics WHERE rubricID='$rubricID'");
-        if (file_exists($filepath . $rubricID . '.gif')) {
-            @unlink($filepath . $rubricID . '.gif');
-        }
-        if (file_exists($filepath . $rubricID . '.jpg')) {
-            @unlink($filepath . $rubricID . '.jpg');
-        }
-        if (file_exists($filepath . $rubricID . '.png')) {
-            @unlink($filepath . $rubricID . '.png');
-        }
-    } else {
-        echo $plugin_language['transaction_invalid'];
-    }
-}
-
-
-#===================================================================================================================
-
-
-if ($action == "add") {
-
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-
-
-    $ergebnis = safe_query("SELECT * FROM `plugins_news`");
-    $ds = mysqli_fetch_array($ergebnis);
-
-    $rubriccategory = safe_query("SELECT * FROM `plugins_news_rubrics` ORDER BY `rubric`");
-    $rubriccats = '<select class="form-select" id="rubric" name="rubric">';
-    while ($dc = mysqli_fetch_array($rubriccategory)) {
-        $selected = '';
-        $rubriccats .= '<option value="' . $dc['rubricID'] . '"' . $selected . '>' . htmlspecialchars($dc['rubric']) .
-            '</option>';
-    }
-    $rubriccats .= '</select>';
-
-    if (isset($_POST["displayed"])) {
-        $displayed = 1;
-    } else {
-        $displayed = 0;
-    }
-
-    $url1 = "http://";
-    $url2 = "http://";
-
-    $link1 = '';
-    $link2 = '';
-
-    $window1 = '<input class="form-check-input" name="window1" type="checkbox" value="1">';
-    $window2 = '<input class="form-check-input" name="window2" type="checkbox" value="1">';
-
-    $comments = '<option value="0">' . $plugin_language['no_comments'] . '</option><option value="1">' .
-        $plugin_language['user_comments'] . '</option><option value="2" selected="selected">' .
-        $plugin_language['visitor_comments'] . '</option>';
-
-    #$tags = \webspell\Tags::getTags('news', $newsID);
-    echo '<script>
-        function chkFormular() {
-            if(!validbbcode(document.getElementById(\'message\').value, \'admin\')){
-                return false;
-            }
-        }
-    </script>';
-
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news'] . '
+                    <div class="mb-3">
+                        <label for="content_editor" class="form-label">Inhalt:</label>
+                        <textarea id="ckeditor" name="content" class="ckeditor" rows="6" style="resize: vertical; width: 100%;" required><?= $data['content'] ?></textarea>
+                        <div id="dropArea" class="mt-2 p-4 text-center border border-secondary rounded bg-light" style="cursor: pointer;">
+                            📎 Hier klicken oder Bild per Drag & Drop einfügen
                         </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['news'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">' . $plugin_language['new_post'] . '</li>
-                </ol>
-            </nav> 
-    <div class="card-body">
-<script>
-    function chkFormular() {
-        if (document.getElementById(\'rubric\').value === "") {
-            alert("Keine katogorie erstellt!");
-            document.getElementById(\'rubric\').focus();
-
-            return false;
-        }
-    }
-    </script>
-    <form class="form-horizontal" method="post" id="post" name="post" action="admincenter.php?site=admin_news" onsubmit="return chkFormular();" enctype="multipart/form-data">
-
-  
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['rubric'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-      ' . $rubriccats . '
-    </div>
-  </div>
-
-<!-- ================================ screen Anfang======================================================== -->
-
-
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['banner'] . ':</label>
-    <div class="col-sm-4">
-      <input class="btn btn-info" name="screen" type="file" id="imgInp" size="40" /> 
-      <small>(max. 1000x500)</small>
-    </div>
-    <div class="col-sm-2">
-      <img id="img-upload" src="../includes/plugins/news_manager/images/news-pic/no-image.jpg" height="50px"/>
-    </div>
-  </div>
-';
-
-
-    echo '<hr>';
-    echo '
-<!-- =============================  screen Ende =========================================================== -->
-
- <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['link'] . ' 1:</label>
-    <div class="col-sm-3">
-      <input class="form-control" name="link1" type="text">
-    </div>
-    <div class="col-sm-3">
-      <input class="form-control" name="url1" type="text" placeholder="http://">
-      </div>
-      <div class="col-sm-2 form-check form-switch" style="padding: 0px 43px;">
-      ' . $window1 . '&nbsp;&nbsp;' . $plugin_language['new_window'] . '
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['link'] . ' 2:</label>
-    <div class="col-sm-3">
-      <input class="form-control" name="link2" type="text">
-    </div>
-    <div class="col-sm-3">
-      <input class="form-control" name="url2" type="text" placeholder="http://">
-      </div>
-      <div class="col-sm-2 form-check form-switch" style="padding: 0px 43px;">
-      ' . $window2 . '&nbsp;&nbsp;' . $plugin_language['new_window'] . '
-    </div>
-  </div>
-   
-<hr>
-
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['headline'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-      <input class="form-control" type="text" class="form-control" name="headline" size="60" required/></em></span>
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['tags'] . '</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-        <input class="form-control" type="text" name="tags" value="" size="97" /></em></span>
-    </div>
-  </div>
-
-<div class="mb-3 row">
-   <label class="col-sm-2 control-label">' . $plugin_language['text'] . ':</label>
-    <div class="col-sm-8">
-      <textarea name="message" id="ckeditor" cols="30" rows="15" class="ckeditor"></textarea>
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['is_displayed'] . ':</label>
-    <div class="col-sm-8 form-check form-switch" style="padding: 0px 43px;">
-      <input class="form-check-input" type="checkbox" name="displayed" value="1" checked="checked" />
-    </div>
-  </div>
-
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['comments'] . ':</label>
-    <div class="col-sm-3">
-      <select class="form-select" name="comments">' . $comments . '</select>
-      </div>
-  </div>
-
-
-  <div class="mb-3 row">
-    <div class="col-sm-offset-2 col-sm-10">
-    <input type="hidden" name="captcha_hash" value="' . $hash . '" />
-    <button class="btn btn-success" type="submit" name="news_save"  />' . $plugin_language['save_news'] . '</button>
-    </div>
-  </div>
-
-  </form></div>
-  </div>';
-} elseif ($action == "edit") {
-
-    $filepath = $plugin_path . "images/news-pic/";
-
-    $newsID = intval($_GET['newsID']);
-    $newsID = $_GET['newsID'];
-
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-
-    $ergebnis = safe_query("SELECT * FROM `plugins_news` WHERE `newsID` = '$newsID'");
-    $ds = mysqli_fetch_array($ergebnis);
-
-    $rubriccategory = safe_query("SELECT * FROM `plugins_news_rubrics` ORDER BY `rubric`");
-    $rubriccats = '<select class="form-select" name="rubric">';
-    while ($dc = mysqli_fetch_array($rubriccategory)) {
-        $selected = '';
-        if ($dc['rubricID'] == $ds['rubric']) {
-            $selected = ' selected="selected"';
-        }
-        $rubriccats .= '<option value="' . $dc['rubricID'] . '"' . $selected . '>' . htmlspecialchars($dc['rubric']) .
-            '</option>';
-    }
-    $rubriccats .= '</select>';
-
-    if ($ds['displayed'] == 1) {
-        $displayed = '<input class="form-check-input" type="checkbox" name="displayed" value="1" checked="checked" />';
-    } else {
-        $displayed = '<input class="form-check-input" type="checkbox" name="displayed" value="1" />';
-    }
-
-
-    $link1 = htmlspecialchars($ds['link1']);
-    $link2 = htmlspecialchars($ds['link2']);
-
-
-    $url1 = "http://";
-    $url2 = "http://";
-
-
-    if ($ds['url1'] != "http://") {
-        $url1 = $ds['url1'];
-    }
-    if ($ds['url2'] != "http://") {
-        $url2 = $ds['url2'];
-    }
-
-
-    if ($ds['window1']) {
-        $window1 = '<input class="form-check-input" name="window1" type="checkbox" value="1" checked="checked">';
-    } else {
-        $window1 = '<input class="form-check-input" name="window1" type="checkbox" value="1">';
-    }
-
-    if ($ds['window2']) {
-        $window2 = '<input class="form-check-input" name="window2" type="checkbox" value="1" checked="checked">';
-    } else {
-        $window2 = '<input class="form-check-input" name="window2" type="checkbox" value="1">';
-    }
-
-    $comments = '<option value="0">' . $plugin_language['no_comments'] . '</option><option value="1">' .
-        $plugin_language['user_comments'] . '</option><option value="2">' .
-        $plugin_language['visitor_comments'] . '</option>';
-    $comments =
-        str_replace(
-            'value="' . $ds['comments'] . '"',
-            'value="' . $ds['comments'] . '" selected="selected"',
-            $comments
-        );
-
-    $tags = \webspell\Tags::getTags('news', $newsID);
-    #\webspell\Tags::setTags('news', $newsID, $_POST[ 'tags' ]);
-
-
-    #$date = date("Y-m-d", $ds['date']);
-    $date = date("Y-m-d", strtotime($ds['date']));
-
-    #$tags = htmlspecialchars($ds[ 'tags' ]);
-
-    $data_array = array();
-    $data_array['$link1'] = $link1;
-    $data_array['$url1'] = $url1;
-    $data_array['$window1'] = $window1;
-    $data_array['$link2'] = $link2;
-    $data_array['$url2'] = $url2;
-    $data_array['$window2'] = $window2;
-    #$data_array['$tags'] = $tags;
-
-
-
-    echo '<script>
-        function chkFormular() {
-            if(!validbbcode(document.getElementById(\'message\').value, \'admin\')){
-                return false;
-            }
-        }
-    </script>';
-
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news'] . '
-                        </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['news'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">' . $plugin_language['edit_news'] . '</li>
-                </ol>
-            </nav> 
-    <div class="card-body">';
-
-    echo '<form class="form-horizontal" method="post" id="post" name="post" action="admincenter.php?site=admin_news&action=edit&newsID=' . $newsID . '"" onsubmit="return chkFormular();" enctype="multipart/form-data">
-
-
-  <input type="hidden" name="newsID" value="' . $ds['newsID'] . '" />
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['rubric'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-      ' . $rubriccats . '
-    </div>
-  </div>
-
-
-<!-- ================================ screen Anfang======================================================== -->
-
-
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['banner'] . ':</label>
-    <div class="col-sm-3"><span class="text-muted small"><em>
-      <input class="btn btn-info" type="file" id="imgInp" name="screen"> <small>(max. 1000x500)</small>
-        </em></span>
-        
-    </div><div class="col-sm-2"></div>
-        <div class="col">
-      <img id="img-upload" src="../includes/plugins/news_manager/images/news-pic/no-image.jpg" height="50px"/>
-    </div>
-
-    <div class="col-sm-3"><input class="btn btn-success" type="submit" name="submit" value="' . $plugin_language['upload'] . '"></div>
-  </div>
-';
-
-
-    $ergebnis = safe_query("SELECT screens FROM plugins_news WHERE newsID='" . $newsID . "'");
-    $db = mysqli_fetch_array($ergebnis);
-    $screens = array();
-    if (!empty($db['screens'])) {
-        $screens = explode("|", $db['screens']);
-    }
-    if (is_array($screens)) {
-        foreach ($screens as $screen) {
-            if ($screen != "") {
-
-                echo '
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['current_banner'] . ':</label>
-    <div class="col-sm-1">
-        <a href="../' . $filepath . $screen . '" target="_blank">
-            <img class="img-fluid" style="height:50px;" src="../' . $filepath . $screen . '" alt="" />
-        </a>
-    </div>
-    <div class="col">' . $screen . '<br>
-        <input type="text" name="pic" size="100" value="../' . $filepath . $screen . '">
-    </div>
-    <div class="col-sm-3">
-        <input class="hidden-xs hidden-sm btn btn-danger" type="button" onclick="confirmDelete(\'' . $plugin_language['delete'] . '\', \'admincenter.php?site=admin_news&action=picdelete&newsID=' . $newsID . '&file=' . basename($screen) . '\')" value="' . $plugin_language['delete'] . '">                    
-    </div>
-</div>
-<hr>
-
-<script>
-function confirmDelete(message, url) {
-    if (confirm(message)) {
-        window.location.href = url;
-    }
-}
-</script>
-';
-            }
-        }
-    }
-
-    echo '
-
-
-<!-- =============================  screen Ende =========================================================== -->
-
-
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['link'] . ' 1:</label>
-    <div class="col-sm-3">
-      <input class="form-control" name="link1" type="text" value="' . htmlspecialchars($ds['link1']) . '">
-    </div>
-    <div class="col-sm-3">
-      <input class="form-control" name="url1" type="text" value="' . htmlspecialchars($ds['url1']) . '" placeholder="http://">
-      </div>
-      <div class="col-sm-2 form-check form-switch" style="padding: 0px 43px;">
-      ' . $window1 . '&nbsp;&nbsp;' . $plugin_language['new_window'] . '
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['link'] . ' 2:</label>
-    <div class="col-sm-3">
-      <input class="form-control" name="link2" type="text" value="' . htmlspecialchars($ds['link2']) . '">
-    </div>
-    <div class="col-sm-3">
-      <input class="form-control" name="url2" type="text" value="' . htmlspecialchars($ds['url2']) . '" placeholder="http://">
-      </div>
-      <div class="col-sm-2 form-check form-switch" style="padding: 0px 43px;">
-      ' . $window2 . '&nbsp;&nbsp;' . $plugin_language['new_window'] . '
-    </div>
-  </div>
-   
-<hr>
- 
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['headline'] . ':</label>
-    <div class="col-sm-8">
-      <input class="form-control" type="text" name="headline" maxlength="255" size="5" value="' . htmlspecialchars($ds['headline']) . '" />
-    </div>
-  </div>
-
-<div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['tags'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-        <input class="form-control" type="text" name="tags" value="' . $tags . '" size="97" /></em></span>
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['text'] . ':</label>
-    <div class="col-sm-8">
-       <textarea name="message" id="ckeditor" cols="30" rows="15" class="ckeditor">' . htmlspecialchars($ds['content']) . ' </textarea>
-    </div>
-  </div>
-
-  <div class="mb-3 row">
-        <label for="bday" class="col-sm-2 control-label">' . $plugin_language['publication_setting'] . ':</label>
-            <div class="col-lg-2">
-            <input name="date" type="date" value="' . $date . '" placeholder="yyyy-mm-dd" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">SEO-Slug (URL-Teil):</label>
+                        <input class="form-control" type="text" name="slug" id="slug" value="<?= htmlspecialchars($data['slug']) ?>">
+                        <div class="form-text">Wird in der URL genutzt, z. B. /news/123/dein-seo-slug</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="link" class="form-label">Interner Link/Dateiname:</label>
+                        <input class="form-control" type="text" name="link" id="link" value="<?= htmlspecialchars($data['link']) ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sort_order" class="form-label">Sortierung:</label>
+                        <input class="form-control" type="number" name="sort_order" id="sort_order" value="<?= htmlspecialchars($data['sort_order']) ?>">
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" <?= $data['is_active'] ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="is_active">Aktiv</label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="allow_comments" id="allow_comments" <?= $data['allow_comments'] ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="allow_comments">Kommentare erlauben</label>
+                    </div>
+
+                    <input type="file" id="uploadImage" accept="image/*" style="display: none;"><br/>
+                    <button type="submit" class="btn btn-success"><?= $isEdit ? "Speichern" : "Hinzufügen" ?></button>
+                    <a href="admincenter.php?site=admin_news" class="btn btn-secondary">Abbrechen</a>
+                </form>
+            </div>
         </div>
     </div>
 
-   <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['is_displayed'] . ':</label>
-    <div class="col-sm-8 form-check form-switch" style="padding: 0px 43px;">
-    ' . $displayed . '
-    </div>
-  </div>
 
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['comments'] . ':</label>
-    <div class="col-sm-3">
-      <select class="form-select" name="comments">' . $comments . '</select>
-      </div>
-  </div>
-  <div class="mb-3 row">
-    <div class="col-sm-offset-2 col-sm-10">
-    <input type="hidden" name="captcha_hash" value="' . $hash . '" /><input type="hidden" name="newsID" value="' . $newsID . '" />
-    <button class="btn btn-warning" type="submit" name="saveedit"  />' . $plugin_language['save_news'] . '</button>
-
-        
-    </div>
-  </div>
-  </form>
-  </div>
-  </div>';
-} elseif ($action == "picdelete") {
-
-    $file = basename($_GET['file']);
-    if (file_exists($filepath . $file)) {
-        @unlink($filepath . $file);
-    }
-
-    $ergebnis = safe_query("SELECT screens FROM plugins_news WHERE newsID=" . $_GET["newsID"] . "");
-    $db = mysqli_fetch_array($ergebnis);
-
-    $screens = explode("|", $db['screens']);
-    foreach ($screens as $pic) {
-        if ($pic != $file) {
-            $newscreens[] = $pic;
-        }
-    }
-    if (is_array($newscreens)) {
-        $newscreens_string = implode("|", $newscreens);
-    }
-
-    safe_query("UPDATE plugins_news SET screens='" . $newscreens_string . "' WHERE newsID=" . $_GET["newsID"] . "");
-
-    header("Location: admincenter.php?site=admin_news&action=edit&newsID=" . $_GET["newsID"] . "");
-} elseif ($action == "") {
-
-
-    if (isset($_GET['page'])) $page = (int)$_GET['page'];
-    else $page = 1;
-
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news'] . '
-                        </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['news'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">New / Edit</li>
-                </ol>
-            </nav> 
-    <div class="card-body">';
-
-    echo '<div class="mb-3 row">
-    <label class="col-md-1 control-label">' . $plugin_language['options'] . ':</label>
-    <div class="col-md-8">
-      <a href="admincenter.php?site=admin_news&action=admin_news_categories" class="btn btn-primary" type="button">' . $plugin_language['news_rubrics'] . '</a>
-      <a href="admincenter.php?site=admin_news&amp;action=add" class="btn btn-primary" type="button">' . $plugin_language['new_post'] . '</a>
-      <a href="admincenter.php?site=admin_news&action=admin_news_settings" class="btn btn-primary" type="button">' . $plugin_language['settings'] . '</a>
-    </div>
-  </div>';
-
-    $settings = safe_query("SELECT * FROM plugins_news_settings");
-    $dx = mysqli_fetch_array($settings);
-
-
-    $maxadminnews = $dx['news'];
-    if (empty($maxshownnews)) {
-        $maxadminnews = 10;
-    }
-
-    $alle = safe_query("SELECT newsID FROM plugins_news");
-    $gesamt = mysqli_num_rows($alle);
-    $pages = 1;
-
-    $settings = safe_query("SELECT * FROM plugins_news_settings");
-    $dn = mysqli_fetch_array($settings);
-
-
-    $max = $dn['admin_news'];
-    if (empty($max)) {
-        $max = 10;
-    }
-
-
-
-    for ($n = $max; $n <= $gesamt; $n += $max) {
-        if ($gesamt > $n) $pages++;
-    }
-
-    if ($pages > 1) $page_link = makepagelink("admincenter.php?site=admin_news", $page, $pages);
-    else $page_link = '';
-
-    if ($page == "1") {
-        $ergebnis = safe_query("SELECT * FROM plugins_news ORDER BY date DESC LIMIT 0,$max");
-        $n = 1;
-    } else {
-        $start = $page * $max - $max;
-        $ergebnis = safe_query("SELECT * FROM plugins_news ORDER BY date DESC LIMIT $start,$max");
-        $n = ($gesamt + 1) - $page * $max + $max;
-    }
-
-
-
-    echo '<table class="table table-striped">
-    <thead>
-      <th><b>' . $plugin_language['date'] . '</b></th>
-      <th><b>' . $plugin_language['rubric'] . '</b></th>
-      <th><b>' . $plugin_language['headline'] . '</b></th>
-      <th><b>' . $plugin_language['is_displayed'] . '</b></th>
-      <th><b>' . $plugin_language['actions'] . '</b></th>
-    </thead>';
-
-    $ds = safe_query("SELECT * FROM `plugins_news` ORDER BY `date`");
-
-    $n = 1;
-
-    while ($db = mysqli_fetch_array($ergebnis)) {
-
-        $CAPCLASS = new \webspell\Captcha;
-        $CAPCLASS->createTransaction();
-        $hash = $CAPCLASS->getHash();
-
-        $rubrikname = getnewsrubricname($db['rubric']);
-        $rubric = $db['rubric'];
-        #$date = getformatdate($db['date']);
-        $date = date("d.m.Y H:i", strtotime($db['date']));
-
-        $db['displayed'] == 1 ?
-            $displayed = '<font color="green"><b>' . $plugin_language['yes'] . '</b></font>' :
-            $displayed = '<font color="red"><b>' . $plugin_language['no'] . '</b></font>';
-
-
-
-        echo '<tr>
-        <td>' . $date . '</td>
-        <td>' . $rubrikname . '</td>
-        <td>' . $db['headline'] . '</td>
-        <td>' . $displayed . '</td>
-        
-        <td><a href="admincenter.php?site=admin_news&amp;action=edit&amp;newsID=' . $db['newsID'] . '" class="btn btn-warning" type="button">' . $plugin_language['edit'] . '</a>
-
-        
-<!-- Button trigger modal -->
-    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirm-delete" data-href="admincenter.php?site=admin_news&amp;delete=true&amp;newsID=' . $db['newsID'] . '&amp;captcha_hash=' . $hash . '">
-    ' . $plugin_language['delete'] . '
-    </button>
-    <!-- Button trigger modal END-->
-
-     <!-- Modal -->
-<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">' . $plugin_language['news'] . '</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body"><p>' . $plugin_language['really_delete_news'] . '</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <a class="btn btn-danger btn-ok">' . $plugin_language['delete'] . '</a>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Modal END -->
-
-        </td>
-      </tr>';
-
-
-        $n++;
-    }
-
-    echo '</table>';
-    if ($pages > 1) echo $page_link;
-
-    #}
-
-    echo '</div></div>';
-} elseif ($action == "admin_news_settings") {
-
-
-    $settings = safe_query("SELECT * FROM plugins_news_settings");
-    $ds = mysqli_fetch_array($settings);
-
-
-    $maxshownnews = $ds['news'];
-    if (empty($maxshownnews)) {
-        $maxshownnews = 10;
-    }
-    $maxnewsarchiv = $ds['newsarchiv'];
-    if (empty($maxnewsarchiv)) {
-        $maxnewsarchiv = 20;
-    }
-    $maxheadlines = $ds['headlines'];
-    if (empty($maxheadlines)) {
-        $maxheadlines = 2;
-    }
-    $maxheadlinechars = $ds['headlineschars'];
-    if (empty($maxheadlinechars)) {
-        $maxheadlinechars = 2;
-    }
-    $maxtopnewschars = $ds['topnewschars'];
-    if (empty($maxtopnewschars)) {
-        $maxtopnewschars = 200;
-    }
-    $maxnewschars = $ds['newschars'];
-    if (empty($maxnewschars)) {
-        $maxnewschars = 200;
-    }
-    $maxfeedback = $ds['feedback'];
-    if (empty($maxfeedback)) {
-        $maxfeedback = 5;
-    }
-
-    #$switchen = $ds['switchen']    
-    $switchen = '<option value="12">' . $plugin_language['big'] . '</option>
-                         <option value="6">' . $plugin_language['two'] . '</option>
-                         <option value="4">' . $plugin_language['three'] . '</option>
-                         <option value="3">' . $plugin_language['four'] . '</option>';
-    $switchen =
-        str_replace('value="' . $ds['switchen'] . '"', 'value="' . $ds['switchen'] . '" selected="selected"', $switchen);
-
-
-
-
-
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-
-    echo '    <form method="post" action="admincenter.php?site=admin_news&action=admin_news_settings">
-        <div class="card">
-            <div class="card-header">
-                ' . $plugin_language['settings'] . '
-            </div>
-
-            <div class="card-body">
-                <div class="col-md-10 form-group"><a href="admincenter.php?site=admin_news" class="white">' . $plugin_language['title'] . '</a> &raquo; <a href="admincenter.php?site=admin_news&action=admin_news_settings" class="white">' . $plugin_language['settings'] . '</a> &raquo; Edit</div>
-<div class="col-md-2 form-group"></div><br><br>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_admin'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_1'] . '"><input class="form-control" name="admin_news" type="text" value="' . $ds['admin_news'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_news'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_2'] . '"><input class="form-control" type="text" name="news" value="' . $ds['news'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_archiv'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_3'] . '"><input class="form-control" type="text" name="newsarchiv" value="' . $ds['newsarchiv'] . '" size="35" ></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_headlines'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_4'] . '"><input class="form-control" type="text" name="headlines" value="' . $ds['headlines'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['news_position'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <select id="switchen" name="switchen" class="form-select">' . $switchen . '</select>
-                                </div>
-                            </div>
-                        </div>
-
-                        
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_length_news'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_5'] . '"><input class="form-control" type="text" name="newschars" value="' . $ds['newschars'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_length_headlines'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_6'] . '"><input class="form-control" type="text" name="headlineschars" value="' . $ds['headlineschars'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['max_length_topnews'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_7'] . '"><input class="form-control" type="text" name="topnewschars" value="' . $ds['topnewschars'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-
-                        <div class="row bt">
-                            <div class="col-md-6">
-                                ' . $plugin_language['comments'] . ':
-                            </div>
-
-                            <div class="col-md-6">
-                                <span class="pull-right text-muted small"><em data-toggle="tooltip" title="' . $plugin_language['tooltip_8'] . '"><input class="form-control" type="text" name="feedback" value="' . $ds['feedback'] . '" size="35"></em></span>
-                            </div>
-                        </div>
-                    </div>
-               </div>
-                <br>
- <div class="form-group">
-<input type="hidden" name="captcha_hash" value="' . $hash . '"> 
-<button class="btn btn-primary" type="submit" name="news_settings_save">' . $plugin_language['update'] . '</button>
-</div>
-
-        
-
- </div>
-            </div>
-       
-        
-    </form>';
-
-    # admin_links_categories
-
-} elseif ($action == "admin_news_categories_add") {
-    $filepath = $plugin_path . "images/news-rubrics/";
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news_rubrics'] . '
-                        </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['title'] . '</a></li>
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news&action=admin_news_categories">' . $plugin_language['news_rubrics'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">' . $plugin_language['add_rubric'] . '</li>
-                </ol>
-            </nav> 
-    <div class="card-body">';
-
-    echo '<form class="form-horizontal" method="post" action="admincenter.php?site=admin_news&action=admin_news_categories" enctype="multipart/form-data">
-        <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['rubric_name'] . ':</label>
-    <div class="col-sm-8">
-      <input type="text" class="form-control" name="name"  />
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['picture_upload'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-     <p class="form-control-static"><input class="btn btn-info" name="pic" type="file" size="40" /></p></em></span>
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <div class="col-sm-offset-2 col-sm-10">
-      <input type="hidden" name="captcha_hash" value="' . $hash . '" /><button class="btn btn-success" type="submit" name="news_categories_save" />' . $plugin_language['add_rubric'] . '</button>
-    </div>
-  </div>
-  </form></div></div>';
-} elseif ($action == "admin_news_categories_edit") {
-    $filepath = $plugin_path . "images/news-rubrics/";
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news_rubrics'] . '
-                        </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['title'] . '</a></li>
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news&action=admin_news_categories">' . $plugin_language['news_rubrics'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">' . $plugin_language['edit_rubric'] . '</li>
-                </ol>
-            </nav> 
-    <div class="card-body">';
-
-
-    $ds = mysqli_fetch_array(
-        safe_query(
-            "SELECT * FROM plugins_news_rubrics WHERE rubricID='" . intval($_GET['rubricID']) . "'"
-        )
-    );
-
-    if (!empty($ds['pic'])) {
-        $pic = '<img class="img-thumbnail" style="width: 100%; max-width: 600px" src="../' . $filepath . $ds['pic'] . '" alt="">';
-    } else {
-        $pic = '<img id="img-upload" class="img-thumbnail" style="width: 100%; max-width: 150px" src="../' . $filepath . 'no-image.jpg" alt="">';
-    }
-
-    echo '<form class="form-horizontal" method="post" action="admincenter.php?site=admin_news&action=admin_news_categories" enctype="multipart/form-data">
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['rubric_name'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-      <input type="text" class="form-control" name="name" value="' . htmlspecialchars($ds['rubric']) . '" /></em></span>
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['picture'] . ':</label>
-    <div class="col-sm-8">
-      <p class="form-control-static">' . $pic . '</p>
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <label class="col-sm-2 control-label">' . $plugin_language['picture_upload'] . ':</label>
-    <div class="col-sm-8"><span class="text-muted small"><em>
-     <p class="form-control-static"><input class="btn btn-info" name="pic" type="file" size="40" /></p></em></span>
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <div class="col-sm-offset-2 col-sm-10">
-     <input type="hidden" name="captcha_hash" value="' . $hash . '" /><input type="hidden" name="rubricID" value="' . $ds['rubricID'] . '" />
-     <button class="btn btn-warning" type="submit" name="news_categories_saveedit" />' . $plugin_language['edit_rubric'] . '</button>
-    </div>
-  </div>
-  </form></div></div>';
-} elseif ($action == "admin_news_categories") {
-
-
-    echo '<div class="card">
-  <div class="card-header">
-                            <i class="bi bi-newspaper"></i> ' . $plugin_language['news_rubrics'] . '
-                        </div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">' . $plugin_language['title'] . '</a></li>
-                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news&action=admin_news_categories">' . $plugin_language['news_rubrics'] . '</a></li>
-                <li class="breadcrumb-item active" aria-current="page">New / Edit</li>
-                </ol>
-            </nav> 
-    <div class="card-body">
-
-<div class="mb-3 row">
-    <label class="col-md-1 control-label">' . $plugin_language['options'] . ':</label>
-    <div class="col-md-8">
-      <a href="admincenter.php?site=admin_news&action=admin_news_categories_add" class="btn btn-primary" type="button">' . $plugin_language['new_rubric'] . '</a>
-    </div>
-  </div>
-
-<div class="row">
-<div class="col-md-12"><br />';
-
-
-
-    $ergebnis = safe_query("SELECT * FROM plugins_news_rubrics ORDER BY rubric");
-    $filepath = $plugin_path . "images/news-rubrics/";
-    echo '<table class="table table-striped">
-    <thead>
-      <tr>
-      <th><b>' . $plugin_language['rubric_name'] . ':</b></th>
-      <th><b>' . $plugin_language['picture'] . ':</b></th>
-      <th><b>' . $plugin_language['actions'] . ':</b></th>
-        </tr></thead>
-          <tbody>';
-    $CAPCLASS = new \webspell\Captcha;
-    $CAPCLASS->createTransaction();
-    $hash = $CAPCLASS->getHash();
-    $i = 1;
-    while ($ds = mysqli_fetch_array($ergebnis)) {
-        if ($i % 2) {
-            $td = 'td1';
+    <?php
+
+
+} elseif (($action ?? '') === 'addcategory' || ($action ?? '') === 'editcategory') {
+    $isEdit = $action === 'editcategory';
+    $errorCat = '';
+    $cat_name = '';
+    $cat_description = '';
+    $cat_image = ''; // neues Feld
+    $cat_slug = '';  // Slug-Feld
+    $editId = 0;
+    $slugWarning = '';
+
+    if ($isEdit) {
+        $editId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $stmt = $_database->prepare("SELECT name, description, image, slug FROM plugins_news_categories WHERE id = ?");
+        $stmt->bind_param("i", $editId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $catData = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($catData) {
+            $cat_name = $catData['name'];
+            $cat_description = $catData['description'];
+            $cat_image = $catData['image']; // aktuelles Bild
+            $cat_slug = $catData['slug'];
         } else {
-            $td = 'td2';
+            $errorCat = "Kategorie nicht gefunden.";
         }
-
-        if (!empty($ds['pic'])) {
-            $pic = '<img class="img-thumbnail" style="width: 100%; max-width: 600px" src="../' . $filepath . $ds['pic'] . '" alt="">';
-        } else {
-            $pic = '<img id="img-upload" class="img-thumbnail" style="width: 100%; max-width: 150px" src="../' . $filepath . 'no-image.jpg" alt="">';
-        }
-
-        echo '<tr>
-      <td>' . htmlspecialchars($ds['rubric']) . '</td>
-      <td>' . $pic . '</td>
-      <td><a href="admincenter.php?site=admin_news&action=admin_news_categories_edit&amp;rubricID=' . $ds['rubricID'] . '" class="btn btn-warning" type="button">' . $plugin_language['edit'] . '</a>
-
-<!-- Button trigger modal -->
-    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirm-delete" data-href="admincenter.php?site=admin_news&action=admin_news_categories&amp;delete_cat=true&amp;rubricID=' . $ds['rubricID'] . '&amp;captcha_hash=' . $hash . '">
-    ' . $plugin_language['delete'] . '
-    </button>
-    <!-- Button trigger modal END-->
-
-     <!-- Modal -->
-<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">' . $plugin_language['title'] . '</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body"><p>' . $plugin_language['really_delete_cat'] . '</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <a class="btn btn-danger btn-ok">' . $plugin_language['delete'] . '</a>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Modal END -->
-
-
-      </td>
-    </tr>';
-
-        $i++;
     }
-    echo '</tbody></table>';
 
-    echo '</div></div></div></div>';
+    // Speichern
+    // Slug-Vergleich: alten Slug beim Edit merken
+    $oldSlug = $isEdit ? $cat_slug : '';
+    $confirmChange = isset($_POST['confirm_slug_change']); // Wurde schon bestätigt?
+
+    // Speichern
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cat_name'])) {
+
+        $cat_name = trim($_POST['cat_name']);
+        $cat_description = trim($_POST['cat_description'] ?? '');
+        $cat_image_path = $cat_image; // altes Bild
+        $cat_slug_input = trim($_POST['cat_slug'] ?? '');
+        $confirmChange = isset($_POST['confirm_slug_change']);
+
+        // Slug automatisch erstellen
+        if ($cat_slug_input === '') {
+            $cat_slug_input = $cat_name !== '' ? generateSlug($cat_name) : 'category-' . time();
+        }
+
+        // Warnung beim geänderten Slug (nur Edit & noch nicht bestätigt)
+        if ($isEdit && !$confirmChange && $oldSlug !== '' && $cat_slug_input !== $oldSlug) {
+            $slugWarning = "
+                <div class='alert alert-warning'>
+                    <strong>Achtung:</strong> Der SEO-Slug wurde geändert!<br><br>
+                    Alte URL: <code>/news/category/{$oldSlug}</code><br>
+                    Neue URL: <code>/news/category/{$cat_slug_input}</code><br>
+                    <small>Das kann bestehende Links und SEO-Rankings beeinflussen.</small>
+                </div>
+                <form method='post' enctype='multipart/form-data'>
+                    " . hiddenFields($_POST) . "
+                    <input type='hidden' name='confirm_slug_change' value='1'>
+                    <button type='submit' class='btn btn-danger'>Weiter & speichern</button>
+                    <a href='admincenter.php?site=admin_news&action=categories' class='btn btn-secondary'>Zurück, nicht speichern</a>
+                </form>
+            ";
+        }
+
+        // Wenn Warnung angezeigt wird, abbrechen
+        if ($slugWarning === '') {
+
+            // Slug eindeutig machen
+            $cat_slug = makeUniqueSlugCategory($cat_slug_input, $isEdit ? $editId : 0);
+
+            // Bild-Upload
+            if (isset($_FILES['cat_image']) && $_FILES['cat_image']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/includes/plugins/news/images/news_categories/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                $filename = time() . '_' . basename($_FILES['cat_image']['name']);
+                $targetFile = $uploadDir . $filename;
+                if (move_uploaded_file($_FILES['cat_image']['tmp_name'], $targetFile)) {
+                    $cat_image_path = $filename;
+                } else {
+                    $errorCat = "Fehler beim Hochladen der Datei!";
+                }
+            }
+
+            if ($cat_name === '') {
+                $errorCat = "Der Kategoriename darf nicht leer sein.";
+            } else {
+                if ($isEdit && $editId > 0) {
+                    $stmt = $_database->prepare(
+                        "UPDATE plugins_news_categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?"
+                    );
+                    $stmt->bind_param("ssssi", $cat_name, $cat_slug, $cat_description, $cat_image_path, $editId);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    $stmt = $_database->prepare(
+                        "INSERT INTO plugins_news_categories (name, slug, description, image) VALUES (?, ?, ?, ?)"
+                    );
+                    $stmt->bind_param("ssss", $cat_name, $cat_slug, $cat_description, $cat_image_path);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+
+                header("Location: admincenter.php?site=admin_news&action=categories");
+                exit;
+
+
+            }
+        }
+    }    
+    ?>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-tags"></i> <?= $isEdit ? 'Kategorie bearbeiten' : 'Neue Kategorie hinzufügen' ?>
+        </div>
+        <nav class="breadcrumb bg-light p-2">
+            <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">News verwalten</a></li>
+            <a class="breadcrumb-item" href="admincenter.php?site=admin_news&action=categories">Kategorien</a>
+            <span class="breadcrumb-item active"><?= $isEdit ? 'Bearbeiten' : 'Hinzufügen' ?></span>
+        </nav>
+        <div class="card-body">
+            <div class="container py-5">
+                <?php if ($errorCat): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($errorCat) ?></div>
+                <?php endif; ?>
+                <?= $slugWarning ?>
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="cat_name" class="form-label">Kategoriename:</label>
+                        <input type="text"
+                               class="form-control"
+                               id="cat_name"
+                               name="cat_name"
+                               value="<?= htmlspecialchars($cat_name) ?>"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cat_slug" class="form-label">Slug (SEO-URL):</label>
+                        <input type="text"
+                               class="form-control"
+                               id="cat_slug"
+                               name="cat_slug"
+                               value="<?= htmlspecialchars($cat_slug) ?>"
+                               placeholder="leer lassen für automatische Erstellung">
+                    </div>
+                    <div class="mb-3">
+                        <label for="cat_description" class="form-label">Beschreibung:</label>
+                        <textarea class="form-control"
+                                  id="cat_description"
+                                  name="cat_description"
+                                  rows="3"><?= htmlspecialchars($cat_description) ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cat_image" class="form-label">Bild (optional):</label>
+                        <input type="file" class="form-control" id="cat_image" name="cat_image">
+                        <?php if ($cat_image): ?>
+                            <small class="text-muted">Aktuelles Bild:</small><br>
+                            <?php $basePath = '/includes/plugins/news/images/news_categories/'; ?>
+                            <img src="<?= htmlspecialchars($basePath . $cat_image) ?>" alt="Kategorie-Bild" style="height:60px;">
+                        <?php endif; ?>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <?= $isEdit ? 'Änderungen speichern' : 'Kategorie hinzufügen' ?>
+                    </button>
+                    <a href="admincenter.php?site=admin_news&action=categories" class="btn btn-secondary">Abbrechen</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <?php
 }
+
+ elseif (($action ?? '') === 'categories') {
+    $errorCat = '';
+
+    // Kategorie löschen
+    if (isset($_GET['delcat'])) {
+        $delcat = intval($_GET['delcat']);
+        $stmt = $_database->prepare("DELETE FROM plugins_news_categories WHERE id = ?");
+        $stmt->bind_param("i", $delcat);
+        $stmt->execute();
+        $stmt->close();
+        header("Location: admincenter.php?site=admin_news&action=categories");
+        exit;
+    }
+
+    // Kategorien laden inkl. Beschreibung
+    $result = $_database->query("SELECT id, name, description, image FROM plugins_news_categories ORDER BY name");
+
+    ?>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-tags"></i> Kategorien verwalten
+        </div>
+        <nav class="breadcrumb bg-light p-2">
+            <a class="breadcrumb-item" href="admincenter.php?site=admin_news">News verwalten</a>
+            <span class="breadcrumb-item active">Kategorien / Add & Edit</span>
+        </nav>
+        <div class="card-body">
+            <div class="container py-5">
+
+                <a href="admincenter.php?site=admin_news&action=addcategory"
+                   class="btn btn-success mb-3">
+                   <i class="bi bi-plus-circle"></i> Neue Kategorie hinzufügen
+                </a>
+                
+                <h5>Bestehende Kategorien:</h5>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Bild</th> <!-- neue Spalte -->
+                        <th>Name</th>
+                        <th>Beschreibung</th>
+                        <th>Aktion</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php while ($cat = $result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= (int)$cat['id'] ?></td>
+                            <td>
+                                <?php if (!empty($cat['image'])):
+                                    $basePath = '/includes/plugins/news/images/news_categories/'; ?>
+                                    <img src="<?= htmlspecialchars($basePath . $cat['image']) ?>" alt="Kategorie-Bild" style="height:60px;">
+                                <?php else: ?>
+                                    <span class="text-muted">kein Bild</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= htmlspecialchars($cat['name']) ?></td>
+                            <td><?= htmlspecialchars($cat['description']) ?></td>
+                            <td>
+                                <a href="admincenter.php?site=admin_news&action=editcategory&id=<?= (int)$cat['id'] ?>"
+                                   class="btn btn-sm btn-warning">Bearbeiten</a>
+                                <a href="admincenter.php?site=admin_news&action=categories&delcat=<?= (int)$cat['id'] ?>"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Kategorie wirklich löschen?')">Löschen</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                    </tbody>
+                </table>
+
+
+                <a href="admincenter.php?site=admin_news" class="btn btn-secondary">Zurück</a>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+ else {
+
+    // --- Newsliste anzeigen ---
+    $result = $_database->query("SELECT a.id, a.title, a.sort_order, a.topnews_is_active, a.is_active, c.name as category_name FROM plugins_news a LEFT JOIN plugins_news_categories c ON a.category_id = c.id ORDER BY a.sort_order ASC, a.title ASC");
+    ?>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div><i class="bi bi-journal-text"></i> News verwalten</div>
+            <div>
+                <a href="admincenter.php?site=admin_news&action=add" class="btn btn-success btn-sm"><i class="bi bi-plus"></i> Neu</a>
+                <a href="admincenter.php?site=admin_news&action=categories" class="btn btn-primary btn-sm"><i class="bi bi-tags"></i> Kategorien</a>
+            </div>
+        </div>
+
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb t-5 p-2 bg-light">
+                <li class="breadcrumb-item"><a href="admincenter.php?site=admin_news">News verwalten</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add & Edit</li>
+            </ol>
+        </nav> 
+        <div class="card-body p-0">
+            <div class="container py-5">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Titel</th>
+                    <th>Kategorie</th>
+                    <th>Top News</th>
+                    <th>Aktiv</th>
+                    <th>Aktionen</th>
+                    <th>Sortierung</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?= (int)$row['id'] ?></td>
+                        <td><?= htmlspecialchars($row['title']) ?></td>
+                        <td><?= htmlspecialchars($row['category_name'] ?? '-') ?></td>
+                        <td><?= $row['topnews_is_active'] ? '<span class="badge bg-success">Ja</span>' : '<span class="badge bg-secondary">Nein</span>' ?></td>                        
+                        <td><?= $row['is_active'] ? '<span class="badge bg-success">Ja</span>' : '<span class="badge bg-secondary">Nein</span>' ?></td>
+                        <td>
+                            <a href="admincenter.php?site=admin_news&action=edit&id=<?= (int)$row['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Bearbeiten</a>
+                            <a href="#" class="btn btn-sm btn-danger btn-delete-news" data-id="<?= (int)$row['id'] ?>"><i class="bi bi-trash"></i> Löschen</a>
+                        </td>
+                        <td><?= (int)$row['sort_order'] ?></td>
+                    </tr>
+                <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+        </div>
+    </div>
+<?php
+}
+?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const dropArea = document.getElementById('dropArea');
+  const fileInput = document.getElementById('uploadImage');
+  let editor = null;
+
+  // Wenn keine DropArea im DOM -> Script sofort beenden
+  if (!dropArea || !fileInput) {
+    return;
+  }
+
+  // CKEditor-Instanz beobachten
+  CKEDITOR.on('instanceReady', function(evt) {
+    if (evt.editor.name === 'ckeditor') {
+      editor = evt.editor;
+    }
+  });
+
+  dropArea.addEventListener('click', () => fileInput.click());
+
+  dropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropArea.classList.add('bg-warning');
+  });
+
+  dropArea.addEventListener('dragleave', () => {
+    dropArea.classList.remove('bg-warning');
+  });
+
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropArea.classList.remove('bg-warning');
+    if (e.dataTransfer.files.length > 0) {
+      uploadImage(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      uploadImage(fileInput.files[0]);
+    }
+  });
+
+  function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    fetch('/includes/plugins/news/upload_image.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.url) {
+        if (!editor) {
+          console.error('CKEditor ist noch nicht bereit.');
+          return;
+        }
+        editor.focus();
+        // Bild als Link einfügen, 75% Breite, klickbar für Original
+        const html = `<a href="${data.url}" target="_blank"><img src="${data.url}" style="width:75%; height:auto;" alt=""></a>`;
+        editor.insertHtml(html);
+      } else {
+        alert(data.message || 'Upload fehlgeschlagen');
+      }
+    })
+    .catch(err => {
+      alert('Fehler beim Upload: ' + err.message);
+    });
+  }
+});
+</script>
+<script>
+document.querySelectorAll('.btn-delete-news').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('News wirklich löschen?')) {
+            const id = this.getAttribute('data-id');
+            fetch('admincenter.php?site=admin_news&action=delete&id=' + id)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Fehler beim Löschen: ' + (data.error || 'Unbekannt'));
+                    }
+                });
+        }
+    });
+});
+</script>
+

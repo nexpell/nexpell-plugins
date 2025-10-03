@@ -1,0 +1,80 @@
+.news-featured-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Featured (Hero) */
+.featured-news {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0px;
+  overflow: hidden;
+  /*box-shadow: 0 3px 12px rgba(0,0,0,0.08);*/
+}
+.featured-thumb {
+  position: relative;
+  display: block;
+}
+.featured-thumb img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  display: block;
+}
+.featured-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: #0d6efd;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+.featured-body {
+  padding: 1rem;
+}
+.featured-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+.featured-excerpt {
+  margin: 0 0 0.75rem;
+  color: #555;
+}
+
+/* List/Grid unten */
+.news-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.news-item {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0px;
+  overflow: hidden;
+  /*box-shadow: 0 2px 8px rgba(0,0,0,0.06);*/
+  background: #fff;
+}
+.news-thumb img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+.news-body {
+  padding: 0.75rem;
+}
+.news-title {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+.news-excerpt {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem;
+}
+.news-meta {
+  font-size: 0.8rem;
+  co

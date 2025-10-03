@@ -1,0 +1,65 @@
+/* masonry_news.css - CSS Columns Masonry */
+
+.masonry-wrapper {
+  width: 100%;
+  margin: 0 auto 1.5rem;
+}
+
+/* Grid via CSS Columns */
+.masonry-grid {
+  column-gap: 1rem;
+  /* default columns, wird per JS/CSS angepasst */
+  column-count: 3;
+}
+
+/* einzelne Card */
+.masonry-item {
+  display: inline-block;           /* notwendig für columns */
+  width: 100%;
+  margin: 0 0 1rem;
+  background: #fff;
+  border-radius: 0px;
+  overflow: hidden;
+  /*box-shadow: 0 1px 6px rgba(0,0,0,0.06);*/
+  break-inside: avoid;
+}
+
+/* Thumbnail */
+.masonry-thumb { display:block; }
+.masonry-thumb img {
+  width: 100%;
+  height: auto; /* oder feste Höhe, falls gewünscht */
+  display: block;
+  object-fit: cover;
+}
+
+/* Body */
+.masonry-body {
+  padding: 0.75rem;
+}
+.masonry-title { margin: 0 0 0.5rem; font-size: 1rem; }
+/*.masonry-title a { color: #212529; text-decoration: none; }*/
+.masonry-title a { color: #fe821d; text-decoration: none; }
+.masonry-excerpt { margin: 0 0 0.75rem; color: #555; font-size: 0.925rem; }
+
+/* Meta row */
+.masonry-meta {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+.masonry-cat { font-size:0.8rem; color:#fff; background:#fe821d; padding:3px 8px; border-radius:0px; }
+/*.masonry-readmore { font-size:0.85rem; text-decoration:none; color:#0d6efd; }*/
+.masonry-readmore { font-size:0.85rem; text-decoration:none; color: #fe821d;}
+
+/* Responsive: columns via media queries */
+@media (max-width: 1199px) {
+  .masonry-grid { column-count: 2; }
+}
+@media (max-width: 767px) {
+  .masonry-grid { column-count: 1; }
+}
+
+/* Optional: small improvements */
+.masonry-item:hover { transform: translateY(-4px); transition: .18s ease; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
