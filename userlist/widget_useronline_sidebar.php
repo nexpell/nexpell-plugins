@@ -70,7 +70,7 @@ if ($numRows === 0) {
         if ((int)$ds['is_online'] === 1) {
             $statuspic = '<span class="badge bg-success">' . $languageService->get('online') . '</span>';
             $lastActiveText = $languageService->get('now_on') 
-                . ' (<span class="online-time" data-start="' . $lastActivity . '"></span>)';
+    . ' (' . date("d.m.Y - H:i", $lastActivity) . ')';
         } else {
             $statuspic = '<span class="badge bg-danger">' . $languageService->get('offline') . '</span>';
             $diff    = time() - $lastActivity;
@@ -121,5 +121,4 @@ if ($numRows === 0) {
 }
 
 echo $tpl->loadTemplate("userlist", "useronline_foot", [], "plugin");
-
 ?>

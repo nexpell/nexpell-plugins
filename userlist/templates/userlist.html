@@ -9,45 +9,43 @@
 <!-- END -->
 <!-- userlist_header -->
 <div class="card">
-    <div class="card-body">
-            
-<table width="100%" cellpadding="2" cellspacing="0" border="0">
-  <tr>
-    <td>{sorter} <br><br> </td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>{page_link}</td>
-    <td align="right"><b>{gesamt}</b> {registered_users}</td>
-  </tr>
-</table>            
-<div class="table-responsive">
-
-<table id="plu_gini" class="table table-striped">
-  <thead>
-    <tr>
-    <th><a class="title1link" href="index.php?site=userlist&amp;sort=username&amp;page={page}">{username}:</a></th>
-    <th>{contact}:</th>
-    <th><a class="title1link" href="index.php?site=userlist&amp;sort=homepage&amp;page={page}">{homepage}:</a></th>
-    <th><a class="titlelink" href="index.php?site=userlist&amp;sort=lastlogin&amp;page={page}">{last_login}:</a></th>
-    <th><a class="titlelink" href="index.php?site=userlist&amp;sort=registerdate&amp;page={page}">{registration}:</a></th>
-  </tr>
- </thead>
-<tbody>
+    <div class="card-body">            
+        <table width="100%" cellpadding="2" cellspacing="0" border="0">
+          <tr>
+            <td>{sorter} <br><br> </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>{page_link}</td>
+            <td align="right"><b>{gesamt}</b> {registered_users}</td>
+          </tr>
+        </table>            
+        <div class="table-responsive">
+            <table id="plu_gini" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th><a class="title1link" href="index.php?site=userlist&amp;sort=username&amp;page={page}">{username}:</a></th>
+                        <th>{contact}:</th>
+                        <th><a class="title1link" href="index.php?site=userlist&amp;sort=homepage&amp;page={page}">{homepage}:</a></th>
+                        <th><a class="titlelink" href="index.php?site=userlist&amp;sort=lastlogin&amp;page={page}">{last_login}:</a></th>
+                        <th><a class="titlelink" href="index.php?site=userlist&amp;sort=registerdate&amp;page={page}">{registration}:</a></th>
+                    </tr>
+                </thead>
+            <tbody>
 <!-- END -->
 <!-- userlist_user -->
-<tr>
-    <td>{avatar} {username} {member}</td>
-    <td>{email} {pm}</td>
-    <td>{homepage}</td>
-    <td>{login}</td>
-    <td>{register}</td>
-</tr>
+                <tr>
+                    <td>{avatar} {username} {member}</td>
+                    <td>{email} {pm}</td>
+                    <td>{homepage}</td>
+                    <td>{login}</td>
+                    <td>{register}</td>
+                </tr>
 <!-- END -->
 <!-- userlist_footer -->
-    </tbody>
-    </table>
-</div>
+            </tbody>
+            </table>
+        </div>
     </div>
 </div>
 <!-- END -->
@@ -55,20 +53,20 @@
 
 <!-- userlist_useronline_head -->
 <div class="card">
-    <div class="card-body" style="margin: -12px -12px -12px -12px;">
+    <div class="card-body">
         <ul class="list-group list-group-flush">
 <!-- END -->
 <!-- userlist_useronline_content -->
             <li class="list-group-item d-flex align-items-center flex-wrap">
-    <img class="img-fluid avatar_small me-2" src="{avatar}" alt="Avatar">
-    <div class="flex-grow-1">
-        {username}
-    </div>
-    <div>
-        {statuspic}
-    </div>
-    <small class="w-100 mt-1">{last_active}</small>
-</li>
+                <img class="img-fluid avatar_small me-2" src="{avatar}" alt="Avatar">
+                <div class="flex-grow-1">
+                    {username}
+                </div>
+                <div>
+                    {statuspic}
+                </div>
+                <small class="w-100 mt-1">{last_active}</small>
+            </li>
 <!-- END -->
 <!-- userlist_useronline_foot -->
         </ul>
@@ -78,7 +76,7 @@
 
 <!-- userlist_widget_lastregistered_head -->
 <div class="card">
-    <div class="card-body widget" style="margin: -12px -12px -12px -12px;"> 
+    <div class="card-body"> 
         <ul class="list-group list-group-flush">
 <!-- END -->
 <!-- userlist_widget_lastregistered_content -->

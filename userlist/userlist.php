@@ -235,8 +235,8 @@ $gefiltert = ($row = $resCnt->fetch_assoc()) ? (int)$row['cnt'] : 0;
                 <?php foreach($rows as $row):
                     $avatarFile = getavatar($row['userID']);
                     $avatar = $avatarFile 
-                        ? '<img src="'.htmlspecialchars($avatarFile).'" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'">' 
-                        : '<img src="default-avatar.png" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'">';
+                        ? '<img src="'.htmlspecialchars($avatarFile).'" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" style="border-radius:50%; object-fit: cover;">' 
+                        : '<img src="default-avatar.png" width="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" height="'.($settings['avatar_size']=='small'?50:($settings['avatar_size']=='medium'?80:100)).'" style="border-radius:50%; object-fit: cover;">';
                     
                     $status = $row['is_online'] 
                         ? '<span style="color:green">' . $languageService->get('online') . '</span>' 
