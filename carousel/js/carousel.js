@@ -24,10 +24,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // Widget suchen – per ID, Klasse oder Attribut
   const widget = document.getElementById("widget_agency_header");
 
-  if (!widget) {
+  /*if (!widget) {
     console.log("Widget 'widget_agency_header' nicht gefunden.");
     return;
-  }
+  }*/
 
   // Navbar Script ausführen
   const navbar = document.getElementById("mainNavbar");
