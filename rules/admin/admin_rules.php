@@ -90,7 +90,7 @@ if ($action === 'add' || $action === 'edit') {
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div><i class="bi bi-card-text"></i> <?= $languageService->get('rules_' . ($editrule ? 'edit' : 'add')) ?></div>
-        <a href="admincenter.php?site=admin_rules" class="btn btn-secondary btn-sm"><?= $languageService->get('rules_cancel') ?></a>
+        <a href="admincenter.php?site=admin_rules" class="btn btn-secondary"><?= $languageService->get('rules_cancel') ?></a>
     </div>
     <div class="card-body">
         <div class="container py-5">
@@ -136,7 +136,7 @@ if ($action === 'add' || $action === 'edit') {
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div><i class="bi bi-card-text"></i> <?= $languageService->get('rules_admin_title') ?></div>
-        <a href="admincenter.php?site=admin_rules&action=add" class="btn btn-success btn-sm"><i class="bi bi-plus"></i> <?= $languageService->get('rules_add') ?></a>
+        <a href="admincenter.php?site=admin_rules&action=add" class="btn btn-success"><i class="bi bi-plus"></i> <?= $languageService->get('rules_add') ?></a>
     </div>
     <div class="card-body p-0">
         <div class="container py-5">
@@ -161,10 +161,10 @@ if ($action === 'add' || $action === 'edit') {
                             </span>
                         </td>
                         <td>
-                            <a href="admincenter.php?site=admin_rules&action=edit&edit=<?= $rule['id'] ?>" class="btn btn-sm btn-warning"><?= $languageService->get('rules_edit') ?></a>
+                            <a href="admincenter.php?site=admin_rules&action=edit&edit=<?= $rule['id'] ?>" class="btn btn-warning"><?= $languageService->get('rules_edit') ?></a>
                             <form method="post" style="display:inline-block;" onsubmit="return confirm('<?= $languageService->get('rules_delete_confirm') ?>');">
                                 <input type="hidden" name="delete_id" value="<?= $rule['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-danger"><?= $languageService->get('delete') ?></button>
+                                <button type="submit" class="btn btn-danger"><?= $languageService->get('delete') ?></button>
                             </form>
                         </td>
                     </tr>

@@ -23,7 +23,7 @@ safe_query("INSERT IGNORE INTO plugins_rules_settings (rulessetID, rules) VALUES
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, plugin_display, widget_display, sidebar) VALUES
-('', 'Rules', 'rules', '[[lang:de]]Mit diesem Plugin könnt ihr eure Regeln anzeigen lassen.[[lang:en]]With this plugin it is possible to show the Rules on the website.[[lang:it]]Con questo plugin è possibile mostrare le Regole del sul sito web', 'admin_rules', 1, 'T-Seven', 'https://webspell-rm.de', 'rules', '', '0.1', 'includes/plugins/rules/', 1, 1, 'deactivated')");
+('', 'Rules', 'rules', '[[lang:de]]Mit diesem Plugin könnt ihr eure Regeln anzeigen lassen.[[lang:en]]With this plugin it is possible to show the Rules on the website.[[lang:it]]Con questo plugin è possibile mostrare le Regole del sul sito web', 'admin_rules', 1, 'T-Seven', 'https://www.nexpell.de', 'rules', '', '0.1', 'includes/plugins/rules/', 1, 1, 'deactivated')");
 
 ## NAVIGATION #####################################################################################################################################
 
