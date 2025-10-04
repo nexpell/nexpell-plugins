@@ -1,0 +1,132 @@
+/* Allgemein */
+.news-magazine-widget a {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Featured News */
+.featured-news {
+    flex: 2 1 60%;
+    position: relative;
+}
+
+.featured-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.featured-news img.featured-img {
+    width: 100%;
+    height: 604px;
+    object-fit: cover;
+}
+
+.featured-text {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.featured-text h3 {
+    margin: 5px 0;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.featured-text p {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Smaller News */
+.smaller-news {
+    flex: 1 1 35%;
+    gap: 15px;
+}
+
+.small-news-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.small-news-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.small-news-text {
+    padding: 8px;
+}
+
+.small-news-text h6 {
+    margin: 5px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mobil */
+@media (max-width: 768px) {
+    .featured-news img.featured-img {
+        height: 350px !important;
+        object-fit: cover;
+    }
+
+    .news-magazine-widget {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .featured-news,
+    .smaller-news {
+        flex: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .featured-news {
+        order: 1 !important;
+    }
+
+    .smaller-news {
+        order: 2 !important;
+    }
+
+    .featured-news img,
+    .small-news-card img {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .featured-text {
+        padding: 12px !important;
+        font-size: 0.95rem;
+    }
+
+    .featured-text h3 {
+        font-size: 1.1rem;
+        line-height: 1.3;
+    }
+
+    .featured-text p {
+        font-size: 0.9rem;
+    }
+}

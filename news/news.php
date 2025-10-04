@@ -35,18 +35,22 @@ if (isset($_GET['action'])) {
     $action = '';
 }
 
-$maxStars = 5; // Maximalsterne
 
 // Funktion zum Prüfen der Rolle eines Benutzers
-function has_role(int $userID, string $roleName): bool {
-    global $_database;
+if (!function_exists('has_role')) {
+    function has_role(int $userID, string $roleName): bool {
+        global $_database;
 
+        $roleID = RoleManager::getUserRoleID($userID);
+        if ($roleID === null) {
+            return false;
+        }
 
-    $roleID = RoleManager::getUserRoleID($userID);
-    if ($roleID === null) {
-        return false;
-    }    
+        // Hier weitere Logik zum Prüfen der Rolle einfügen
+        return ($roleID === $roleName); // Beispiel, anpassen
+    }
 }
+
 
 
 $segments = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
@@ -494,7 +498,11 @@ if ($news_id > 0) {
     }
 
 } elseif ($action == "") {
-    // Kategorien laden und anzeigen
+    // Anzahl News pro Seite
+    $newsPerPageFirst = 3; // erste Seite
+    $newsPerPageOther = 3; // weitere Seiten
+
+    // Kategorien laden
     $cats_result = safe_query("SELECT * FROM plugins_news_categories ORDER BY sort_order ASC");
     if (mysqli_num_rows($cats_result) > 0) {
 
@@ -503,24 +511,41 @@ if ($news_id > 0) {
         ];
 
         echo $tpl->loadTemplate("news", "category", $data_array, 'plugin');
-
-        // Head-Bereich der Newsliste
         echo $tpl->loadTemplate("news", "content_all_head", $data_array, 'plugin');
 
+        // Aktuelle Seite ermitteln
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         if ($page < 1) $page = 1;
-        $limit = 6;
-        $offset = ($page - 1) * $limit;
 
+        // Gesamtanzahl News ermitteln
         $total_news_result = safe_query("SELECT COUNT(*) AS total FROM plugins_news WHERE is_active = 1");
         $total_news_row = mysqli_fetch_assoc($total_news_result);
         $total_news = (int)$total_news_row['total'];
-        $total_pages = ceil($total_news / $limit);
 
-        $news_result = safe_query("SELECT * FROM plugins_news WHERE is_active = 1 ORDER BY updated_at DESC LIMIT $offset, $limit");
+        // Berechnung wie bei YouTube
+        $newsAfterFirst = max(0, $total_news - $newsPerPageFirst);
+        $totalPagesOther = ($newsPerPageOther > 0) ? ceil($newsAfterFirst / $newsPerPageOther) : 0;
+        $total_pages = ($total_news > $newsPerPageFirst) ? 1 + $totalPagesOther : 1;
+        if ($page > $total_pages) $page = $total_pages;
+
+        // Offset und Limit setzen
+        if ($page === 1) {
+            $offset = 0;
+            $limit = $newsPerPageFirst;
+        } else {
+            $offset = $newsPerPageFirst + ($page - 2) * $newsPerPageOther;
+            $limit = $newsPerPageOther;
+        }
+
+        // News abfragen
+        $news_result = safe_query("
+            SELECT * FROM plugins_news
+            WHERE is_active = 1
+            ORDER BY updated_at DESC, id DESC
+            LIMIT $offset, $limit
+        ");
 
         if (mysqli_num_rows($news_result) > 0) {
-
             $monate = [
                 1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
                 3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
@@ -532,70 +557,53 @@ if ($news_id > 0) {
 
             while ($new = mysqli_fetch_assoc($news_result)) {
                 $timestamp = (int)$new['updated_at'];
+                if ($timestamp <= 0) $timestamp = time();
                 $tag = date("d", $timestamp);
                 $monat = date("n", $timestamp);
                 $year = date("Y", $timestamp);
                 $monatname = $monate[$monat];
-                $id        = (int)$new['id'];
-                $title     = $new['title'];
-                $slug      = $new['slug'] ?: SeoUrlHandler::slugify($title);
+                $id = (int)$new['id'];
+                $title = $new['title'];
+                $slug = $new['slug'] ?: SeoUrlHandler::slugify($title);
 
                 // Kategorie
-                $catID     = (int)$new['category_id'];
+                $catID = (int)$new['category_id'];
                 $cat_query = safe_query("SELECT name, slug, image FROM plugins_news_categories WHERE id = $catID");
-                $cat       = mysqli_fetch_assoc($cat_query);
-                $cat_name  = htmlspecialchars($cat['name'] ?? '');
-                $cat_slug  = $cat['slug'] ?: SeoUrlHandler::slugify($cat_name);
+                $cat = mysqli_fetch_assoc($cat_query);
+                $cat_name = htmlspecialchars($cat['name'] ?? '');
+                $cat_slug = $cat['slug'] ?: SeoUrlHandler::slugify($cat_name);
 
-                // Kategorie-Link
-                $new_catname = '<a href="' . 
-                    htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=news&action=show&id=$catID&slug=$cat_slug")) . 
+                $new_catname = '<a href="' .
+                    htmlspecialchars(SeoUrlHandler::convertToSeoUrl("index.php?site=news&action=show&id=$catID&slug=$cat_slug")) .
                     '"><strong style="font-size: 12px">' . $cat_name . '</strong></a>';
 
-                // News-Link
                 $url_watch_seo = SeoUrlHandler::buildPluginUrl('plugins_news', $id, $lang);
 
-                // Autor
                 $profileUrl = SeoUrlHandler::convertToSeoUrl("/profile/" . intval($new['userID']));
-                $username   = '<a href="' . htmlspecialchars($profileUrl) . '">
-                                    <img src="' . htmlspecialchars(getavatar($new['userID'])) . '" 
-                                         class="img-fluid align-middle rounded me-1" 
-                                         style="height: 23px; width: 23px;" 
-                                         alt="' . htmlspecialchars(getusername($new['userID'])) . '">
-                                    <strong>' . htmlspecialchars(getusername($new['userID'])) . '</strong>
-                                </a>';
+                $username = '<a href="' . htmlspecialchars($profileUrl) . '">
+                                <img src="' . htmlspecialchars(getavatar($new['userID'])) . '"
+                                     class="img-fluid align-middle rounded me-1"
+                                     style="height: 23px; width: 23px;"
+                                     alt="' . htmlspecialchars(getusername($new['userID'])) . '">
+                                <strong>' . htmlspecialchars(getusername($new['userID'])) . '</strong>
+                             </a>';
 
-                // Titel kürzen
                 $short_title = mb_strlen($title) > 70 ? mb_substr($title, 0, 70) . '...' : $title;
 
                 if (!function_exists('truncateHtml')) {
-                    /**
-                     * Kürzt HTML-Text auf eine bestimmte Länge.
-                     * @param string $text
-                     * @param int $length
-                     * @param string $ending
-                     * @param bool $considerHtml
-                     * @return string
-                     */
                     function truncateHtml(string $text, int $length = 150, string $ending = '...', bool $considerHtml = true): string {
-                        $plain = strip_tags($text); // alles HTML entfernen
-                        if (mb_strlen($plain) <= $length) {
-                            return $text; // kürzer als Limit, alles zurückgeben
-                        }
+                        $plain = strip_tags($text);
+                        if (mb_strlen($plain) <= $length) return $text;
                         return mb_substr($plain, 0, $length) . $ending;
                     }
                 }
 
-                // Inhalt kürzen
                 $short_content = truncateHtml($new['content'], 150);
 
-
-                // Kategorie-Bild
-                $image = $cat['image'] 
-                    ? "/includes/plugins/news/images/news_categories/" . $cat['image'] 
+                $image = $cat['image']
+                    ? "/includes/plugins/news/images/news_categories/" . $cat['image']
                     : "/includes/plugins/news/images/no-image.jpg";
 
-                // Daten an Template
                 $data_array = [
                     'name'      => $new_catname,
                     'title'     => htmlspecialchars($short_title),
@@ -616,16 +624,29 @@ if ($news_id > 0) {
 
         echo $tpl->loadTemplate("news", "content_all_foot", $data_array, 'plugin');
 
-        // Pagination
+        // --- SEO-Pagination Links ---
         if ($total_pages > 1) {
-            echo '<nav><ul class="pagination justify-content-center">';
-            for ($i = 1; $i <= $total_pages; $i++) {
-                $active   = ($i === $page) ? 'active' : '';
-                $pagelink = SeoUrlHandler::convertToSeoUrl("/news/page/$i");
-                echo '<li class="page-item ' . $active . '"><a class="page-link" href="' . htmlspecialchars($pagelink) . '">' . $i . '</a></li>';
-            }
-            echo '</ul></nav>';
-        }
+    echo '<div class="news-pagination mt-3">';
+
+    // Previous
+    if ($page > 1) {
+        $prevPage = $page - 1;
+        $prevLink = 'index.php?site=news';
+        if ($prevPage > 1) $prevLink .= '&page=' . $prevPage;
+        echo '<a href="' . htmlspecialchars($prevLink) . '" class="btn btn-secondary">← ' . $languageService->get('previous') . '</a> ';
+    }
+
+    // Next
+    if ($page < $total_pages) {
+        $nextPage = $page + 1;
+        $nextLink = 'index.php?site=news&page=' . $nextPage;
+        echo '<a href="' . htmlspecialchars($nextLink) . '" class="btn btn-secondary">' . $languageService->get('next') . ' →</a>';
+    }
+
+    echo '</div>';
+}
+
+
     } else {
         echo $languageService->get('no_categories');
     }

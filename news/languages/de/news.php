@@ -103,4 +103,7 @@ $language_array = array(
     'october'   => 'Oktober',
     'november'  => 'November',
     'december'  => 'Dezember',
+
+    'previous'  => 'Vorherige',
+    'next'      => 'Nächste',
 );

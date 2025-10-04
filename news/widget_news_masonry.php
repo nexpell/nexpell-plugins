@@ -22,7 +22,7 @@ $columns_mobile  = 1;      // Spalten auf Mobile
 $excerpt_chars   = 180;    // Länge Vorschau-Text
 
 // Lade CSS/JS (wenn dein System loadWidgetHeadAssets unterstützt, passe Namen an)
-echo '<link rel="stylesheet" href="/includes/plugins/news/css/masonry_news.css">' . PHP_EOL;
+echo '<link rel="stylesheet" href="/includes/plugins/news/css/news_masonry.css">' . PHP_EOL;
 echo '<script defer src="/includes/plugins/news/js/masonry_news.js"></script>' . PHP_EOL;
 
 // Query: Aktive News (anpassen nach gewünschter Sortierung)
