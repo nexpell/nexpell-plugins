@@ -1,0 +1,176 @@
+/*--------------------------------------------------------------
+# carousel
+--------------------------------------------------------------*/
+#hero {
+  background-color: rgba(63, 73, 83, 0.8);
+  overflow: hidden;
+  margin-top: 0px;
+}
+
+/* Carousel-Grundstruktur */
+#hero .carousel,
+#hero .carousel-inner,
+#hero .carousel-item {
+  height: auto; /* Fullscreen auf Desktop */
+  position: relative;
+}
+
+/* Einheitliche Bild-/Video-Darstellung */
+#hero .carousel-item .pic {
+  width: 100%;
+  height: auto; /* Füllt den kompletten Container */
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Overlay */
+#hero .carousel-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(30, 35, 40, 0.3);
+  z-index: 1;
+}
+
+/* Caption */
+#hero .carousel-caption {
+  top: 40%;
+  bottom: auto;
+  z-index: 2;
+}
+
+#hero h5 {
+  margin-bottom: 20px;
+  font-size: 48px;
+  font-weight: 700;
+}
+
+#hero h5 span {
+  color: var(--bs-primary);
+}
+
+#hero p {
+  animation-delay: 0.4s;
+  margin: 0 auto 30px auto;
+}
+
+/* CTA Button */
+#hero .btn-get-started {
+  font-family: "Raleway", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 1px;
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 4px;
+  background: rgba(var(--bs-link-color), 0.7);
+  color: white;
+  border-top: 8px solid white;
+  border-bottom: 8px solid white;
+  transition: background 1s;
+  animation-delay: 0.8s;
+}
+
+#hero .btn-get-started:hover {
+  background: rgba(var(--bs-link-hover-color), 1);
+  color: white;
+}
+
+/* Pfeile */
+#hero .carousel-control-prev,
+#hero .carousel-control-next {
+  text-decoration: none !important; /* verhindert Unterstreichung */
+  outline: none;                     /* entfernt evtl. Fokus-Rahmen */
+  box-shadow: none;
+}
+
+#hero .carousel-control-next-icon,
+#hero .carousel-control-prev-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+  text-decoration: none; /* sicherstellen */
+}
+
+#hero .carousel-control-next-icon:hover,
+#hero .carousel-control-prev-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--bs-carousel_h1_span_color-rgb), 1);
+  text-decoration: none;
+}
+
+
+/* Indikatoren */
+#hero .carousel-indicators button {
+  background-color: #fff;
+  width: 40px;
+  height: 4px;
+  opacity: 0.6;
+  border: none;
+  border-radius: 50px;
+  margin: 0 4px;
+  transition: background-color 0.3s, opacity 0.3s;
+  padding: 0;
+}
+
+#hero .carousel-indicators button.active {
+  opacity: 1;
+  background-color: var(--bs-primary);
+}
+
+/* Responsive */
+/* Responsive */
+/* Mobile */
+@media (max-width: 768px) {
+  #hero {
+    height: auto !important;   /* erzwingt automatische Höhe */
+    margin: 0;
+    padding: 0;
+  }
+
+  #hero .carousel,
+  #hero .carousel-inner,
+  #hero .carousel-item {
+    height: auto !important;   /* keine fixe Höhe von Bootstrap übernehmen */
+    min-height: unset !important;
+  }
+
+  #hero .carousel-item .pic {
+    width: 100%;
+    height: auto;
+    max-height: 220px;         /* Bildhöhe begrenzen */
+    object-fit: cover;
+    display: block;
+  }
+
+  #hero .carousel-caption {
+    position: absolute;
+    bottom: 10px;
+    top: auto;
+  }
+
+  #hero h5 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  #hero .carousel-indicators button {
+  height: 2px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  #hero .carousel-item .pic {
+    max-height: 200px;
+  }
+  #hero .carousel-indicators button {
+  height: 2px;
+  }
+}

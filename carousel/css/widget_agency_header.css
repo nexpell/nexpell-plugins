@@ -1,0 +1,100 @@
+/*--------------------------------------------------------------
+# Agency Header
+--------------------------------------------------------------*/
+/* Transparente Start-Navigation */
+/*.bg-primary,
+.bg-dark,
+.bg-light,
+.bg-body-tertiary {
+  color: #fff;
+}
+
+.bg-primary .nav-link,
+.bg-dark .nav-link,
+.bg-body-tertiary .nav-link {
+  color: #fff;
+}
+
+.bg-primary .nav-link:hover,
+.bg-dark .nav-link:hover,
+.bg-body-tertiary .nav-link:hover {
+  color: #fe821d;
+}*/
+
+.bg-primary {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  color: #fff !important;
+}
+.bg-light {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bg-body-tertiary {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bg-dark {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  color: #fff !important;
+}
+
+/* Bei Scrollen: farbige Navigation */
+.navbar-colored {
+  background-color: #1f1f1f;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Header-Hintergrund */
+.agency-hero {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: -80px;
+}
+
+.agency-hero .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.agency-hero .content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  padding: 2rem;
+}
+
+.agency-hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.agency-hero p {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-get-started {
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+  background-color: #fe821d;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease;
+}
+
+.btn-get-started:hover {
+  background-color: #e57110;
+}
