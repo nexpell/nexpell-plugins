@@ -126,6 +126,27 @@ switch ($action) {
     $threadID = intval($_GET['id'] ?? 0);
     if ($threadID <= 0) die("Ungültiger Thread.");
 
+    
+
+    if ($threadID > 0 && $userID > 0) {
+        $now = time();
+
+        $stmt = $_database->prepare("
+            INSERT INTO plugins_forum_read (userID, threadID, last_read_at)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE last_read_at = VALUES(last_read_at)
+        ");
+        if ($stmt) {
+            $stmt->bind_param("iii", $userID, $threadID, $now);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+
+
+
+    
     $thread_res = safe_query("SELECT * FROM plugins_forum_threads WHERE threadID = $threadID");
     if (mysqli_num_rows($thread_res) === 0) die("Thread nicht gefunden.");
     $thread = mysqli_fetch_assoc($thread_res);
@@ -886,97 +907,141 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         <?php
         break;
 
+
+
+
+
+
     case 'board': // oder default
     $boards = getBoards();
 
+    // Eingeloggter Benutzer → gelesene Threads laden
+    $readThreads = [];
+    if ($userID)  {
+        $res = safe_query("
+            SELECT threadID, last_read_at AS last_read_at 
+            FROM plugins_forum_read 
+            WHERE userID = $userID
+        ");
+        while ($row = mysqli_fetch_assoc($res)) {
+            $readThreads[$row['threadID']] = (int)$row['last_read_at'];
+        }
+    }
     ?>
-    
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">Forum</li>
-          </ol>
-        </nav>
 
-        <h4 class="mb-4">Forum Boards</h4>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Forum</li>
+      </ol>
+    </nav>
 
-        <?php foreach ($boards as $board): ?>
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
-                            <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
-                        </a>
+    <h4 class="mb-4">Forum Boards</h4>
 
-                    </h5>
-                    <p class="card-text"><?= nl2br(htmlspecialchars($board['description'] ?? 'Keine Beschreibung')) ?></p>
+    <?php foreach ($boards as $board): ?>
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
+                        <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
+                    </a>
+                </h5>
+                <p class="card-text"><?= nl2br(htmlspecialchars($board['description'] ?? 'Keine Beschreibung')) ?></p>
 
-                    <?php
-                    // Kategorien für dieses Board laden
-                    $resCats = safe_query("SELECT * FROM plugins_forum_categories WHERE group_id = " . intval($board['id']) . " ORDER BY position ASC");
-                    $categories = [];
-                    while ($cat = mysqli_fetch_assoc($resCats)) {
-                        $categories[] = $cat;
-                    }
+                <?php
+                // Kategorien für dieses Board laden
+                $resCats = safe_query("SELECT * FROM plugins_forum_categories WHERE group_id = " . intval($board['id']) . " ORDER BY position ASC");
+                $categories = [];
+                while ($cat = mysqli_fetch_assoc($resCats)) {
+                    $categories[] = $cat;
+                }
 
-                    if (empty($categories)) {
-                        echo '<div class="alert alert-info">Keine Kategorien in diesem Board.</div>';
-                    } else {
-                        echo '<ul class="list-group mb-3">';
-                        foreach ($categories as $cat) {
-                            // Anzahl Threads
-                            $resThreads = safe_query("SELECT COUNT(*) AS thread_count FROM plugins_forum_threads WHERE catID = " . intval($cat['catID']));
-                            $threadCountRow = mysqli_fetch_assoc($resThreads);
-                            $threadCount = $threadCountRow['thread_count'] ?? 0;
+                if (empty($categories)) {
+                    echo '<div class="alert alert-info">Keine Kategorien in diesem Board.</div>';
+                } else {
+                    echo '<ul class="list-group mb-3">';
+                    foreach ($categories as $cat) {
+                        // Anzahl Threads
+                        $resThreads = safe_query("SELECT COUNT(*) AS thread_count FROM plugins_forum_threads WHERE catID = " . intval($cat['catID']));
+                        $threadCountRow = mysqli_fetch_assoc($resThreads);
+                        $threadCount = $threadCountRow['thread_count'] ?? 0;
 
-                            // Anzahl Beiträge (Posts)
-                            $resPosts = safe_query("
-                                SELECT COUNT(*) AS post_count 
-                                FROM plugins_forum_posts p
-                                JOIN plugins_forum_threads t ON p.threadID = t.threadID
-                                WHERE t.catID = " . intval($cat['catID'])
-                            );
-                            $postCountRow = mysqli_fetch_assoc($resPosts);
-                            $postCount = $postCountRow['post_count'] ?? 0;
+                        // Anzahl Beiträge (Posts)
+                        $resPosts = safe_query("
+                            SELECT COUNT(*) AS post_count 
+                            FROM plugins_forum_posts p
+                            JOIN plugins_forum_threads t ON p.threadID = t.threadID
+                            WHERE t.catID = " . intval($cat['catID'])
+                        );
+                        $postCountRow = mysqli_fetch_assoc($resPosts);
+                        $postCount = $postCountRow['post_count'] ?? 0;
 
-                            // Letzter Beitrag
-                            $resLastPost = safe_query("
-                                SELECT p.postID, p.created_at, p.threadID, u.username 
-                                FROM plugins_forum_posts p
-                                LEFT JOIN users u ON p.userID = u.userID
-                                JOIN plugins_forum_threads t ON p.threadID = t.threadID
-                                WHERE t.catID = " . intval($cat['catID']) . "
-                                ORDER BY p.created_at DESC
-                                LIMIT 1
+                        // Letzter Beitrag
+                        $resLastPost = safe_query("
+                            SELECT p.postID, p.created_at, p.threadID, u.username 
+                            FROM plugins_forum_posts p
+                            LEFT JOIN users u ON p.userID = u.userID
+                            JOIN plugins_forum_threads t ON p.threadID = t.threadID
+                            WHERE t.catID = " . intval($cat['catID']) . "
+                            ORDER BY p.created_at DESC
+                            LIMIT 1
+                        ");
+                        $lastPost = mysqli_fetch_assoc($resLastPost);
+                        $lastPostTime = $lastPost['created_at'] ?? null;
+                        $lastPostUser = $lastPost['username'] ?? 'Keine Beiträge';
+                        $lastPostID = $lastPost['postID'] ?? 0;
+                        $lastPostThreadID = $lastPost['threadID'] ?? 0;
+
+                        // Seite des letzten Beitrags berechnen (10 Posts pro Seite)
+                        $lastPostPage = 1;
+                        if ($lastPostID && $lastPostThreadID) {
+                            $resPos = safe_query("
+                                SELECT COUNT(*) AS pos 
+                                FROM plugins_forum_posts 
+                                WHERE threadID = " . intval($lastPostThreadID) . " 
+                                  AND postID <= " . intval($lastPostID) . "
                             ");
-                            $lastPost = mysqli_fetch_assoc($resLastPost);
-                            $lastPostTime = $lastPost['created_at'] ?? null;
-                            $lastPostUser = $lastPost['username'] ?? 'Keine Beiträge';
-                            $lastPostID = $lastPost['postID'] ?? 0;
-                            $lastPostThreadID = $lastPost['threadID'] ?? 0;
+                            $posRow = mysqli_fetch_assoc($resPos);
+                            $pos = $posRow['pos'] ?? 1;
+                            $postsPerPage = 10;
+                            $lastPostPage = ceil($pos / $postsPerPage);
+                        }
 
-                            // Seite des letzten Beitrags berechnen (10 Posts pro Seite)
-                            if ($lastPostID) {
-                                $resPos = safe_query("
-                                    SELECT COUNT(*) AS pos 
-                                    FROM plugins_forum_posts 
-                                    WHERE threadID = " . intval($lastPostThreadID) . " 
-                                      AND created_at <= '" . mysqli_real_escape_string($GLOBALS['_database'], $lastPostTime) . "'
-                                ");
-                                $posRow = mysqli_fetch_assoc($resPos);
-                                $pos = $posRow['pos'] ?? 1;
-                                $postsPerPage = 10;
-                                $lastPostPage = ceil($pos / $postsPerPage);
-                            } else {
-                                $lastPostPage = 1;
+                        // Prüfen, ob neue Beiträge vorhanden sind
+                        $isNew = false;
+                        if ($userID) {
+                            $resThreadsNew = safe_query("
+                                SELECT t.threadID, MAX(p.created_at) AS last_post_ts
+                                FROM plugins_forum_threads t
+                                LEFT JOIN plugins_forum_posts p ON t.threadID = p.threadID
+                                WHERE t.catID = " . intval($cat['catID']) . "
+                                GROUP BY t.threadID
+                            ");
+                            while ($threadRow = mysqli_fetch_assoc($resThreadsNew)) {
+                                $threadID = intval($threadRow['threadID']);
+                                $threadTimestamp = intval($threadRow['last_post_ts'] ?? 0);
+
+                                if ($threadTimestamp === 0) continue; // keine Posts
+
+                                $lastRead = $readThreads[$threadID] ?? 0;
+
+                                if ($lastRead === 0 || $threadTimestamp > $lastRead) {
+                                    $isNew = true;
+                                    break;
+                                }
                             }
-                    ?>
+                        }
 
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                        ?>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center <?= $isNew ? 'bg-light border border-primary' : '' ?>">
                             <div>
-                                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=category&id=' . intval($cat['catID']))) ?>">
+                                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=category&id=' . intval($cat['catID']))) ?>" class="<?= $isNew ? 'fw-bold' : '' ?>">
                                     <?= htmlspecialchars($cat['title'] ?? 'Unbekannte Kategorie') ?>
+                                    <?php if ($isNew): ?>
+                                        <span class="badge bg-danger ms-2">neu</span>
+                                    <?php endif; ?>
                                 </a>
-
                                 <br>
                                 <small class="text-muted"><?= htmlspecialchars($cat['description'] ?? '') ?></small>
                             </div>
@@ -990,28 +1055,30 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                                         $url = 'index.php?site=forum&action=thread&id=' . intval($lastPostThreadID) . '&page=' . intval($lastPostPage) . '#post' . intval($lastPostID);
                                         ?>
                                         <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
-                                            <?= date('d.m.Y H:i', intval($lastPostTime)) ?> von <?= htmlspecialchars($lastPostUser) ?>
+                                            <?= date('d.m.Y H:i', $lastPostTime) ?> von <?= htmlspecialchars($lastPostUser) ?>
                                         </a>
-
                                     <?php else: ?>
                                         Keine Beiträge
                                     <?php endif; ?>
                                 </div>
                             </div>
                         </li>
-                    <?php
+                        <?php
                     }
                     echo '</ul>';
                 }
                 ?>
-
-
-                </div>
             </div>
-        <?php endforeach; ?>
-    
+        </div>
+    <?php endforeach; ?>
+
     <?php
     break;
+
+
+
+
+
 
     case 'overview':
     $boardID = intval($_GET['id'] ?? 0);
@@ -1020,6 +1087,7 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         break;
     }
 
+    // Board laden
     $res = safe_query("SELECT * FROM plugins_forum_boards WHERE id = $boardID");
     $board = mysqli_fetch_assoc($res);
 
@@ -1028,108 +1096,142 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         break;
     }
 
+    // Kategorien laden
     $resCats = safe_query("SELECT * FROM plugins_forum_categories WHERE group_id = $boardID ORDER BY position ASC");
     $categories = [];
     while ($cat = mysqli_fetch_assoc($resCats)) {
         $categories[] = $cat;
     }
+
+    // Eingeloggter Benutzer → gelesene Threads laden
+    $readThreads = [];
+    if ($userID)  {
+        $res = safe_query("SELECT threadID, last_read_at AS last_read_at FROM plugins_forum_read WHERE userID = $userID");
+        while ($row = mysqli_fetch_assoc($res)) {
+            $readThreads[$row['threadID']] = (int)$row['last_read_at'];
+        }
+    }
     ?>
-    
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
-            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($board['title']) ?></li>
-          </ol>
-        </nav>
-        <h4 class="mb-3"><?= htmlspecialchars($board['title']) ?></h4>
-        <p><?= nl2br(htmlspecialchars($board['description'])) ?></p>
 
-        <?php if (empty($categories)): ?>
-            <div class="alert alert-info">Keine Kategorien in diesem Board.</div>
-        <?php else: ?>
-            <ul class="list-group mb-4">
-                <?php foreach ($categories as $category):
-                    // Anzahl Threads (Themen) in der Kategorie
-                    $resThreads = safe_query("SELECT COUNT(*) AS thread_count FROM plugins_forum_threads WHERE catID = " . intval($category['catID']));
-                    $threadCountRow = mysqli_fetch_assoc($resThreads);
-                    $threadCount = $threadCountRow['thread_count'] ?? 0;
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($board['title']) ?></li>
+      </ol>
+    </nav>
+    <h4 class="mb-3"><?= htmlspecialchars($board['title']) ?></h4>
+    <p><?= nl2br(htmlspecialchars($board['description'])) ?></p>
 
-                    // Anzahl Beiträge (Posts) in der Kategorie (über alle Threads)
-                    $resPosts = safe_query("
-                        SELECT COUNT(*) AS post_count 
-                        FROM plugins_forum_posts p
-                        JOIN plugins_forum_threads t ON p.threadID = t.threadID
-                        WHERE t.catID = " . intval($category['catID'])
-                    );
-                    $postCountRow = mysqli_fetch_assoc($resPosts);
-                    $postCount = $postCountRow['post_count'] ?? 0;
+    <?php if (empty($categories)): ?>
+        <div class="alert alert-info">Keine Kategorien in diesem Board.</div>
+    <?php else: ?>
+        <ul class="list-group mb-4">
+        <?php foreach ($categories as $category):
 
-                    // Letzter Beitrag in der Kategorie (PostID, Zeit, User, ThreadID)
-                    $resLastPost = safe_query("
-                        SELECT p.postID, p.created_at, u.username, t.threadID
-                        FROM plugins_forum_posts p
-                        LEFT JOIN users u ON p.userID = u.userID
-                        JOIN plugins_forum_threads t ON p.threadID = t.threadID
-                        WHERE t.catID = " . intval($category['catID']) . "
-                        ORDER BY p.created_at DESC
-                        LIMIT 1
-                    ");
-                    $lastPost = mysqli_fetch_assoc($resLastPost);
-                    $lastPostTime = $lastPost['created_at'] ?? null;
-                    $lastPostUser = $lastPost['username'] ?? 'Keine Beiträge';
-                    $lastPostID = $lastPost['postID'] ?? 0;
-                    $lastPostThreadID = $lastPost['threadID'] ?? 0;
+            // Anzahl Threads
+            $resThreadsCount = safe_query("SELECT COUNT(*) AS thread_count FROM plugins_forum_threads WHERE catID = " . intval($category['catID']));
+            $threadCountRow = mysqli_fetch_assoc($resThreadsCount);
+            $threadCount = $threadCountRow['thread_count'] ?? 0;
 
-                    // Optional: Berechnung der Seite des letzten Beitrags, falls Pagination da ist
-                    // Angenommen 10 Beiträge pro Seite:
-                    $lastPostPage = 1;
-                    if ($lastPostID && $lastPostThreadID) {
-                        $resPos = safe_query("
-                            SELECT COUNT(*) AS post_position 
-                            FROM plugins_forum_posts 
-                            WHERE threadID = $lastPostThreadID AND postID <= $lastPostID
-                        ");
-                        $posRow = mysqli_fetch_assoc($resPos);
-                        $postPosition = $posRow['post_position'] ?? 1;
-                        $lastPostPage = ceil($postPosition / 10);
-                    }
+            // Anzahl Beiträge
+            $resPosts = safe_query("
+                SELECT COUNT(*) AS post_count 
+                FROM plugins_forum_posts p
+                JOIN plugins_forum_threads t ON p.threadID = t.threadID
+                WHERE t.catID = " . intval($category['catID'])
+            );
+            $postCountRow = mysqli_fetch_assoc($resPosts);
+            $postCount = $postCountRow['post_count'] ?? 0;
+
+            // Letzter Beitrag
+            $resLastPost = safe_query("
+                SELECT p.postID, p.created_at, u.username, t.threadID
+                FROM plugins_forum_posts p
+                LEFT JOIN users u ON p.userID = u.userID
+                JOIN plugins_forum_threads t ON p.threadID = t.threadID
+                WHERE t.catID = " . intval($category['catID']) . "
+                ORDER BY p.created_at DESC
+                LIMIT 1
+            ");
+            $lastPost = mysqli_fetch_assoc($resLastPost);
+            $lastPostTime = $lastPost['created_at'] ?? null;
+            $lastPostUser = $lastPost['username'] ?? 'Keine Beiträge';
+            $lastPostID = $lastPost['postID'] ?? 0;
+            $lastPostThreadID = $lastPost['threadID'] ?? 0;
+
+            // Seite für letzten Beitrag berechnen
+            $lastPostPage = 1;
+            if ($lastPostID && $lastPostThreadID) {
+                $resPos = safe_query("
+                    SELECT COUNT(*) AS post_position 
+                    FROM plugins_forum_posts 
+                    WHERE threadID = $lastPostThreadID AND postID <= $lastPostID
+                ");
+                $posRow = mysqli_fetch_assoc($resPos);
+                $postPosition = $posRow['post_position'] ?? 1;
+                $lastPostPage = ceil($postPosition / 10);
+            }
+
+            // Prüfen, ob die Kategorie neue Beiträge hat
+            $isNew = false;
+if ($userID) {
+    $resThreadsNew = safe_query("
+        SELECT t.threadID, MAX(p.created_at) AS last_post_at
+        FROM plugins_forum_threads t
+        LEFT JOIN plugins_forum_posts p ON t.threadID = p.threadID
+        WHERE t.catID = " . intval($category['catID']) . "
+        GROUP BY t.threadID
+    ");
+    while ($threadRow = mysqli_fetch_assoc($resThreadsNew)) {
+        $threadID = intval($threadRow['threadID']);
+        $threadTimestamp = intval($threadRow['last_post_at'] ?? 0);
+        $lastRead = $readThreads[$threadID] ?? 0;
+        if ($threadTimestamp > $lastRead) {
+            $isNew = true;
+            break; // Kategorie als neu markieren
+        }
+    }
+}
+            ?>
+            <li class="list-group-item d-flex justify-content-between align-items-center <?= $isNew ? 'bg-light border border-primary' : '' ?>">
+                <div>
+                    <?php
+                    $url = 'index.php?site=forum&action=category&id=' . intval($category['catID']);
                     ?>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
+                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>" class="<?= $isNew ? 'fw-bold' : '' ?>">
+                        <?= htmlspecialchars($category['title']) ?> mm
+                        <?php if ($isNew): ?>
+                            <span class="badge bg-danger ms-2">neu</span>
+                        <?php endif; ?>
+                    </a>
+                    <br>
+                    <small class="text-muted"><?= htmlspecialchars($category['description']) ?></small>
+                </div>
+                <div class="text-end" style="min-width: 240px;">
+                    <span class="badge bg-primary me-2">Themen: <?= intval($threadCount) ?></span>
+                    <span class="badge bg-secondary me-2">Beiträge: <?= intval($postCount) ?></span>
+                    <div class="small text-muted">
+                        Letzter Beitrag:
+                        <?php if ($lastPostTime && $lastPostID && $lastPostThreadID): ?>
                             <?php
-                            $url = 'index.php?site=forum&action=category&id=' . intval($category['catID']);
+                            $url = 'index.php?site=forum&action=thread&id=' . intval($lastPostThreadID) . '&page=' . intval($lastPostPage) . '#post' . intval($lastPostID);
                             ?>
                             <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
-                                <?= htmlspecialchars($category['title']) ?>
+                                <?= date('d.m.Y H:i', $lastPostTime) ?> von <?= htmlspecialchars($lastPostUser) ?> xx
                             </a>
-                            <br>
-                            <small class="text-muted"><?= htmlspecialchars($category['description']) ?></small>
-                        </div>
-                        <div class="text-end" style="min-width: 240px;">
-                            <span class="badge bg-primary me-2">Themen: <?= intval($threadCount) ?></span>
-                            <span class="badge bg-secondary me-2">Beiträge: <?= intval($postCount) ?></span>
-                            <div class="small text-muted">
-                                Letzter Beitrag:
-                                <?php if ($lastPostTime && $lastPostID && $lastPostThreadID): ?>
-                                    <?php
-                                    $url = 'index.php?site=forum&action=thread&id=' . intval($lastPostThreadID) . '&page=' . intval($lastPostPage) . '#post' . intval($lastPostID);
-                                    ?>
-                                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl($url)) ?>">
-                                        <?= date('d.m.Y H:i', strtotime($lastPostTime)) ?> von <?= htmlspecialchars($lastPostUser) ?>
-                                    </a>
-
-                                <?php else: ?>
-                                    Keine Beiträge
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    
+                        <?php else: ?>
+                            Keine Beiträge
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
     <?php
     break;
+
+
 
 
     case 'category':
@@ -1139,9 +1241,9 @@ document.querySelectorAll('.like-btn').forEach(btn => {
         break;
     }
 
+    // Kategorie laden
     $categoryRes = safe_query("SELECT * FROM plugins_forum_categories WHERE catID = $catID");
     $category = mysqli_fetch_assoc($categoryRes);
-
     if (!$category) {
         echo '<div class="alert alert-danger">Kategorie nicht gefunden.</div>';
         break;
@@ -1152,47 +1254,74 @@ document.querySelectorAll('.like-btn').forEach(btn => {
     $boardRes = safe_query("SELECT * FROM plugins_forum_boards WHERE id = $boardID");
     $board = mysqli_fetch_assoc($boardRes);
 
+    // Threads abrufen und letzte Beiträge anreichern
     $threads = getThreadsByCategory($catID);
     $threads = enrichThreadsWithLastPost($threads);
+
+    // Benutzer eingeloggt → gelesene Threads laden
+    $readThreads = [];
+    if ($userID)  {
+        $res = safe_query("SELECT threadID, last_read_at FROM plugins_forum_read WHERE userID = $userID");
+        while ($row = mysqli_fetch_assoc($res)) {
+            $readThreads[$row['threadID']] = (int)$row['last_read_at'];
+        }
+    }
+
+    // Breadcrumbs
     ?>
-    
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a></li>
-            <li class="breadcrumb-item">
-                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
-                    <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum')) ?>">Forum</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=overview&id=' . intval($board['id']))) ?>">
+                <?= htmlspecialchars($board['title'] ?? 'Unbekanntes Board') ?>
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($category['title']) ?></li>
+      </ol>
+    </nav>
+
+    <h4 class="mb-3"><?= htmlspecialchars($category['title']) ?></h4>
+    <p><?= htmlspecialchars($category['description']) ?></p>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0"><?= htmlspecialchars($category['title']) ?></h2>
+            <?php if ($userID): ?>
+                <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=new_thread&catID=' . intval($category['catID']))) ?>" class="btn btn-sm btn-primary">
+                    Neues Thema erstellen
                 </a>
-            </li>
-
-            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($category['title']) ?></li>
-          </ol>
-        </nav>
-        <h4 class="mb-3"><?= htmlspecialchars($category['title']) ?></h4>
-        <p><?= htmlspecialchars($category['description']) ?></p>
-
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="h5 mb-0"><?= htmlspecialchars($category['title']) ?></h2>
-                    <?php if ($userID): ?>
-                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=new_thread&catID=' . intval($category['catID']))) ?>" class="btn btn-sm btn-primary">
-                            Neues Thema erstellen
-                        </a>
-
-                    <?php endif; ?>
-                </div>
-                <div class="card-body">
-
+            <?php endif; ?>
+        </div>
+        <div class="card-body">
 
         <?php if (empty($threads)): ?>
             <div class="alert alert-info">Keine Themen in dieser Kategorie.</div>
         <?php else: ?>
             <ul class="list-group list-group-flush">
-            <?php foreach ($threads as $thread): ?>
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($thread['threadID']))) ?>" class="text-decoration-none">
+            <?php foreach ($threads as $thread): 
+                $threadID = intval($thread['threadID']);
+                $lastPostTime = intval($thread['last_post_time'] ?? 0);
+
+                // Prüfen, ob der Thread neue Beiträge hat
+                $isNew = false;
+                if ($userID)  {
+                    $lastRead = $readThreads[$threadID] ?? 0;
+                    if ($lastPostTime > $lastRead) {
+                        $isNew = true;
+                    }
+                }
+            ?>
+                <li class="list-group-item <?= $isNew ? 'bg-light border border-primary' : '' ?>">
+                    <div class="d-flex justify-content-between align-items-center"><?php
+                        /*<a href="<?= #htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . $threadID)) ?>" class="text-decoration-none <?= $isNew #? 'fw-bold' : '' ?>">*/?>
+                        <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . $threadID . '&page=' . intval($thread['last_post_page']) . '#post' . intval($thread['last_post_id']))) ?>">    
                             <?= htmlspecialchars($thread['title']) ?>
+                            <?php if ($isNew): ?>
+                                <span class="badge bg-danger ms-2">neu</span>
+                            <?php endif; ?>
                         </a>
 
                         <div class="text-end">
@@ -1201,10 +1330,9 @@ document.querySelectorAll('.like-btn').forEach(btn => {
                             <small class="text-muted">
                                 Letzter Beitrag:
                                 <?php if ($thread['last_post_id'] > 0): ?>
-                                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . intval($thread['threadID']) . '&page=' . intval($thread['last_post_page']) . '#post' . intval($thread['last_post_id']))) ?>">
+                                    <a href="<?= htmlspecialchars(SeoUrlHandler::convertToSeoUrl('index.php?site=forum&action=thread&id=' . $threadID . '&page=' . intval($thread['last_post_page']) . '#post' . intval($thread['last_post_id']))) ?>">
                                         <?= date('d.m.Y H:i', $thread['last_post_time']) ?> von <?= htmlspecialchars($thread['last_username']) ?>
                                     </a>
-
                                 <?php else: ?>
                                     Keine Beiträge
                                 <?php endif; ?>
@@ -1215,9 +1343,11 @@ document.querySelectorAll('.like-btn').forEach(btn => {
             <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-    </div></div>
+        </div>
+    </div>
     <?php
     break;
+
 }
 ?>
 
@@ -1295,18 +1425,18 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                  const hash = window.location.hash;
-                  if (hash.startsWith("#post")) {
-                    const target = document.querySelector(hash);
-                    if (target) {
-                      target.classList.add("highlight-post");
+document.addEventListener("DOMContentLoaded", function () {
+    const hash = window.location.hash;
+    if (hash.startsWith("#post")) {
+        const target = document.querySelector(hash);
+        if (target) {
+            target.classList.add("highlight-post");
 
-                      // optional wieder entfernen nach 4 Sekunden
-                      setTimeout(() => {
-                        target.classList.remove("highlight-post");
-                      }, 4000);
-                    }
-                  }
-                });
-            </script>
+            // optional wieder entfernen nach 4 Sekunden
+            setTimeout(() => {
+                target.classList.remove("highlight-post");
+            }, 4000);
+        }
+    }
+});
+</script>

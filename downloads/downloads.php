@@ -370,7 +370,7 @@ elseif ($action === 'detail' && $id > 0) {
         }
         echo '</div></section>';
     } else {
-        echo '<div class="alert alert-warning">Es sind derzeit keine Downloads verfügbar.</div>';
+        echo '<div class="alert alert-info">Es sind derzeit keine Downloads verfügbar.</div>';
     }
 }
 ?>

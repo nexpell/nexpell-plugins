@@ -30,7 +30,7 @@ safe_query("INSERT IGNORE INTO plugins_userlist_settings (id, users_per_page, us
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
-('', 'Userlist', 'userlist', '[[lang:de]]Mit diesem Plugin könnt ihr euer Registered Users anzeigen lassen.[[lang:en]]With this plugin you can display your registered user.[[lang:it]]Con questo plugin puoi visualizzare la lista dei tuoi utenti registrati.', 'admin_userlist', 1, 'T-Seven', 'https://webspell-rm.de', 'userlist', '', '0.1', 'includes/plugins/userlist/', 1, 1, 1, 1, 'deactivated')");
+('', 'Userlist', 'userlist', '[[lang:de]]Mit diesem Plugin könnt ihr euer Registered Users anzeigen lassen.[[lang:en]]With this plugin you can display your registered user.[[lang:it]]Con questo plugin puoi visualizzare la lista dei tuoi utenti registrati.', 'admin_userlist', 1, 'T-Seven', 'https://www.nexpell.de', 'userlist', '', '0.1', 'includes/plugins/userlist/', 1, 1, 1, 1, 'deactivated')");
 
 safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
 ('widget_lastregistered_sidebar', 'Last Registered Sidebar', 'userlist', 'userlist'),

@@ -40,7 +40,7 @@ if (!$settings) {
 // === GET Parameter oder Fallback zu Settings ===
 $perPage    = isset($_GET['perPage']) ? max(1, intval($_GET['perPage'])) : intval($settings['users_per_page']);
 $page       = max(1, intval($_GET['page'] ?? 1));
-$search     = trim($_GET['search'] ?? '');  // default_search existiert nicht mehr, kann leer bleiben
+$search     = trim($_GET['search'] ?? '');
 $roleFilter = $_GET['role'] ?? $settings['default_role'];
 $sort       = $_GET['sort'] ?? $settings['default_sort'];
 $order      = strtoupper($_GET['order'] ?? $settings['default_order']);
@@ -55,7 +55,6 @@ safe_query("
         default_role='".mysqli_real_escape_string($_database,$roleFilter)."'
     WHERE id=1
 ");
-
 
 // Rollen Dropdown dynamisch
 $rolesResult = safe_query("SELECT role_name FROM user_roles ORDER BY role_name ASC");
@@ -84,9 +83,30 @@ if($roleFilter !== '') {
 
 $whereSQL = $where ? "WHERE ".implode(" AND ", $where) : "";
 
-// SQL Abfrage inkl. Rollen + Webseite
-$sqlOrder = ($sort === 'website') ? "username ASC" : "$sort $order";
+// === Sortierung absichern ===
+$sortMap = [
+    'id'         => 'u.userID',
+    'username'   => 'u.username',
+    'registerdate' => 'u.registerdate',
+    'lastlogin'  => 'u.lastlogin',
+    'is_online'  => 'u.is_online',
+    'website'    => 'us.website'
+];
 
+if (!array_key_exists($sort, $sortMap)) {
+    $sort = 'id'; // Fallback
+}
+
+$dbSort = $sortMap[$sort];
+
+$order = strtoupper($order);
+if ($order !== 'ASC' && $order !== 'DESC') {
+    $order = 'DESC';
+}
+
+$sqlOrder = "$dbSort $order";
+
+// === Hauptquery ===
 $sql = "
 SELECT 
     u.userID,
@@ -95,10 +115,11 @@ SELECT
     u.lastlogin,
     u.is_online,
     GROUP_CONCAT(r.role_name ORDER BY r.role_name SEPARATOR ', ') AS roles,
-    (SELECT website FROM user_socials WHERE userID = u.userID LIMIT 1) AS website
+    us.website
 FROM users u
 LEFT JOIN user_role_assignments ura ON u.userID = ura.userID
 LEFT JOIN user_roles r ON ura.roleID = r.roleID
+LEFT JOIN user_socials us ON us.userID = u.userID
 $whereSQL
 GROUP BY u.userID
 ORDER BY $sqlOrder
@@ -122,39 +143,40 @@ $result = $stmt->get_result();
 $rows = [];
 while($row = $result->fetch_assoc()) $rows[] = $row;
 
-// Sortieren nach Webseite in PHP, falls ausgewählt
-if($sort === 'website') {
-    usort($rows, function($a, $b) use ($order) {
-        $cmp = strcmp($a['website'] ?? '', $b['website'] ?? '');
-        return $order === 'DESC' ? -$cmp : $cmp;
-    });
+// === Gesamtanzahl für Pagination ===
+$sqlCount = "
+SELECT COUNT(DISTINCT u.userID) as total
+FROM users u
+LEFT JOIN user_role_assignments ura ON u.userID = ura.userID
+LEFT JOIN user_roles r ON ura.roleID = r.roleID
+LEFT JOIN user_socials us ON us.userID = u.userID
+$whereSQL
+";
+$stmtCount = $_database->prepare($sqlCount);
+if ($params) {
+    $bindTypes = str_repeat('s', count($params));
+    $bindRefs  = [];
+    foreach ($params as $k => $v) $bindRefs[$k] = &$params[$k];
+    call_user_func_array([$stmtCount, 'bind_param'], array_merge([$bindTypes], $bindRefs));
 }
-
-// Gesamtanzahl für Pagination
-$countSQL = "SELECT COUNT(*) as total FROM users u $whereSQL";
-$countStmt = $_database->prepare($countSQL);
-if (!$countStmt) die("SQL Error: " . $_database->error);
-if(count($params) > 0) {
-    $bindRefs = [];
-    for($i=0; $i<count($params); $i++) $bindRefs[$i] = &$params[$i];
-    call_user_func_array([$countStmt, 'bind_param'], array_merge([str_repeat('s', count($params))], $bindRefs));
-}
-$countStmt->execute();
-$totalUsers = $countStmt->get_result()->fetch_assoc()['total'];
+$stmtCount->execute();
+$totalUsers = $stmtCount->get_result()->fetch_assoc()['total'];
 $totalPages = ceil($totalUsers / $perPage);
 
-// Gesamtanzahl aller User
+// === Gesamtanzahl aller User ===
 $alle = safe_query("SELECT userID FROM users");
 $gesamt = mysqli_num_rows($alle);
 
-$sqlCount = "
+// === Gefilterte Anzahl ===
+$sqlCountFiltered = "
 SELECT COUNT(DISTINCT u.userID) as cnt
 FROM users u
 LEFT JOIN user_role_assignments ura ON u.userID = ura.userID
 LEFT JOIN user_roles r ON ura.roleID = r.roleID
+LEFT JOIN user_socials us ON us.userID = u.userID
 $whereSQL
 ";
-$stmtCount = $_database->prepare($sqlCount);
+$stmtCount = $_database->prepare($sqlCountFiltered);
 if ($params) {
     $bindTypes = str_repeat('s', count($params));
     $bindRefs  = [];

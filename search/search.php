@@ -158,7 +158,7 @@ function buildLikeConditionsOr(array $columns, array $terms): array {
 $data_array = [
     'placeholder' => $languageService->get('placeholder'),
     'button'      => $languageService->get('button'),
-    'query'       => htmlspecialchars($q),
+    'query'       => htmlspecialchars($q, ENT_QUOTES, 'UTF-8'),
 ];
 echo $tpl->loadTemplate("search", "form", $data_array, "plugin");
 

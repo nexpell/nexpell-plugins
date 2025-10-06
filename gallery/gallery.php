@@ -3,6 +3,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 use nexpell\LanguageService;
 
 global $_database, $languageService, $tpl;
@@ -100,18 +104,17 @@ if ($result && $result->num_rows > 0) {
     <?php if (count($images) === 0): ?>
         <p class="text-center">Keine Bilder in dieser Kategorie.</p>
     <?php else: ?>
-        <?php foreach ($images as $image): ?>
-            <div class="<?= $colClass ?> portfolio-item filter-<?= $image['category_id'] ?> <?= htmlspecialchars($image['class']) ?>">
-                <a href="#" 
-                   class="lightbox-trigger d-block mb-4" 
-                   data-src="/includes/plugins/gallery/images/upload/<?= rawurlencode($image['filename']) ?>"
-                   title="<?= htmlspecialchars($image['category_name']) ?>">
-                    <img src="/includes/plugins/gallery/images/upload/thumbs/<?= rawurlencode($image['filename']) ?>" 
-                         class=" rounded" 
-                         alt="<?= htmlspecialchars($image['category_name']) ?>" loading="lazy" aria-label="Bild in Kategorie <?= htmlspecialchars($image['category_name']) ?>">
-                </a>
-            </div>
+        <?php foreach ($images as $image): 
+            if (empty($image['filename'])) continue; // überspringen, wenn leer
+            $full_url = 'https://' . $_SERVER['HTTP_HOST'] . '/includes/plugins/gallery/images/upload/' . rawurlencode($image['filename']);
+        ?>
+        <div class="<?= $colClass ?> portfolio-item filter-<?= $image['category_id'] ?> <?= htmlspecialchars($image['class']) ?>">
+            <a href="#" class="lightbox-trigger d-block mb-4" data-src="<?= $full_url ?>" title="<?= $image['category_name'] ?>">
+                <img src="/includes/plugins/gallery/images/upload/thumbs/<?= rawurlencode($image['filename']) ?>" class="rounded" alt="<?= htmlspecialchars($image['category_name']) ?>" loading="lazy">
+            </a>
+        </div>
         <?php endforeach; ?>
+
     <?php endif; ?>
 </div>
 
@@ -189,7 +192,7 @@ window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 lightboxImage.src = images[index];
                 lightboxImage.classList.remove('animate-in');
-            }, 200);
+            }, 500);
         }
     }
 

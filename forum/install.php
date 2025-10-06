@@ -77,10 +77,18 @@ safe_query("CREATE TABLE IF NOT EXISTS plugins_forum_likes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 ");
 
+safe_query("CREATE TABLE IF NOT EXISTS plugins_forum_read (
+  userID int(11) NOT NULL,
+  threadID int(11) NOT NULL,
+  last_read_at int(11) NOT NULL,
+  PRIMARY KEY (userID, threadID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+");
+
 ## SYSTEM #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO settings_plugins (name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, plugin_display, widget_display, sidebar) VALUES
-('Forum', 'forum', '[[lang:de]]Mit diesem Plugin könnt ihr ein Forum auf eurer Website integrieren, in dem Benutzer Themen erstellen und diskutieren können.[[lang:en]]With this plugin you can integrate a forum into your website where users can create topics and participate in discussions.[[lang:it]]Con questo plugin puoi integrare un forum nel tuo sito web, dove gli utenti possono creare argomenti e partecipare alle discussioni.', 'admin_forum', 1, 'T-Seven', 'https://webspell-rm.de', 'forum', '', '0.1', 'includes/plugins/forum/', 1, 1, 'deactivated')");
+('Forum', 'forum', '[[lang:de]]Mit diesem Plugin könnt ihr ein Forum auf eurer Website integrieren, in dem Benutzer Themen erstellen und diskutieren können.[[lang:en]]With this plugin you can integrate a forum into your website where users can create topics and participate in discussions.[[lang:it]]Con questo plugin puoi integrare un forum nel tuo sito web, dove gli utenti possono creare argomenti e partecipare alle discussioni.', 'admin_forum', 1, 'T-Seven', 'https://www.nexpell.de', 'forum', '', '0.1', 'includes/plugins/forum/', 1, 1, 'deactivated')");
 
 safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
   ('widget_forum_content', 'Forum Widget Content', 'forum', 'forum'),
