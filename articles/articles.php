@@ -217,15 +217,6 @@ if ($action == "show" && isset($_GET['id']) && is_numeric($_GET['id'])) {
 $loggedin = isset($_SESSION['userID']) && $_SESSION['userID'] > 0;
 $userID = $loggedin ? (int)$_SESSION['userID'] : 0;
 
-// Header-Daten
-/*$data_array = [
-    'class' => $class,
-    'title' => $languageService->get('title'),
-    'subtitle' => 'Articles'
-];
-
-echo $tpl->loadTemplate("articles", "head", $data_array, 'plugin');*/
-
 $action = $_GET['action'] ?? '';
 
 // Handle rating submission
@@ -713,6 +704,6 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
             echo '</ul></nav>';
         }
     } else {
-        echo $languageService->get('no_categories');
+        echo '<div class="alert alert-info">'.$languageService->get('no_categories').'</div>';
     }
 }

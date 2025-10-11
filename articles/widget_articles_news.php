@@ -19,12 +19,14 @@ $latest = safe_query("
 ");
 
 // Hilfsfunktion: Text kürzen
-function shortenText($text, $length = 200) {
-    $text = trim($text);
-    if (mb_strlen($text) <= $length) {
-        return $text;
+if (!function_exists('shortenText')) {
+    function shortenText($text, $length = 200) {
+        $text = trim($text);
+        if (mb_strlen($text) <= $length) {
+            return $text;
+        }
+        return mb_substr($text, 0, $length) . '…';
     }
-    return mb_substr($text, 0, $length) . '…';
 }
 ?>
 

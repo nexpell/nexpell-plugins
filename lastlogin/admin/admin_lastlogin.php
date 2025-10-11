@@ -20,9 +20,6 @@ use nexpell\AccessControl;
 // Den Admin-Zugriff für das Modul überprüfen
 AccessControl::checkAdminAccess('lastlogin');
 
-// Sprachdateien laden
-$pm = new plugin_manager();
-
 // Standard-Zeitraumklassen für farbliche Markierung
 $colors = [
     2 => 'table-success',

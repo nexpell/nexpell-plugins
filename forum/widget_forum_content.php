@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 use nexpell\LanguageService;
 use nexpell\SeoUrlHandler;
 
-global $languageService;
+global $languageService,$_database;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('forum');
