@@ -1,28 +1,3 @@
-document.querySelectorAll('.like-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const postID = btn.dataset.postid;
-        const liked = btn.dataset.liked === '1';
-        const action = liked ? 'unlike' : 'like';
-
-        fetch('/includes/plugins/forum/like_post_ajax.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `postID=${postID}&action=${action}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
-                btn.dataset.liked = liked ? '0' : '1';
-                btn.textContent = liked ? 'Like' : 'Unlike';
-                btn.nextElementSibling.textContent = data.likes;
-            } else {
-                alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
-            }
-        })
-        .catch(() => alert('Netzwerkfehler'));
-    });
-});
-
 document.addEventListener('DOMContentLoaded', function () {
   const dropArea = document.getElementById('dropArea');
   const fileInput = document.getElementById('uploadImage');
