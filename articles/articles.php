@@ -592,14 +592,7 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
     $cats_result = safe_query("SELECT * FROM plugins_articles_categories ORDER BY sort_order ASC");
     if (mysqli_num_rows($cats_result) > 0) {
 
-        $data_array = [
-            'title_categories' => $languageService->get('title_categories'),
-        ];
-
-        echo $tpl->loadTemplate("articles", "category", $data_array, 'plugin');
-
-        // Head-Bereich der Artikelliste
-        echo $tpl->loadTemplate("articles", "content_all_head", $data_array, 'plugin');
+        
 
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         if ($page < 1) $page = 1;
@@ -614,7 +607,16 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
         $articles_result = safe_query("SELECT * FROM plugins_articles WHERE is_active = 1 ORDER BY updated_at DESC LIMIT $offset, $limit");
 
         if (mysqli_num_rows($articles_result) > 0) {
+        
+            $data_array = [
+                'title_categories' => $languageService->get('title_categories'),
+            ];
 
+            echo $tpl->loadTemplate("articles", "category", $data_array, 'plugin');
+
+            // Head-Bereich der Artikelliste
+            echo $tpl->loadTemplate("articles", "content_all_head", $data_array, 'plugin');
+        
             $monate = [
                 1 => $languageService->get('jan'), 2 => $languageService->get('feb'),
                 3 => $languageService->get('mar'), 4 => $languageService->get('apr'),
@@ -691,6 +693,8 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
 
                 echo $tpl->loadTemplate("articles", "content_all", $data_array, 'plugin');
             }
+        } else {
+            echo '<div class="alert alert-info">' . $languageService->get('no_articles_found') . '</div>';
         }
 
         echo $tpl->loadTemplate("articles", "content_all_foot", $data_array, 'plugin');
@@ -704,6 +708,6 @@ if ($action == "watch" && isset($_GET['id']) && is_numeric($_GET['id'])) {
             echo '</ul></nav>';
         }
     } else {
-        echo '<div class="alert alert-info">'.$languageService->get('no_categories').'</div>';
+        echo '<div class="alert alert-info">'.$languageService->get('no_articles_categories_found').'</div>';
     }
 }

@@ -44,6 +44,6 @@ $language_array = [
     'edit'             => 'Edit',
     'delete'           => 'Delete',
     'confirm_delete'   => 'Really delete?',
-    'no_sponsors_found'=> 'No sponsors found.',
+    'no_sponsors_found'=> 'There are currently no sponsor entries available.',
 ];
 

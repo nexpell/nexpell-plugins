@@ -35,7 +35,7 @@ $links = [];
 $categoriesMap = [];
 $categories = [];
 
-if ($result) {
+if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         // Fallback-Bild setzen
         $row['image'] = !empty($row['image']) ? $row['image'] : 'assets/default_thumb.jpg';
@@ -72,18 +72,21 @@ if ($result) {
             ];
         }
     }
+
+
+    // Daten für Template vorbereiten
+    $data_array = [
+        'links' => $links,
+        'categories' => $categories,
+        'filter_all'     => $languageService->get('filter_all'),
+        'link_no_description' => $languageService->get('link_no_description'),
+        'link_visit' => $languageService->get('link_visit'),
+        'link_invalid' => $languageService->get('link_invalid'),
+    ];
+
+    // Template laden und ausgeben
+    echo $tpl->loadTemplate("links", "main", $data_array, "plugin");
+} else {
+    // Keine Partner vorhanden → Hinweis anzeigen
+    echo '<div class="alert alert-info">' . $languageService->get('no_links_found') . '</div>';
 }
-
-// Daten für Template vorbereiten
-$data_array = [
-    'links' => $links,
-    'categories' => $categories,
-    'filter_all'     => $languageService->get('filter_all'),
-    'link_no_description' => $languageService->get('link_no_description'),
-    'link_visit' => $languageService->get('link_visit'),
-    'link_invalid' => $languageService->get('link_invalid'),
-];
-
-// Template laden und ausgeben
-echo $tpl->loadTemplate("links", "main", $data_array, "plugin");
-

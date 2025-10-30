@@ -44,9 +44,9 @@ safe_query("INSERT IGNORE INTO plugins_youtube_settings (id, plugin_name, settin
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
 ('', 'Youtube', 'youtube', '[[lang:de]]Mit diesem Plugin könnt ihr eure Youtube anzeigen lassen.[[lang:en]]With this plugin you can display your Youtube.[[lang:it]]Con questo plugin è possibile mostrare gli Youtube sul sito web.', 'admin_youtube', 1, 'T-Seven', 'https://www.nexpell.de', 'youtube', '', '0.3', 'includes/plugins/youtube/', 1, 1, 1, 1, 'deactivated')");
 
-safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
+/*safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
 ('widget_Youtube_content', 'Youtube Widget Content', 'youtube', 'youtube'),
-('widget_Youtube_sidebar', 'Youtube Widget Sidebar', 'youtube', 'youtube')");
+('widget_Youtube_sidebar', 'Youtube Widget Sidebar', 'youtube', 'youtube')");*/
 
 ## NAVIGATION #####################################################################################################################################
 

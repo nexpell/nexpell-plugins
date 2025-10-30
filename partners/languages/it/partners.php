@@ -37,5 +37,6 @@ $language_array = array(
     // Varie
     'yes' => 'Sì',
     'no' => 'No',
+    'no_partners_found' => 'Al momento non ci sono partner disponibili.',
 );
 

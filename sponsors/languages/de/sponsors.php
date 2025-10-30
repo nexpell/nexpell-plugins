@@ -44,7 +44,7 @@ $language_array = [
     'edit'             => 'Bearbeiten',
     'delete'           => 'Löschen',
     'confirm_delete'   => 'Wirklich löschen?',
-    'no_sponsors_found'=> 'Keine Sponsoren gefunden.',
+    'no_sponsors_found'=> 'Derzeit sind keine Sponsoren-Einträge vorhanden.',
 ];
 
 

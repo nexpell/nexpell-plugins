@@ -4,6 +4,72 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+
+// --- AJAX-Löschung ---
+// ====================================================
+// 1️⃣  REINER JSON-AJAX DELETE HANDLER
+// ====================================================
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    if (ob_get_length()) ob_end_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(200);
+
+    // Minimaler Bootstrap
+    require_once __DIR__ . '/../../../../system/config.inc.php';
+    require_once __DIR__ . '/../../../../system/core/init.php';
+    global $_database;
+
+    $id = (int)$_GET['id'];
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Ungültige ID']);
+        exit;
+    }
+
+    try {
+        // --- Bild abfragen ---
+        $stmt = $_database->prepare("SELECT banner_image FROM plugins_articles WHERE id = ?");
+        if (!$stmt) throw new Exception('DB-Prepare fehlgeschlagen: ' . $_database->error);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->bind_result($imageFilename);
+        $found = $stmt->fetch();
+        $stmt->close();
+
+        if (!$found) {
+            echo json_encode(['success' => false, 'error' => 'Artikel nicht gefunden']);
+            exit;
+        }
+
+        // --- Löschen ---
+        $stmtDel = $_database->prepare("DELETE FROM plugins_articles WHERE id = ?");
+        if (!$stmtDel) throw new Exception('DB-Delete fehlgeschlagen: ' . $_database->error);
+        $stmtDel->bind_param("i", $id);
+        $ok = $stmtDel->execute();
+        $stmtDel->close();
+
+        // --- Bild löschen ---
+        if (!empty($imageFilename)) {
+            // Versuche beide möglichen Speicherorte
+            $possiblePaths = [
+                __DIR__ . '/../../../../images/article/' . $imageFilename,           // Standard-Pfad
+                __DIR__ . '/../../../../includes/plugins/articles/images/article/' . $imageFilename // Fallback
+            ];
+            foreach ($possiblePaths as $imagePath) {
+                if (is_file($imagePath)) {
+                    @unlink($imagePath);
+                    break; // Stop nach erstem Treffer
+                }
+            }
+        }
+
+        echo json_encode(['success' => $ok]);
+    } catch (Throwable $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
+
 use nexpell\LanguageService;
 use nexpell\NavigationUpdater;// SEO Anpassung
 
@@ -42,35 +108,7 @@ if (!in_array($sortBy, $allowedSorts)) {
 $uploadDir = __DIR__ . '/../images/'; // für allgemeine Uploads
 $plugin_path = __DIR__ . '/../images/article/'; // für Bannerbild Upload
 
-// --- AJAX-Löschung ---
-if (($action ?? '') === 'delete' && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
 
-    // Artikelinformationen laden (inkl. optional Bildname)
-    $stmt = $_database->prepare("SELECT banner_image FROM plugins_articles WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->bind_result($imageFilename);
-    if ($stmt->fetch()) {
-        $stmt->close();
-
-        // Artikel aus DB löschen
-        $stmtDel = $_database->prepare("DELETE FROM plugins_articles WHERE id = ?");
-        $stmtDel->bind_param("i", $id);
-        $stmtDel->execute();
-        $stmtDel->close();
-
-        // Bilddatei löschen, wenn vorhanden
-        if (!empty($imageFilename)) {
-            @unlink($plugin_path . $imageFilename);
-        }
-
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Artikel nicht gefunden']);
-    }
-    exit;
-}
 
 // --- Artikel hinzufügen / bearbeiten ---
 if (($action ?? '') === "add" || ($action ?? '') === "edit") {
@@ -160,7 +198,13 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
                     WHERE id = '$id'
                 ");
             } else {
-                $userID = 1; 
+                // Prüfe, ob der Benutzer eingeloggt ist
+                if (!isset($_SESSION['userID'])) {
+                    die('Fehler: Kein Benutzer eingeloggt!');
+                }
+
+                // userID aus der Session holen
+                $userID = (int)$_SESSION['userID'];
 
                 safe_query("
                     INSERT INTO plugins_articles
@@ -204,13 +248,11 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
                 <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
             <div class="container py-5">
-            <form method="post" enctype="multipart/form-data" novalidate>
-                
-
+            <form method="post" class="needs-validation" enctype="multipart/form-data" novalidate>
                 <div class="mb-3">
                     <label for="category_id" class="form-label">Kategorie:</label>
                     <select class="form-select" name="category_id" id="category_id" required>
-                        <option value="">Bitte wählen...</option>
+                        <option value="" <?= empty($data['category_id']) ? 'selected' : '' ?> disabled hidden>Bitte wählen...</option>
                         <?php
                         $stmtCat = $_database->prepare("SELECT id, name FROM plugins_articles_categories ORDER BY name");
                         $stmtCat->execute();
@@ -222,6 +264,7 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
                         $stmtCat->close();
                         ?>
                     </select>
+                    <div class="invalid-feedback">Bitte eine Kategorie auswählen.</div>
                 </div>
 
                 <div class="mb-3">
@@ -488,23 +531,49 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
 <?php
 }  // schließt das else
 ?>
-    <script>
-    document.querySelectorAll('.btn-delete-article').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('Artikel wirklich löschen?')) {
-                const id = this.getAttribute('data-id');
-                fetch('admincenter.php?site=admin_articles&action=delete&id=' + id)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Fehler beim Löschen: ' + (data.error || 'Unbekannt'));
-                        }
-                    });
+<script>
+document.querySelectorAll('.btn-delete-article').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (confirm('Artikel wirklich löschen?')) {
+      const id = this.dataset.id;
+      fetch('admincenter.php?site=admin_articles&action=delete&id=' + id, {
+        cache: 'no-cache'
+      })
+        .then(res => res.text())
+        .then(text => {
+          console.log('Serverantwort:', text);
+          try {
+            const data = JSON.parse(text);
+            if (data.success) {
+              alert('✅ Artikel erfolgreich gelöscht!');
+              location.reload();
+            } else {
+              alert('❌ Fehler: ' + (data.error || 'Unbekannt'));
             }
-        });
-    });
-    </script>
+          } catch (err) {
+            alert('⚠️ Ungültige Antwort vom Server:\n' + text);
+          }
+        })
+        .catch(err => alert('⚠️ Serverfehler: ' + err));
+    }
+  });
+});
+</script>
+<script>
+(() => {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>
+
 

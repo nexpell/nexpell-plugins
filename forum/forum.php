@@ -484,27 +484,39 @@ switch ($action) {
                                 </div>
                                 <div class="mt-3 text-end">
                                 <?php 
-                                    $postID = $post['postID'];
-                                    $userID = isset($_SESSION['userID']) ? (int)$_SESSION['userID'] : 0;
+$postID   = (int)$post['postID'];
+$postUser = (int)$post['userID'];              // Autor des Beitrags
+$userID   = isset($_SESSION['userID']) ? (int)$_SESSION['userID'] : 0;
 
-                                    // Like-Anzahl immer holen – egal ob eingeloggt oder nicht
-                                    $likeCount = getLikeCount($postID);
+// Like-Anzahl immer holen – egal ob eingeloggt oder nicht
+$likeCount = getLikeCount($postID);
 
-                                    if ($userID > 0) {
-                                        $liked = userLikedPost($postID, $userID);
-                                        ?>
-                                        <button class="btn btn-outline-primary btn-sm like-btn" 
-                                                data-postid="<?= $postID ?>" 
-                                                data-liked="<?= $liked ? '1' : '0' ?>">
-                                            <?= $liked ? 'Unlike' : 'Like' ?>
-                                        </button>
-                                    <?php 
-                                    } else {
-                                        // Nicht eingeloggt → Nur Text
-                                        echo '<span class="text-muted">Like</span>';
-                                    }
-                                ?>
-                                <span class="like-count ms-2"><?= $likeCount ?></span>
+// Hat der aktuelle User bereits geliked?
+$liked = ($userID > 0) ? userLikedPost($postID, $userID) : false;
+
+// Eigener Beitrag?
+$isOwn = ($userID > 0 && $userID === $postUser);
+?>
+
+<div class="d-inline-flex align-items-center gap-2">
+  <?php if ($userID === 0): ?>
+    <span class="text-muted" title="Bitte einloggen">Like</span>
+  <?php elseif ($isOwn): ?>
+    <span class="text-muted" title="Eigene Beiträge können nicht geliked werden">Like</span>
+  <?php else: ?>
+    <button
+      class="btn btn-outline-primary btn-sm like-btn"
+      data-postid="<?= $postID ?>"
+      data-liked="<?= $liked ? '1' : '0' ?>"
+      aria-pressed="<?= $liked ? 'true' : 'false' ?>"
+      title="<?= $liked ? 'Gefällt mir nicht mehr' : 'Gefällt mir' ?>">
+      <?= $liked ? 'Unlike' : 'Like' ?>
+    </button>
+  <?php endif; ?>
+
+  <span class="like-count ms-2" data-postid="<?= $postID ?>"><?= (int)$likeCount ?></span>
+</div>
+
                                 </div>
                                 <?php if (!empty($post['signatur'])): ?> 
                         <?php endif; ?>

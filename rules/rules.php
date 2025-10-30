@@ -68,7 +68,7 @@ if (mysqli_num_rows($ergebnis) > 0) {
 
     echo $tpl->renderPagination("index.php?site=rules", $page, $pages);
 } else {
-    echo '<div class="alert alert-info">' . $languageService->get('rules_no_entries') . '</div>';
+    echo '<div class="alert alert-info">' . $languageService->get('no_rules_found') . '</div>';
 }
 ?>
 

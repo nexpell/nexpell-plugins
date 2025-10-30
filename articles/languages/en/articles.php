@@ -87,7 +87,10 @@ $language_array = array(
     'you_have_already_rated'   => 'You have already rated.',
     'your_comment'             => 'Your comment',
 
-    'new' => 'NEW',
-    'read_more' => 'Read more',
+    'new'                      => 'NEW',
+    'read_more'                => 'Read more',
+
+    'no_articles_categories_found' => 'There are currently no categories and article entries available.',
+    'no_articles_found'            => 'There are currently no article entries available.',
 );
 

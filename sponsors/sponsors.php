@@ -37,35 +37,39 @@ $levelColors = [
 ];
 
 $imagePath = '/includes/plugins/sponsors/images/';
+if ($result && $result->num_rows > 0) {
+    while ($ds = mysqli_fetch_array($result)) {
+        $levelKey = strtolower(str_replace([' ', 'ü'], ['_', 'ue'], $ds['level']));
 
-while ($ds = mysqli_fetch_array($result)) {
-    $levelKey = strtolower(str_replace([' ', 'ü'], ['_', 'ue'], $ds['level']));
+        $urlRaw = trim((string)($row['slug'] ?? ''));
+            if ($urlRaw) {
+                $urlCandidate = (stripos($urlRaw, 'http') === 0) ? $urlRaw : 'http://' . $urlRaw;
+                $row['valid_url'] = filter_var($urlCandidate, FILTER_VALIDATE_URL) ? $urlCandidate : '';
+            } else {
+                $row['valid_url'] = '';
+            }
+            
+            $slug[] = $row;
 
-    $urlRaw = trim((string)($row['slug'] ?? ''));
-        if ($urlRaw) {
-            $urlCandidate = (stripos($urlRaw, 'http') === 0) ? $urlRaw : 'http://' . $urlRaw;
-            $row['valid_url'] = filter_var($urlCandidate, FILTER_VALIDATE_URL) ? $urlCandidate : '';
-        } else {
-            $row['valid_url'] = '';
-        }
-        
-        $slug[] = $row;
+        $sponsors[] = [
+            'id'    => (int)$ds['id'],
+            'name'  => htmlspecialchars($ds['name']),
+            'logo'  => $imagePath . htmlspecialchars($ds['logo']),
+            'level' => $languageService->get($levelKey),
+            'color' => $levelColors[$levelKey] ?? '#ccc',
+            'slug'  => $slug
+        ];
+    }
 
-    $sponsors[] = [
-        'id'    => (int)$ds['id'],
-        'name'  => htmlspecialchars($ds['name']),
-        'logo'  => $imagePath . htmlspecialchars($ds['logo']),
-        'level' => $languageService->get($levelKey),
-        'color' => $levelColors[$levelKey] ?? '#ccc',
-        'slug'  => $slug
+    // Daten in $data_array zusammenfassen
+    $data_array = [
+        'headline' => $languageService->get('headline'),
+        'text'     => $languageService->get('text'),
+        'sponsors' => $sponsors
     ];
+
+    echo $tpl->loadTemplate("sponsors", "main", $data_array, "plugin");
+} else {
+    // Keine Partner vorhanden → Hinweis anzeigen
+    echo '<div class="alert alert-info">' . $languageService->get('no_sponsors_found') . '</div>';
 }
-
-// Daten in $data_array zusammenfassen
-$data_array = [
-    'headline' => $languageService->get('headline'),
-    'text'     => $languageService->get('text'),
-    'sponsors' => $sponsors
-];
-
-echo $tpl->loadTemplate("sponsors", "main", $data_array, "plugin");

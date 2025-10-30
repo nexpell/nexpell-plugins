@@ -4,6 +4,101 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// ====================================================
+// 1️⃣  JSON-AJAX DELETE HANDLER (immer ganz oben!)
+// ====================================================
+
+// Parameter zuerst holen
+$action = $_GET['action'] ?? '';
+
+// ====================================================
+// 1️⃣  REINER JSON-AJAX DELETE HANDLER
+// ====================================================
+// --- AJAX-Löschung ---
+// ====================================================
+// 1️⃣  REINER JSON-AJAX DELETE HANDLER
+// ====================================================
+// ====================================================
+// 1️⃣  REINER JSON-AJAX DELETE HANDLER mit Content-Bildlöschung
+// ====================================================
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    if (ob_get_length()) ob_end_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(200);
+
+    require_once __DIR__ . '/../../../../system/config.inc.php';
+    require_once __DIR__ . '/../../../../system/core/init.php';
+    global $_database;
+
+    $id = (int)$_GET['id'];
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Ungültige ID']);
+        exit;
+    }
+
+    try {
+        // === 1️⃣ Bild + Content abrufen ===
+        $stmt = $_database->prepare("SELECT banner_image, content FROM plugins_news WHERE id = ?");
+        if (!$stmt) throw new Exception('DB-Fehler beim SELECT: ' . $_database->error);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->bind_result($imageFilename, $contentHtml);
+        $found = $stmt->fetch();
+        $stmt->close();
+
+        if (!$found) {
+            echo json_encode(['success' => false, 'error' => 'News nicht gefunden']);
+            exit;
+        }
+
+        // === 2️⃣ Hauptbild löschen (falls vorhanden) ===
+        if (!empty($imageFilename)) {
+            $possiblePaths = [
+                __DIR__ . '/../../../../images/news/' . $imageFilename,
+                __DIR__ . '/../../../../includes/plugins/news/images/news_images/' . $imageFilename
+            ];
+            foreach ($possiblePaths as $imagePath) {
+                if (is_file($imagePath)) {
+                    @unlink($imagePath);
+                    break;
+                }
+            }
+        }
+
+        // === 3️⃣ Eingebettete Content-Bilder löschen ===
+        if (!empty($contentHtml)) {
+            // Alle src="/includes/plugins/news/images/news_images/XYZ.png"
+            preg_match_all(
+                '#/includes/plugins/news/images/news_images/([a-zA-Z0-9._-]+\.(?:png|jpg|jpeg|gif|webp))#i',
+                $contentHtml,
+                $matches
+            );
+
+            if (!empty($matches[1])) {
+                foreach ($matches[1] as $filename) {
+                    $imgPath = __DIR__ . '/../../../../includes/plugins/news/images/news_images/' . $filename;
+                    if (is_file($imgPath)) {
+                        @unlink($imgPath);
+                    }
+                }
+            }
+        }
+
+        // === 4️⃣ Datensatz aus DB löschen ===
+        $stmtDel = $_database->prepare("DELETE FROM plugins_news WHERE id = ?");
+        if (!$stmtDel) throw new Exception('DB-Fehler beim DELETE: ' . $_database->error);
+        $stmtDel->bind_param("i", $id);
+        $ok = $stmtDel->execute();
+        $stmtDel->close();
+
+        echo json_encode(['success' => $ok]);
+    } catch (Throwable $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
+
 use nexpell\LanguageService;
 use nexpell\NavigationUpdater;// SEO Anpassung
 
@@ -40,32 +135,6 @@ if (!in_array($sortBy, $allowedSorts)) {
 }
 
 $uploadDir = __DIR__ . '/../images/'; // für allgemeine Uploads
-
-// --- AJAX-Löschung ---
-if (($action ?? '') === 'delete' && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
-
-    
-    if ($stmt->fetch()) {
-        $stmt->close();
-
-        // News aus DB löschen
-        $stmtDel = $_database->prepare("DELETE FROM plugins_news WHERE id = ?");
-        $stmtDel->bind_param("i", $id);
-        $stmtDel->execute();
-        $stmtDel->close();
-
-        // Bilddatei löschen, wenn vorhanden
-        if (!empty($imageFilename)) {
-            @unlink($plugin_path . $imageFilename);
-        }
-
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'News nicht gefunden']);
-    }
-    exit;
-}
 
 function makeUniqueSlug($slug, $id = 0) {
     global $_database;
@@ -305,22 +374,24 @@ if (($action ?? '') === "add" || ($action ?? '') === "edit") {
             <?php endif; ?>
             <?= $slugWarning ?>
             <div class="container py-5">
-                <form method="post" enctype="multipart/form-data" novalidate>
+                <form method="post" class="needs-validation" enctype="multipart/form-data" novalidate>
                     <div class="mb-3">
                         <label for="category_id" class="form-label">Kategorie:</label>
                         <select class="form-select" name="category_id" id="category_id" required>
-                            <option value="">Bitte wählen...</option>
-                            <?php
-                            $stmtCat = $_database->prepare("SELECT id, name FROM plugins_news_categories ORDER BY name");
-                            $stmtCat->execute();
-                            $resCat = $stmtCat->get_result();
-                            while ($cat = $resCat->fetch_assoc()) {
-                                $selected = ($cat['id'] == $data['category_id']) ? 'selected' : '';
-                                echo '<option value="' . (int)$cat['id'] . '" ' . $selected . '>' . htmlspecialchars($cat['name']) . '</option>';
-                            }
-                            $stmtCat->close();
-                            ?>
-                        </select>
+                        <option value="" <?= empty($data['category_id']) ? 'selected' : '' ?> disabled hidden>Bitte wählen...</option>
+                        <?php
+                        $stmtCat = $_database->prepare("SELECT id, name FROM plugins_news_categories ORDER BY name");
+                        $stmtCat->execute();
+                        $resCat = $stmtCat->get_result();
+                        while ($cat = $resCat->fetch_assoc()) {
+                            $selected = ($cat['id'] == $data['category_id']) ? 'selected' : '';
+                            echo '<option value="' . (int)$cat['id'] . '" ' . $selected . '>' . htmlspecialchars($cat['name']) . '</option>';
+                        }
+                        $stmtCat->close();
+                        ?>
+                    </select>
+                    <div class="invalid-feedback">Bitte eine Kategorie auswählen.</div>
+
                     </div>
 
                     <div class="mb-3">
@@ -760,23 +831,51 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
+<!-- ==================================================== -->
+<!-- 5️⃣  Delete-Button Script -->
+<!-- ==================================================== -->
 <script>
 document.querySelectorAll('.btn-delete-news').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (confirm('News wirklich löschen?')) {
-            const id = this.getAttribute('data-id');
-            fetch('admincenter.php?site=admin_news&action=delete&id=' + id)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Fehler beim Löschen: ' + (data.error || 'Unbekannt'));
-                    }
-                });
-        }
-    });
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (confirm('News wirklich löschen?')) {
+      const id = this.dataset.id;
+      fetch('admincenter.php?site=admin_news&action=delete&id=' + id, {
+        cache: 'no-cache'
+      })
+        .then(res => res.text())
+        .then(text => {
+          console.log('Serverantwort:', text);
+          try {
+            const data = JSON.parse(text);
+            if (data.success) {
+              alert('✅ News erfolgreich gelöscht!');
+              location.reload();
+            } else {
+              alert('❌ Fehler: ' + (data.error || 'Unbekannt'));
+            }
+          } catch (err) {
+            alert('⚠️ Ungültige Antwort vom Server:\n' + text);
+          }
+        })
+        .catch(err => alert('⚠️ Serverfehler: ' + err));
+    }
+  });
 });
-</script>
 
+</script>
+<script>
+(() => {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>

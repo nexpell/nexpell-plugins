@@ -533,9 +533,11 @@ if (mysqli_num_rows($servers)) {
             echo '<div class="alert alert-danger mb-0">Server nicht erreichbar</div>';
         }
 
-        echo '<a href="' . SeoUrlHandler::convertToSeoUrl(
-            'index.php?site=gametracker&action=serverdetails&id=' . (int)str_replace('server_', '', $id)
-        ) . '" class="btn btn-outline-primary mt-2 w-100">Details anzeigen</a>';
+        //echo '<a href="' . SeoUrlHandler::convertToSeoUrl(
+        //    'index.php?site=gametracker&action=serverdetails&id=' . (int)str_replace('server_', '', $id)
+        //) . '" class="btn btn-outline-primary mt-2 w-100">Details anzeigen</a>';
+
+        echo '<a href="index.php?site=gametracker&action=serverdetails&id=' . (int)str_replace('server_', '', $id) . '" class="btn btn-outline-primary mt-2 w-100">Details anzeigen</a>';
 
         echo '</div>';
         echo '</div></div>';

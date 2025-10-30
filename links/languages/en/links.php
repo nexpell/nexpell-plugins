@@ -40,5 +40,6 @@ $language_array = array(
     'add'              => 'Add',
     'update'           => 'Update',
     'cancel'           => 'Cancel',
+    'no_links_found' => 'There are currently no link entries available.',
 );
 

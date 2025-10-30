@@ -5,11 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use nexpell\LanguageService;
 
-global $_database,$languageService;
+global $_database, $languageService;
 
 $lang = $languageService->detectLanguage();
 $languageService->readPluginModule('partners');
 $translate = new multiLanguage($lang);
+
 // Styleklasse laden
 $config = mysqli_fetch_array(safe_query("SELECT selected_style FROM settings_headstyle_config WHERE id=1"));
 $class = htmlspecialchars($config['selected_style']);
@@ -21,10 +22,6 @@ $data_array = [
     'subtitle' => 'Partners'
 ];
 echo $tpl->loadTemplate("partners", "head", $data_array, "plugin");
-
-// Sprachwerte vorher holen
-$no_valid_link = $languageService->get('no_valid_link');
-$learn_more = $languageService->get('learn_more');
 
 // Partnerdaten laden
 $alertColors = ['primary', 'secondary', 'success', 'warning', 'danger', 'info'];
@@ -53,24 +50,31 @@ if ($result && $result->num_rows > 0) {
                 $slug = $urlCandidate;
             }
         }
+
         $description = $translate->getTextByLanguage($description);
-        // Sprachwerte pro Partner einfügen
         $partners[] = [
-            'id' => (int)$partner['id'],
-            'name' => $name,
-            'logo' => $logo,
+            'id'          => (int)$partner['id'],
+            'name'        => $name,
+            'logo'        => $logo,
             'description' => $description,
-            'color' => $colorKey,
-            'slug' => $slug,
-            'learn_more' => $learn_more,
-            'no_valid_link' => $no_valid_link
+            'color'       => $colorKey,
+            'slug'        => $slug,
+            'learn_more'  => $languageService->get('learn_more'),
+            'no_valid_link' => $languageService->get('no_valid_link'),
         ];
     }
+
+    // Template-Daten übergeben
+    $data_array = [
+        'partners' => $partners
+    ];
+
+    echo $tpl->loadTemplate("partners", "main", $data_array, "plugin");
+
+} else {
+    // Keine Partner vorhanden → Hinweis anzeigen
+    echo '<div class="alert alert-info">' . $languageService->get('no_partners_found') . '</div>';
 }
 
-// Template-Daten übergeben
-$data_array = [
-    'partners' => $partners
-];
 
-echo $tpl->loadTemplate("partners", "main", $data_array, "plugin");
+?>

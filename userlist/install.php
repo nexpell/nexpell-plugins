@@ -39,7 +39,8 @@ safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modu
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
-('', 3, '[[lang:de]]Mitglieder[[lang:en]]Members[[lang:it]]Membri', 'userlist', 'admincenter.php?site=admin_userlist', 1)");
+('', 3, '[[lang:de]]Userliste-Einstellungen[[lang:en]]User List Settings[[lang:it]]Impostazioni elenco utenti
+', 'userlist', 'admincenter.php?site=admin_userlist', 1)");
 
 safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, sort, indropdown) VALUES
 ('', 3, '[[lang:de]]Mitglieder[[lang:en]]Members[[lang:it]]Membri', 'userlist', 'index.php?site=userlist', 1, 1)");

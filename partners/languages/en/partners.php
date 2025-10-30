@@ -37,4 +37,5 @@ $language_array = array(
     // Misc
     'yes' => 'Yes',
     'no' => 'No',
+    'no_partners_found' => 'There are currently no partner entries available.',
 );
