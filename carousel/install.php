@@ -43,19 +43,29 @@ safe_query("INSERT IGNORE INTO plugins_carousel_settings (carouselID, carousel_h
 safe_query("INSERT IGNORE INTO settings_plugins (pluginID, name, modulname, info, admin_file, activate, author, website, index_link, hiddenfiles, version, path, status_display, plugin_display, widget_display, delete_display, sidebar) VALUES
 ('', 'Carousel', 'carousel', '[[lang:de]]Mit diesem Plugin könnt ihr ein Carousel in die Webseite einbinden.[[lang:en]]With this plugin you can integrate a carousel into your website.[[lang:it]]Con questo plugin puoi integrare un carosello nel sito web.', 'admin_carousel', 1, 'T-Seven', 'https://www.nexpell.de', '', '', '0.1', 'includes/plugins/carousel/', 1, 1, 0, 1, 'deactivated')");
 
-safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
+/*safe_query("INSERT IGNORE INTO settings_widgets (widget_key, title, plugin, modulname) VALUES
 ('widget_sticky_header', 'Sticky Header', 'carousel', 'carousel'),
 ('widget_carousel_crossfade', 'Carousel Crossfade', 'carousel', 'carousel'),
 ('widget_parallax_header', 'Parallax Header', 'carousel', 'carousel'),
-('widget_agency_header', 'Agency Header', 'carousel', 'carousel')");
+('widget_agency_header', 'Agency Header', 'carousel', 'carousel')");*/
+
+
+
+safe_query("
+INSERT IGNORE INTO settings_widgets 
+(widget_key, title, plugin, description, modulname, allowed_zones, active, version, created_at) 
+VALUES
+('widget_agency_header', 'Agency Header', 'carousel', NULL, 'carousel', 'undertop', 1, '1.0.0', NOW()),
+('widget_carousel_crossfade', 'Carousel Crossfade', 'carousel', NULL, 'carousel', 'top,undertop', 1, '1.0.0', NOW()),
+('widget_parallax_header', 'Parallax Header', 'carousel', NULL, 'carousel', 'undertop', 1, '1.0.0', NOW()),
+('widget_sticky_header', 'Sticky Header', 'carousel', NULL, 'carousel', 'top,undertop', 1, '1.0.0', NOW())
+");
+
 
 ## NAVIGATION #####################################################################################################################################
 
 safe_query("INSERT IGNORE INTO navigation_dashboard_links (linkID, catID, name, modulname, url, sort) VALUES
 ('', 10, '[[lang:de]]Carousel[[lang:en]]Carousel[[lang:it]]Carosello Immagini', 'carousel', 'admincenter.php?site=admin_carousel', 1)");
-
-safe_query("INSERT IGNORE INTO navigation_website_sub (snavID, mnavID, name, modulname, url, last_modified, sort, indropdown) VALUES
-('', 3, '[[lang:de]]tt[[lang:en]]tt[[lang:it]]tt', 'carousel', 'index.php?site=carousel', NOW(), 1, 1)");
 
 #######################################################################################################################################
 safe_query("

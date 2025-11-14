@@ -8,7 +8,7 @@ use nexpell\LanguageService;
 global $languageService;
 
 $lang = $languageService->detectLanguage();
-$languageService->readModule('carousel');
+$languageService->readPluginModule('carousel');
 
 $tpl = new Template();
 
@@ -81,7 +81,7 @@ if (mysqli_num_rows($carousel) > 0) {
         // Link Button (falls Link vorhanden)
         $link = '';
         if (!empty($link_url)) {
-            $link = '<a href="' . htmlspecialchars($link_url) . '" class="btn btn-primary scrollto">' . htmlspecialchars($languageService->get('read_more')) . '</a>';
+            $link = '<a href="' . htmlspecialchars($link_url) . '" class="btn btn-primary scrollto">' . $languageService->get('read_more') . '</a>';
         }
 
         // Template-Replacements
