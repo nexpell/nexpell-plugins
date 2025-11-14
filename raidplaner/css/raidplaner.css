@@ -1,0 +1,161 @@
+.raidplaner-container .btn-group.is-guest a[href*="action=characters"],
+.raidplaner-container .btn-group.is-guest a[href*="action=my_stats"] {
+  display: none !important;
+}
+.btn.btn-discord, .btn.btn-discord:focus, .btn.btn-discord:active {
+    color: #fff;
+    background-color: #5865f2;
+    border-color: #5865f2;
+    box-shadow: 0px 2px 5px 0px rgba(88, 101, 242, 0.45);
+}
+.btn.btn-discord:hover {
+    color: #fff;
+    background-color: #5865f2;
+    border-color: #5865f2;
+    box-shadow: 0px 6px 9px 0px rgba(88, 101, 242, 0.65);
+}
+.btn.btn-secondary, .btn.btn-secondary:focus, .btn.btn-secondary:active {
+    box-shadow: 0px 2px 5px 0px rgba(108, 117, 125, 0.45);
+}
+.btn.btn-secondary:hover {
+    box-shadow: 0px 6px 9px 0px rgba(108, 117, 125, 0.65);
+}
+.raidplaner-container {
+    padding: 20px;
+}
+.raidplaner-container .btn.btn-secondary, .raidplaner-container .btn.btn-secondary:focus, .raidplaner-container .btn.btn-secondary:active {
+    box-shadow: none;
+}
+.raidplaner-container .btn.btn-secondary:hover {
+    box-shadow: none;
+}
+.raid-item {
+    transition: background-color 0.2s ease-in-out;
+}
+.raid-item:hover {
+    background-color: #eef2f7;
+}
+.raid-details-header {
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.signup-role-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    border-left: 4px solid #0d6efd;
+}
+.signup-role-group h5 {
+    margin-bottom: 10px;
+    color: #0d6efd;
+}
+.signup-role-group ul {
+    padding-left: 20px;
+}
+.signup-role-group .role-bench {
+    color: #d8900b;
+}
+.wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1rem;
+}
+.item-card {
+    background-color: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+.item-card-header {
+    padding: 0.75rem 1rem;
+    background-color: #efefef;
+    color: #2a2a2a;
+    font-weight: bold;
+}
+.item-card-body .list-group-item {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    color: #585858;
+}
+.editable-text:hover {
+    cursor: pointer;
+    border-bottom: 1px dotted #0d6efd;
+    color: #0d6efd;
+}
+.card.past-raids .card-header {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+.card.past-raids table {
+    opacity: 0.9;
+}
+.card.raids .card-header {
+    min-height: 65px;
+    display: flex;
+    align-items: center;
+}
+.card.raids .card-header h5 {
+    margin-bottom: 0;
+    line-height: 1.3;
+}
+
+.raid-card      { min-height: 350px; }
+.raid-card .btn { margin-top: auto; }
+.role-summary { margin-bottom: .5rem; }
+/* BiS Planner spezifische Styles */
+.loot-list.list-group-item { 
+    padding-left: 0px; 
+    padding-right: 0px; 
+}
+.table-bis-planner .slot-row{
+    --bs-table-bg: #777777;
+    --bs-table-color: #fff;
+}
+.table-bis-planner tr { 
+    border-bottom: 1px solid #efefef;
+}
+.table-bis-planner td { 
+    vertical-align: middle; 
+}
+.table-bis-planner .rp-td-flex { 
+    line-height: 1; 
+}
+.table-bis-planner .rp-td-flex > * { 
+    margin-bottom: 0 !important; 
+}
+.table-bis-planner .slot-title{
+    text-transform:uppercase; letter-spacing:.03em; font-weight:700; font-size:.85rem;
+}
+.table-bis-planner tbody tr:hover{ background:rgba(13,110,253,.03); }
+.table-bis-planner .source-badge{
+    display:inline-block; padding:.25rem .5rem; border:1px solid #dee2e6; background:#fff; font-size:.85rem;
+}
+@media (prefers-color-scheme: dark){
+    .table-bis-planner .slot-row{background:#1c1f23;border-color:#2b3035}
+    .table-bis-planner .source-badge{background:#16191c;border-color:#2b3035;color:#dee2e6}
+}
+/* --- Raidplaner Widget Sidebar Carousel --- */
+
+.rdplnr-carousel .carousel-inner {
+    overflow: hidden;
+}
+
+.rdplnr-carousel .carousel-indicators {
+    display: flex;
+    gap: .35rem;
+    margin: 0;
+}
+
+.rdplnr-carousel .rdplnr-indicators {
+    background: rgba(0, 0, 0, .06);
+    padding: .35rem .6rem;
+    justify-content: center;
+}
+
+.rdplnr-carousel .carousel-indicators [data-bs-target] {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}

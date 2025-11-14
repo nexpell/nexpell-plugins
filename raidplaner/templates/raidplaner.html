@@ -1,0 +1,600 @@
+<!-- raidplaner_head -->
+<div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<div class="raidplaner-container">
+    <div class="d-flex justify-content-end align-items-center mb-4">
+        <div class="btn-group {auth_cls}">
+            <a href="index.php?site=raidplaner" class="btn btn-secondary">Raids</a>
+            <a href="index.php?site=raidplaner&action=calendar" class="btn btn-secondary">{calendar}</a>
+            <a href="index.php?site=raidplaner&action=archive" class="btn btn-secondary">{finished_raids}</a>
+            <a href="index.php?site=raidplaner&action=characters" class="btn btn-secondary">{characters}</a>
+            <a href="index.php?site=raidplaner&action=my_stats" class="btn btn-secondary">{my_stats}</a>
+        </div>
+    </div>
+<!-- END -->
+
+<!-- raidplaner_calendar_view -->
+<h3>{title}</h3>
+<script src="includes/plugins/raidplaner/js/index.global.min.js"></script>
+<script src="includes/plugins/raidplaner/js/locales-all.global.min.js"></script>
+
+<!-- NUR EINEN Kalender-Container -->
+<div id="calendar" class="mt-4"></div>
+
+<style>
+  .fc-event-title {
+    display: block;
+    white-space: normal !important;
+  }
+</style>
+
+<script>
+(function () {
+  // --- Sprache aus dem CMS/der Seite ermitteln ---
+  function getCmsLocale() {
+    const fromGlobal = window.CMS_LANG || window.CMS_LOCALE || (window.i18n && window.i18n.locale);
+    if (fromGlobal) return fromGlobal;
+
+    const bodyAttr = document.body && (document.body.dataset.locale || document.body.dataset.lang);
+    if (bodyAttr) return bodyAttr;
+
+    const htmlEl = document.documentElement;
+    const htmlData = htmlEl && (htmlEl.dataset && (htmlEl.dataset.locale || htmlEl.dataset.lang));
+    if (htmlData) return htmlData;
+
+    const htmlLang = htmlEl && htmlEl.lang;
+    if (htmlLang) return htmlLang;
+
+    const cookieLang = (document.cookie.match(/(?:^|;\s*)lang=([^;]+)/) || [])[1]
+                    || (document.cookie.match(/(?:^|;\s*)locale=([^;]+)/) || [])[1];
+    if (cookieLang) return decodeURIComponent(cookieLang);
+
+    const nav = navigator.languages && navigator.languages.length ? navigator.languages[0] : navigator.language;
+    return nav || 'en';
+  }
+
+  // --- Mapping & Normalisierung für FullCalendar ---
+  const LOCALE_MAP = {
+    'en': 'en', 'en-us': 'en', 'en-gb': 'en-gb',
+    'de': 'de', 'de-de': 'de', 'de-at': 'de-at', 'de-ch': 'de-ch',
+    'fr': 'fr', 'fr-fr': 'fr', 'fr-ch': 'fr-ch',
+    'es': 'es', 'es-es': 'es', 'es-mx': 'es-mx',
+    'it': 'it', 'nl': 'nl', 'pl': 'pl', 'pt': 'pt', 'pt-br': 'pt-br',
+    'zh': 'zh-cn', 'zh-cn': 'zh-cn', 'zh-tw': 'zh-tw',
+    'ru': 'ru'
+  };
+  function normalizeForFullCalendar(loc) {
+    if (!loc) return 'en';
+    const norm = loc.toString().trim().replace('_', '-').toLowerCase();
+    if (LOCALE_MAP[norm]) return LOCALE_MAP[norm];
+    const base = norm.split('-')[0];
+    if (LOCALE_MAP[base]) return LOCALE_MAP[base];
+    return base || 'en';
+  }
+
+  // --- Manuelle Buttontexte (für volle Kontrolle) ---
+  const BUTTON_TEXTS = {
+    de: { today: 'Heute', month: 'Monat', week: 'Woche', list: 'Liste' },
+    en: { today: 'Today', month: 'Month', week: 'Week',  list: 'List' },
+    fr: { today: "Aujourd'hui", month: 'Mois',  week: 'Semaine', list: 'Liste' },
+    es: { today: 'Hoy',   month: 'Mes',    week: 'Semana',  list: 'Lista' },
+    it: { today: 'Oggi',  month: 'Mese',   week: 'Settimana', list: 'Elenco' },
+    nl: { today: 'Vandaag', month: 'Maand', week: 'Week', list: 'Lijst' },
+    pl: { today: 'Dzisiaj', month: 'Miesiąc', week: 'Tydzień', list: 'Lista' }
+  };
+  function getButtonTextFor(locale) {
+    const base = (locale || '').toString().toLowerCase().split('-')[0] || 'en';
+    return BUTTON_TEXTS[base] || BUTTON_TEXTS.en;
+  }
+
+  // --- Initialisieren ---
+  let currentLocale = normalizeForFullCalendar(getCmsLocale());
+  const calendarEl = document.getElementById('calendar');
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: currentLocale,
+    timeZone: 'local',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
+    buttonText: getButtonTextFor(currentLocale),
+    events: {events_json_data},
+    eventClick: function(info) {
+      info.jsEvent.preventDefault();
+      if (info.event.url) window.location.href = info.event.url;
+    }
+  });
+  calendar.render();
+
+  // --- Sprachwechsel aus dem CMS mitnehmen ---
+  document.addEventListener('site:localeChanged', function (ev) {
+    const next = normalizeForFullCalendar(ev && ev.detail && ev.detail.locale);
+    applyLocaleIfChanged(next);
+  });
+
+  const htmlObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(m => {
+      if (m.type === 'attributes' && m.attributeName === 'lang') {
+        const next = normalizeForFullCalendar(document.documentElement.lang);
+        applyLocaleIfChanged(next);
+      }
+    });
+  });
+  htmlObserver.observe(document.documentElement, { attributes: true });
+
+  let lastCookieLang = null;
+  setInterval(function() {
+    const ck = (document.cookie.match(/(?:^|;\s*)lang=([^;]+)/) || [])[1]
+            || (document.cookie.match(/(?:^|;\s*)locale=([^;]+)/) || [])[1];
+    const decoded = ck ? decodeURIComponent(ck) : null;
+    if (decoded && decoded !== lastCookieLang) {
+      lastCookieLang = decoded;
+      const next = normalizeForFullCalendar(decoded);
+      applyLocaleIfChanged(next);
+    }
+  }, 2000);
+
+  window.addEventListener('message', function(e) {
+    if (e && e.data && e.data.type === 'site:localeChanged') {
+      const next = normalizeForFullCalendar(e.data.locale);
+      applyLocaleIfChanged(next);
+    }
+  });
+
+  function applyLocaleIfChanged(next) {
+    if (!next || next === currentLocale) return;
+    currentLocale = next;
+    calendar.setOption('locale', next);
+    calendar.setOption('buttonText', getButtonTextFor(next));
+  }
+})();
+</script>
+<!-- END -->
+
+<!-- raidplaner_dashboard -->
+<h3>{upcoming_raids_title}</h3>
+        <div class="row">
+            {upcoming_raids_html}
+        </div>
+<!-- END -->
+
+<!-- raidplaner_dashboard_entry -->
+<div class="col-md-6 col-lg-4 d-flex mb-4">
+  <div class="card raid-card flex-fill d-flex flex-column">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="card-title mb-0">{title}</h5>
+        {status_badge_html}
+      </div>
+      <h6 class="card-subtitle mb-3 text-muted">{time} {clock}</h6>
+
+      <div class="flex-grow-1 d-flex flex-column">
+        <small class="text-muted">{total}: {total_signed_up} / {total_needed}</small>
+        <div class="progress mb-3" style="height: 10px;">
+          <div class="progress-bar" role="progressbar" style="width: {total_progress_percent}%;" aria-valuenow="{total_progress_percent}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <div class="role-summary">
+          {role_details_html}
+        </div>
+      </div>
+      <a href="{details_url}" class="btn btn-primary w-100 mt-auto">{details_signup}</a>
+    </div>
+  </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_dashboard_roles_signup -->
+<div class="role-progress-item mb-2">
+    <div class="d-flex justify-content-between align-items-center">
+        <small><i class="bi {role_icon}"></i> {role_name}</small>
+        <small><strong>{signed_up} / {needed}</strong></small>
+    </div>
+    <div class="progress" style="height: 5px;">
+        <div class="progress-bar" role="progressbar" style="width: {role_progress_percent}%;"></div>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_show_details -->
+<div class="d-flex justify-content-between align-items-center raid-details-header">
+  <h3 class="mb-0">{event_title}</h3>
+  <span class="text-end fw-semibold">{event_time_formatted}</span>
+</div>
+     <div class="card mb-4">
+        <div class="card-header"><h5 class="card-title">{description}</h5></div>
+        <div class="card-body">
+            {event_description}
+        </div>
+    </div>
+<div class="row g-4">
+  <div class="{signup_col_class}">
+    {show_signup_form_html}
+  </div>
+  <div class="{content_col_class}">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="card-title">{signups}</h5></div>
+            <div class="card-body">
+                <div class="row g-3">{participants_html}</div>
+                {benched_html}
+            </div>
+        </div>
+        <div class="mb-4">
+            {declined_html}
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="card-title">{boss_bis_loot}</h5></div>
+            <div class="card-body">
+                {bosses_html}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_show_details_role_group -->
+<div class="col-md-6 col-lg-4 mb-3">
+    <div class="card h-100">
+        <div class="card-header">
+            <span><i class="bi {role_icon}"></i> {role_name}</span>
+            <span>{participants_count}/{needed_count}</span>
+        </div>
+        <ul class="list-group list-group-flush">{participant_items_html}</ul>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_show_details_participant_item -->
+<li class="list-group-item">
+    <a href="{profile_url}" style="text-decoration: none;">{char_name}</a> ({class_name})
+    <i class="bi bi-chat-left-dots-fill ms-1 {comment_hidden_class}" 
+       data-bs-toggle="tooltip" data-bs-placement="top" 
+       title="{comment}"></i>
+</li>
+<!-- END -->
+
+<!-- raidplaner_show_details_benched_section -->
+ <div class="mt-4">
+    <h6 class="text-warning">{waiting} ({benched_count})</h6>
+    <ul class="list-group list-group-flush mt-2">{benched_items_html}</ul>
+</div>
+<!-- END -->
+
+<!-- raidplaner_show_details_declined_section -->
+ <div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <a data-bs-toggle="collapse" href="#declined-list" style="text-decoration: none;">
+                {unsubscribed} ({declined_count}) <i class="bi bi-chevron-down"></i>
+            </a>
+        </h5>
+    </div>
+    <div class="collapse" id="declined-list">
+        <ul class="list-group list-group-flush">{declined_items_html}</ul>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_show_details_boss_item -->
+<div class="accordion-item">
+    <h2 class="accordion-header" id="heading{boss_id}">
+        <button class="accordion-button collapsed" type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#collapse{boss_id}" 
+                aria-expanded="false" 
+                aria-controls="collapse{boss_id}">
+            <strong>{boss_name}</strong>
+        </button>
+    </h2>
+    <div id="collapse{boss_id}" 
+         class="accordion-collapse collapse" 
+         aria-labelledby="heading{boss_id}" 
+         data-bs-parent="#bossAccordion">
+        <div class="accordion-body">
+            {tactics_html}
+            {loot_html}
+        </div>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_characters -->
+<div class="row">
+    <div class="col-md-8">
+        <h3>{characters_title}</h3>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead><tr><th>{th_main}</th><th>{th_name}</th><th>{th_class}</th><th>{th_level}</th><th>{th_actions}</th></tr></thead>
+                    <tbody>
+                        {character_table_rows_html}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title">{add_character_title}</h5></div>
+            <div class="card-body">
+                <form method="POST" action="{form_action_url}">
+                    <input type="hidden" name="csrf_token" value="{csrf_token}">
+                    <div class="mb-3"><label for="character_name" class="form-label">{form_char_name}</label><input type="text" class="form-control" id="character_name" name="character_name" required></div>
+                    <div class="mb-3"><label for="class_id" class="form-label">{form_char_class}</label><select class="form-select" id="class_id" name="class_id" required><option value="">{please_choose}</option>{class_options_html}</select></div>
+                    <div class="mb-3"><label for="level" class="form-label">{form_char_level}</label><input type="number" class="form-control" id="level" name="level" required></div>
+                    <button type="submit" name="submit_add_character" class="btn btn-primary w-100">{form_add_button}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{modals_html}
+<!-- END -->
+
+<!-- raidplaner_characters_entry -->
+<tr>
+    <td>
+        <button class="btn btn-sm btn-outline-secondary main-star" data-char-id="{id}" title="Als Main festlegen">
+            <i class="bi {is_main_icon_class}"></i>
+        </button>
+    </td>
+    <td>{character_name}</td>
+    <td>{class_name}</td>
+    <td>{level}</td>
+    <td>
+        <a href="{bis_planner_url}" class="btn btn-sm btn-info" title="BiS Planner"><i class="bi bi-gem"></i></a>
+        <button type="button" class="btn btn-sm btn-warning me-1" data-bs-toggle="modal" data-bs-target="#editCharacterModal{id}"><i class="bi bi-pencil-fill"></i></button>
+        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCharacterModal{id}"><i class="bi bi-trash-fill"></i></button>
+    </td>
+</tr>
+<!-- END -->
+
+<!-- raidplaner_bis_planner -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>{title} {for} {character_name}</h3>
+    <a href="{back_to_chars_url}" class="btn btn-secondary">{back_to_chars_overview}</a>
+</div>
+<table class="table align-middle table-hover table-bis-planner">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Raid</th>
+            <th>{source}</th>
+            <th style="width: 250px;">{status}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {bis_list_html}
+    </tbody>
+</table>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.gear-status-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const itemId = this.dataset.itemId;
+            const charId = this.dataset.charId;
+            const newStatus = this.value;
+            const csrfToken = '{csrf_token}';
+            const statusIconSpan = document.querySelector(`.status-icon[data-item-id-icon="${itemId}"]`);
+            const statusIcon = statusIconSpan ? statusIconSpan.querySelector('i') : null;
+
+            const formData = new FormData();
+            formData.append('character_id', charId);
+            formData.append('item_id', itemId);
+            formData.append('status', newStatus);
+            formData.append('csrf_token', csrfToken);
+
+            fetch('index.php?site=raidplaner&action=update_gear_status', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (statusIconSpan && statusIcon) {
+                        statusIconSpan.className = 'status-icon fs-5 me-2';
+                        statusIcon.className = 'bi';
+                        if (newStatus === 'obtained') {
+                            statusIconSpan.classList.add('text-success');
+                            statusIcon.classList.add('bi-check-circle-fill');
+                        } else if (newStatus === 'wishlist') {
+                            statusIconSpan.classList.add('text-warning');
+                            statusIcon.classList.add('bi-star-fill');
+                        } else {
+                            statusIconSpan.classList.add('text-danger');
+                            statusIcon.classList.add('bi-x-circle');
+                        }
+                    }
+                } else {
+                    alert('{alert_network_error}');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('{alert_network_error}');
+            });
+        });
+    });
+});
+</script>
+<!-- END -->
+
+<!-- raidplaner_bis_planner_slot -->
+<tr class="slot-row">
+    <td colspan="4">
+        <span class="slot-title">{slot_name}</span>
+    </td>
+</tr>
+<!-- END -->
+
+<!-- raidplaner_bis_planner_item -->
+<tr>
+  <td class="fw-semibold">{item_name}</td>
+  <td>{raid_text}</td>
+  <td>{boss_text}</td>
+  <td>
+    <div class="d-inline-flex align-items-center gap-2 rp-td-flex">
+      {status_dropdown_html}
+      <span class="status-icon" data-item-id-icon="{id}"><i class="bi {icon_class}"></i></span>
+    </div>
+  </td>
+</tr>
+<!-- END -->
+
+<!-- raidplaner_archive -->
+<h3>{title}</h3>
+{no_raids_message_html}
+{raid_list_container_html}
+<!-- END -->
+
+<!-- raidplaner_archive_entry -->
+<a href="{details_url}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+    <strong>{title}</strong>
+    <span class="text-muted">{date}</span>
+</a>
+<!-- END -->
+
+<!-- raidplaner_my_stats_page -->
+<h3>{title}</h3>
+<p>{personal_raid_statistic}</p>
+
+<div class="row mt-4">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{attendance_rate}</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success progress-bar" role="progressbar" style="width: {attendance_percentage}%;" aria-valuenow="{attendance_percentage}" aria-valuemin="0" aria-valuemax="100"><strong>{attendance_percentage}%</strong></div>
+                </div>
+                <small class="text-muted mt-2 d-block">{attendance_note}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle-fill text-success fs-2"></i> {present}</h5>
+                <p class="card-text fs-1 fw-bold">{count_present}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-clock-fill text-warning fs-2"></i> {late}</h5>
+                <p class="card-text fs-1 fw-bold">{count_late}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-x-circle-fill text-danger fs-2"></i> {absent}</h5>
+                <p class="card-text fs-1 fw-bold">{count_absent}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">{attendance_history}</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Raid</th>
+                    <th>{character}</th>
+                    <th>{date}</th>
+                    <th>{status}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {attendance_history_html}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">{myloot_history}</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>{item}</th>
+                    <th>{slot}</th>
+                    <th>{character}</th>
+                    <th>Boss</th>
+                    <th>Raid</th>
+                    <th>{date}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loot_history_html}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- END -->
+
+<!-- raidplaner_foot -->
+</div>
+<!-- END -->
+<!-- raidplaner_widget_sidebar_upperhead -->
+ <div class="head-boxes {class}">
+    <span class="head-boxes-head">{title}</span>
+    <h2 class="head-h2">
+        <span class="head-boxes-title">{title}</span>
+    </h2>
+    <p class="head-boxes-foot">{subtitle}</p>
+</div>
+<!-- END -->
+<!-- raidplaner_widget_sidebar_head -->
+<div class="widget widget-raidplaner">
+  <div class="card raid-card flex-fill">
+    <div class="card-body p-3">
+<!-- END -->
+<!-- raidplaner_widget_sidebar_content -->
+<div class="rpw-item mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <strong class="text-truncate">{title}</strong>
+    {status_badge_html}
+  </div>
+
+  <div class="small text-muted mb-2">{time} {clock}</div>
+
+  <div class="mb-2">
+    <small class="text-muted">{total}: {total_signed_up} / {total_needed}</small>
+    <div class="progress" style="height:8px;">
+      <div class="progress-bar" role="progressbar"
+           style="width: {total_progress_percent}%"
+           aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+  </div>
+
+  <div class="role-summary">
+    {role_details_html}
+  </div>
+
+  <a href="{details_url}" class="btn btn-sm btn-primary w-100 mt-2">{details_signup}</a>
+</div>
+<!-- END -->
+<!-- raidplaner_widget_sidebar_foot -->
+    </div> <!-- /.card-body -->
+  </div>   <!-- /.card -->
+</div>     <!-- /.widget -->
+<!-- END -->
