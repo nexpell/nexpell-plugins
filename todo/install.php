@@ -1,10 +1,15 @@
 <?php
 safe_query("CREATE TABLE IF NOT EXISTS plugins_todo (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  userID INT NOT NULL,
-  task VARCHAR(255) NOT NULL,
-  done TINYINT(1) NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `id` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
+  `task` varchar(255) NOT NULL,
+  `done` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `description` text DEFAULT NULL,
+  `priority` enum('low','medium','high') NOT NULL DEFAULT 'medium',
+  `due_date` date DEFAULT NULL,
+  `progress` int(11) NOT NULL DEFAULT 0,
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
 ## SYSTEM #####################################################################################################################################
